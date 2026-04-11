@@ -54,8 +54,6 @@ export function AuthProvider({ children }) {
     const moduleMap = {
       links: ["free", "starter", "pro", "business"],
       priceAnalyze: ["free", "starter", "pro", "business"],
-      expedicao: ["pro", "business"],
-      nfe: ["pro", "business"],
       catalog: ["pro", "business"],
       meli: ["starter", "pro", "business"],
       sellerMonitor: ["pro", "business"],

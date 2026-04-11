@@ -30,8 +30,6 @@ export const PLANS = {
     features: [
       "Tudo do Starter",
       "Monitor de sellers",
-      "Expedição",
-      "Notas fiscais",
       "Catálogo de produtos",
     ],
   },
@@ -58,8 +56,6 @@ export function planSlugByPriceId(priceId) {
 export const MODULES = {
   links: { name: "Acompanhamento de Links", plans: ["free", "starter", "pro", "business"] },
   priceAnalyze: { name: "Análise de Preços", plans: ["free", "starter", "pro", "business"] },
-  expedicao: { name: "Expedição", plans: ["pro", "business"] },
-  nfe: { name: "Notas Fiscais", plans: ["pro", "business"] },
   catalog: { name: "Catálogo", plans: ["pro", "business"] },
   meli: { name: "Contas Mercado Livre", plans: ["starter", "pro", "business"] },
   sellerMonitor: { name: "Monitor de Sellers", plans: ["pro", "business"] },

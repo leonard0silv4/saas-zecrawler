@@ -63,7 +63,7 @@ FRONTEND_URL=http://localhost:5173
 |------------|------------|--------|--------------------------------------------|
 | Gratuito   | R$ 0       | 10     | Links                                      |
 | Starter    | R$ 19,90   | 100    | Links, Mercado Livre                       |
-| Pro        | R$ 29,90   | 500    | Links, ML, Expedição, NF, Catálogo         |
+| Pro        | R$ 29,90   | 500    | Links, ML, monitor sellers, Catálogo       |
 | Business   | R$ 59,90   | 1.000  | Tudo + API access + Suporte prioritário    |
 
 Configurados em `backend/config/plans.js`.
@@ -96,26 +96,6 @@ DELETE /api/links/all/:storeName
 GET    /api/links/refresh/:storeName   (SSE)
 GET    /api/links/tags
 POST   /api/links/clear-rates/:storeName
-```
-
-### Expedição (Pro+)
-```
-GET  /api/expedicao/verificar/:orderId
-POST /api/expedicao/registrar    { orderId, mesaId, seller }
-GET  /api/expedicao/meta
-POST /api/expedicao/meta         { tipoConfiguracao, total|porSeller }
-POST /api/expedicao/encerrar-dia
-GET  /api/expedicao/dashboard?data=2025-04-09
-```
-
-### Notas Fiscais (Pro+)
-```
-POST /api/nfe/parse   (upload XML)
-GET  /api/nfe?search=&startDate=&endDate=&cursor=&limit=20
-POST /api/nfe         { fornecedor, numeroNota, valores, produtos }
-GET  /api/nfe/:id
-PUT  /api/nfe/:id
-DELETE /api/nfe/:id
 ```
 
 ### Catálogo (Pro+)

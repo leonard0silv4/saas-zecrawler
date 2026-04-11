@@ -1,13 +1,11 @@
 import { useAuth } from "../contexts/AuthContext";
-import { Link2, Package, FileText, BookOpen, ShoppingBag, Crown, LineChart, Store } from "lucide-react";
+import { Link2, BookOpen, ShoppingBag, Crown, LineChart, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CARDS = [
   { module: "links", icon: Link2, label: "Links", desc: "Acompanhe preços de concorrentes", to: "/links", color: "bg-blue-500" },
   { module: "priceAnalyze", icon: LineChart, label: "Análise de preços", desc: "Grupos por SKU dos seus links", to: "/price-analyze", color: "bg-sky-500" },
   { module: "sellerMonitor", icon: Store, label: "Monitor sellers", desc: "Páginas de vendedores ML", to: "/seller-monitor", color: "bg-teal-500" },
-  { module: "expedicao", icon: Package, label: "Expedição", desc: "Controle de pacotes e mesas", to: "/expedicao", color: "bg-emerald-500" },
-  { module: "nfe", icon: FileText, label: "Notas Fiscais", desc: "Gerencie suas notas de entrada", to: "/nfe", color: "bg-violet-500" },
   { module: "catalog", icon: BookOpen, label: "Catálogo", desc: "Catálogo de produtos e dimensões", to: "/catalog", color: "bg-orange-500" },
   { module: "meli", icon: ShoppingBag, label: "Mercado Livre", desc: "Contas e produtos ML", to: "/meli", color: "bg-yellow-500" },
 ];

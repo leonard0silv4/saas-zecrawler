@@ -1,7 +1,7 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  Link2, Package, FileText, BookOpen, ShoppingBag,
+  Link2, BookOpen, ShoppingBag,
   LogOut, LayoutDashboard, Crown, Menu, X, CreditCard,
   LineChart, Store, Settings,
 } from "lucide-react";
@@ -14,8 +14,6 @@ const NAV = [
   { to: "/links", icon: Link2, label: "Links", module: "links" },
   { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze" },
   { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor" },
-  { to: "/expedicao", icon: Package, label: "Expedição", module: "expedicao" },
-  { to: "/nfe", icon: FileText, label: "Notas Fiscais", module: "nfe" },
   { to: "/catalog", icon: BookOpen, label: "Catálogo", module: "catalog" },
   { to: "/meli", icon: ShoppingBag, label: "Mercado Livre", module: "meli" },
 ];

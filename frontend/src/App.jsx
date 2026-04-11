@@ -7,8 +7,6 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import PlansPage from "./pages/PlansPage";
 import LinksPage from "./pages/LinksPage";
-import ExpedicaoPage from "./pages/ExpedicaoPage";
-import NfePage from "./pages/NfePage";
 import CatalogPage from "./pages/CatalogPage";
 import MeliPage from "./pages/MeliPage";
 import PriceAnalyzePage from "./pages/PriceAnalyzePage";
@@ -48,8 +46,8 @@ export default function App() {
             <Route path="/links" element={<LinksPage />} />
             <Route path="/price-analyze" element={<PriceAnalyzePage />} />
             <Route path="/seller-monitor" element={<SellerMonitorPage />} />
-            <Route path="/expedicao" element={<ExpedicaoPage />} />
-            <Route path="/nfe" element={<NfePage />} />
+            <Route path="/expedicao" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/nfe" element={<Navigate to="/dashboard" replace />} />
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/meli" element={<MeliPage />} />
             <Route path="/ml-cookies" element={<MlCookiesPage />} />

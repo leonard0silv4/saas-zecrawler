@@ -7,9 +7,7 @@ import { getOwnerId } from "../middleware/auth.js";
 import AuthController from "../controllers/AuthController.js";
 import StripeController from "../controllers/StripeController.js";
 import LinkController from "../controllers/LinkController.js";
-import ExpedicaoController from "../controllers/ExpedicaoController.js";
 import MeliController from "../controllers/MeliController.js";
-import NfController from "../controllers/NfController.js";
 import CatalogProductController from "../controllers/CatalogProductController.js";
 import CookieController from "../controllers/CookieController.js";
 import PriceAnalyzeController from "../controllers/PriceAnalyzeController.js";
@@ -74,27 +72,10 @@ r.get("/seller-monitor/:id/alerts", requireModule("sellerMonitor"), SellerMonito
 r.put("/seller-monitor/:id/alerts/read-all", requireModule("sellerMonitor"), SellerMonitorController.markAllAlertsRead);
 r.put("/seller-monitor/alerts/:alertId/read", requireModule("sellerMonitor"), SellerMonitorController.markAlertRead);
 
-// ─── Expedição ─────────────────────────────────────────────────
-r.get("/expedicao/dia-encerrado", requireModule("expedicao"), ExpedicaoController.verificarDiaEncerrado);
-r.get("/expedicao/verificar/:orderId", requireModule("expedicao"), ExpedicaoController.verificar);
-r.post("/expedicao/registrar", requireModule("expedicao"), ExpedicaoController.registrar);
-r.get("/expedicao/meta", requireModule("expedicao"), ExpedicaoController.obterMeta);
-r.post("/expedicao/meta", requireModule("expedicao"), ExpedicaoController.configurarMeta);
-r.post("/expedicao/encerrar-dia", requireModule("expedicao"), ExpedicaoController.encerrarDia);
-r.get("/expedicao/dashboard", requireModule("expedicao"), ExpedicaoController.dashboard);
-
 // ─── Mercado Livre ─────────────────────────────────────────────
 r.get("/meli/accounts", requireModule("meli"), MeliController.getAccounts);
 r.get("/meli/products", requireModule("meli"), MeliController.getProducts);
 r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShipment);
-
-// ─── Notas Fiscais ─────────────────────────────────────────────
-r.post("/nfe/parse", requireModule("nfe"), NfController.parseXml);
-r.get("/nfe", requireModule("nfe"), NfController.index);
-r.post("/nfe", requireModule("nfe"), NfController.store);
-r.get("/nfe/:id", requireModule("nfe"), NfController.show);
-r.put("/nfe/:id", requireModule("nfe"), NfController.update);
-r.delete("/nfe/:id", requireModule("nfe"), NfController.destroy);
 
 // ─── Catálogo ──────────────────────────────────────────────────
 r.get("/catalog", requireModule("catalog"), CatalogProductController.index);

@@ -17,7 +17,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PAID_PLANS = [
   { slug: "starter", name: "ZeCrawler Starter", price: 1990, description: "100 links, dashboard completo" },
-  { slug: "pro", name: "ZeCrawler Pro", price: 2990, description: "500 links, expedição, NF, catálogo" },
+  { slug: "pro", name: "ZeCrawler Pro", price: 2990, description: "500 links, monitor sellers, catálogo" },
   { slug: "business", name: "ZeCrawler Business", price: 5990, description: "1000 links, tudo incluso" },
 ];
 
