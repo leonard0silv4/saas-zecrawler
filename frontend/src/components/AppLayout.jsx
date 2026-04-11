@@ -1,0 +1,132 @@
+import { Link, useLocation, Outlet } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  Link2, Package, FileText, BookOpen, ShoppingBag,
+  LogOut, LayoutDashboard, Crown, Menu, X, CreditCard,
+  LineChart, Store, Settings,
+} from "lucide-react";
+import { useState } from "react";
+
+const NAV = [
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", module: null },
+  { to: "/plans", icon: Crown, label: "Planos", module: null },
+  { to: "/settings", icon: Settings, label: "Configurações", module: null },
+  { to: "/links", icon: Link2, label: "Links", module: "links" },
+  { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze" },
+  { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor" },
+  { to: "/expedicao", icon: Package, label: "Expedição", module: "expedicao" },
+  { to: "/nfe", icon: FileText, label: "Notas Fiscais", module: "nfe" },
+  { to: "/catalog", icon: BookOpen, label: "Catálogo", module: "catalog" },
+  { to: "/meli", icon: ShoppingBag, label: "Mercado Livre", module: "meli" },
+];
+
+export default function AppLayout() {
+  const { user, logout, canAccess, manageBilling } = useAuth();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const planColors = {
+    free: "bg-gray-100 text-gray-600",
+    starter: "bg-blue-100 text-blue-700",
+    pro: "bg-purple-100 text-purple-700",
+    business: "bg-amber-100 text-amber-700",
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200
+        transform transition-transform lg:translate-x-0
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+      `}>
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100">
+            <span className="text-lg font-bold text-brand-700 tracking-tight">ZeCrawler</span>
+            <button className="lg:hidden p-1" onClick={() => setSidebarOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Nav */}
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {NAV.map((item) => {
+              const active = location.pathname.startsWith(item.to);
+              const locked = item.module && !canAccess(item.module);
+
+              return (
+                <Link
+                  key={item.to}
+                  to={locked ? "/plans" : item.to}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                    ${active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}
+                    ${locked ? "opacity-50" : ""}
+                  `}
+                >
+                  <item.icon size={18} />
+                  <span>{item.label}</span>
+                  {locked && <Crown size={14} className="ml-auto text-amber-500" />}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* User */}
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-sm font-bold">
+                {user?.name?.[0]?.toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user?.name}</p>
+                <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${planColors[user?.effectivePlan || user?.plan] || planColors.free}`}>
+                  {user?.planConfig?.name || "Gratuito"}
+                </span>
+              </div>
+            </div>
+            {user?.hasSubscription && (
+              <button
+                onClick={manageBilling}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+              >
+                <CreditCard size={16} />
+                Assinatura
+              </button>
+            )}
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+            >
+              <LogOut size={16} />
+              Sair
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top bar mobile */}
+        <header className="lg:hidden flex items-center h-14 px-4 bg-white border-b border-gray-200">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2">
+            <Menu size={20} />
+          </button>
+          <span className="ml-3 font-bold text-brand-700">ZeCrawler</span>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
