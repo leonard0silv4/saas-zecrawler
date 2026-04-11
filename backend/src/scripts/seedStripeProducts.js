@@ -8,9 +8,11 @@
  */
 import Stripe from "stripe";
 import dotenv from "dotenv";
-
-dotenv.config({ path: "../../.env" });
-
+import { fileURLToPath } from "url";                                                                                                                                                                             
+import { dirname, resolve } from "path";
+                                                                                                                                                                                                                 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: resolve(__dirname, "../../.env") });
 
 console.log(process.env.STRIPE_SECRET_KEY)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
