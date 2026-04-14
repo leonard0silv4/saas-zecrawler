@@ -90,14 +90,19 @@ async function extractProductsFromPage(url, ownerId) {
     const imgEl = $(el).find("img").first();
     const image =
       imgEl.attr("src") || imgEl.attr("data-src") || imgEl.attr("data-lazy") || "";
-    const fractionText = $(el)
+    // Use .poly-price__current to get the "por" (selling) price and avoid the
+    // "de" (original/strikethrough) price that appears first in the DOM on discounted items.
+    const priceWrapper = $(el).find(".poly-price__current").length
+      ? $(el).find(".poly-price__current")
+      : $(el);
+    const fractionText = priceWrapper
       .find(".andes-money-amount__fraction")
       .first()
       .text()
       .trim()
       .replace(/\./g, "")
       .replace(/,/g, "");
-    const centsText = $(el).find(".andes-money-amount__cents").first().text().trim();
+    const centsText = priceWrapper.find(".andes-money-amount__cents").first().text().trim();
     const price = fractionText ? parseFloat(`${fractionText}.${centsText || "00"}`) : 0;
     if (productUrl && name) products.push({ url: productUrl, name, image, price, sku });
   });
