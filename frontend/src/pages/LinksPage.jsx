@@ -117,11 +117,7 @@ export default function LinksPage() {
         </div>
       </div>
 
-      <p className="text-sm text-amber-900 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4">
-        <strong>Análise de preços:</strong> adicione a tag{" "}
-        <code className="bg-white px-1 rounded border border-amber-200 text-xs">minha-loja</code> nos links dos seus
-        anúncios para comparar com concorrentes no mesmo SKU.
-      </p>
+  
 
       {/* Add modal */}
       {showAdd && (

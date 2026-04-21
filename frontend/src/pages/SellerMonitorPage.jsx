@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Loader2, Package, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
+import { format } from "date-fns";
+
 
 function fmtAgo(iso) {
   if (!iso) return "—";
@@ -298,10 +300,14 @@ export default function SellerMonitorPage() {
                       key={a._id}
                       className={`text-sm border rounded-lg p-3 ${a.read ? "border-gray-100 bg-gray-50" : "border-amber-200 bg-amber-50/50"}`}
                     >
-                      <div className="font-medium">{a.type === "new_product" ? "Produto novo" : "Mudança de preço"}</div>
+                      <div className="font-medium">{format(a.createdAt, "dd/MM/yy - ")} {a.type === "new_product" ? "Produto novo" : "Mudança de preço"}
+                        
+
+                      </div>
                       <a href={a.productUrl} target="_blank" rel="noreferrer" className="text-brand-600 text-xs line-clamp-2">
-                        {a.productName}
+                        {a.productName} 
                       </a>
+                      
                       {a.type === "price_change" && (
                         <div className="text-xs text-gray-600 mt-1">
                           R$ {a.oldPrice?.toFixed(2)} → R$ {a.newPrice?.toFixed(2)}

@@ -158,22 +158,8 @@ export default function PriceAnalyzePage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Análise de preços</h1>
-          <p className="text-gray-500 mt-1">
-            Mesmo fluxo do script Python: gera <code className="text-xs bg-gray-100 px-1 rounded">produtos_mercadolivre.xml</code> a
-            partir dos{" "}
-            <a href="/links" className="text-brand-600 hover:underline">
-              links
-            </a>{" "}
-            cadastrados; a tela lê o XML e agrupa por <code className="text-xs bg-gray-100 px-1 rounded">grupo</code>.
-          </p>
-          <p className="text-sm text-blue-900 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mt-3">
-            <strong>Cookies ML</strong> e <strong>nomes das suas lojas</strong> ficam em{" "}
-            <a href="/settings" className="text-brand-700 font-medium hover:underline">
-              Configurações
-            </a>
-            . Sem cookies, o ML pode bloquear ou retornar páginas vazias. Se não configurar lojas, usa-se a variável{" "}
-            <code className="text-xs">VITE_PRICE_ANALYZE_MY_SELLERS</code> ou a lista padrão do projeto.
-          </p>
+    
+  
           {extractionDate && (
             <p className="text-xs text-gray-500 mt-2">
               XML extraído em:{" "}
@@ -198,7 +184,7 @@ export default function PriceAnalyzePage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
             >
               <Play size={16} className={generating ? "animate-pulse" : ""} />
-              {generating ? "Gerando XML…" : "Gerar XML (scrape)"}
+              {generating ? "Buscando dados" : "Buscar dados"}
             </button>
             <button
               type="button"
@@ -207,7 +193,7 @@ export default function PriceAnalyzePage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
             >
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-              Recarregar XML
+              Recarregar
             </button>
           </div>
         </div>
