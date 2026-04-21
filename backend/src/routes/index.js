@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
-import { requireModule, checkLinkLimit } from "../middleware/plan.js";
+import { requireModule, checkLinkLimit, checkSellerMonitorLimit } from "../middleware/plan.js";
 import { addSSEClient, removeSSEClient } from "../utils/sse.js";
 import { getOwnerId } from "../middleware/auth.js";
 
@@ -63,7 +63,7 @@ r.post("/price-analyze/generate", requireModule("priceAnalyze"), PriceAnalyzeCon
 
 // ─── Seller Monitor ────────────────────────────────────────────
 r.get("/seller-monitor", requireModule("sellerMonitor"), SellerMonitorController.index);
-r.post("/seller-monitor", requireModule("sellerMonitor"), SellerMonitorController.store);
+r.post("/seller-monitor", requireModule("sellerMonitor"), checkSellerMonitorLimit, SellerMonitorController.store);
 r.delete("/seller-monitor/:id", requireModule("sellerMonitor"), SellerMonitorController.destroy);
 r.get("/seller-monitor/:id/products", requireModule("sellerMonitor"), SellerMonitorController.getProducts);
 r.post("/seller-monitor/:id/run", requireModule("sellerMonitor"), SellerMonitorController.runScrape);

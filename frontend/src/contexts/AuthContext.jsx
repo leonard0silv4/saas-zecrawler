@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
       priceAnalyze: ["free", "starter", "pro", "business"],
       catalog: ["pro", "business"],
       meli: ["starter", "pro", "business"],
-      sellerMonitor: ["pro", "business"],
+      sellerMonitor: ["free", "starter", "pro", "business"],
     };
     return moduleMap[module]?.includes(plan) || false;
   }

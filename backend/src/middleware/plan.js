@@ -1,5 +1,6 @@
 import { PLANS, MODULES } from "../../config/plans.js";
 import Link from "../models/Link.js";
+import SellerPage from "../models/SellerPage.js";
 
 /**
  * Checks if user's plan allows access to a specific module.
@@ -46,6 +47,36 @@ export async function checkLinkLimit(req, res, next) {
     }
 
     req.linkLimit = { current: currentCount, max: planConfig.maxLinks };
+    next();
+  } catch (err) {
+    return res.status(500).json({ error: "Erro ao verificar limite" });
+  }
+}
+
+/**
+ * Checks if user can add more seller monitors based on plan limits.
+ * Use as middleware before seller monitor creation route.
+ */
+export async function checkSellerMonitorLimit(req, res, next) {
+  try {
+    const effectivePlan = req.user.effectivePlan || req.user.plan || "free";
+    const planConfig = PLANS[effectivePlan];
+    if (!planConfig) return res.status(400).json({ error: "Plano inválido" });
+
+    const ownerId = String(req.user.role === "owner" ? req.user.id : req.user.ownerId);
+    const currentCount = await SellerPage.countDocuments({ ownerId });
+    const maxSellerMonitors = planConfig.maxSellerMonitors ?? 0;
+
+    if (currentCount >= maxSellerMonitors) {
+      return res.status(403).json({
+        error: "Limite de sellers monitorados atingido",
+        current: currentCount,
+        max: maxSellerMonitors,
+        plan: effectivePlan,
+      });
+    }
+
+    req.sellerMonitorLimit = { current: currentCount, max: maxSellerMonitors };
     next();
   } catch (err) {
     return res.status(500).json({ error: "Erro ao verificar limite" });

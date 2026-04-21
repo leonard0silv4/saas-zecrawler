@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Loader2, Package, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
 import { format } from "date-fns";
+import { useAuth } from "../contexts/AuthContext";
 
 
 function fmtAgo(iso) {
@@ -15,6 +16,7 @@ function fmtAgo(iso) {
 }
 
 export default function SellerMonitorPage() {
+  const { user } = useAuth();
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
@@ -152,20 +154,27 @@ export default function SellerMonitorPage() {
 
   const selected = sellers.find((s) => s._id === selectedId);
   const unread = sellers.reduce((acc, s) => acc + (s.unreadAlerts || 0), 0);
+  const maxSellerMonitors = user?.planConfig?.maxSellerMonitors ?? 0;
+  const canAddSeller = sellers.length < maxSellerMonitors;
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-8rem)]">
       <aside className="lg:w-72 shrink-0 bg-white rounded-xl border border-gray-100 flex flex-col max-h-[40vh] lg:max-h-none">
         <div className="p-3 border-b border-gray-100 flex items-center justify-between">
-          <span className="font-semibold text-gray-900 flex items-center gap-2">
-            <Store size={18} className="text-brand-600" />
-            Sellers
-            {unread > 0 && (
-              <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                <Bell size={10} /> {unread}
-              </span>
-            )}
-          </span>
+          <div>
+            <span className="font-semibold text-gray-900 flex items-center gap-2">
+              <Store size={18} className="text-brand-600" />
+              Sellers
+              {unread > 0 && (
+                <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <Bell size={10} /> {unread}
+                </span>
+              )}
+            </span>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {sellers.length} de {maxSellerMonitors} utilizados
+            </p>
+          </div>
           <button type="button" onClick={fetchSellers} className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg">
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
@@ -218,10 +227,16 @@ export default function SellerMonitorPage() {
         <button
           type="button"
           onClick={() => setAddOpen(true)}
-          className="m-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+          disabled={!canAddSeller}
+          className="m-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={16} /> Novo seller
         </button>
+        {!canAddSeller && (
+          <p className="px-3 pb-3 text-xs text-amber-700">
+            Você atingiu o limite do seu plano para sellers monitorados.
+          </p>
+        )}
       </aside>
 
       <main className="flex-1 bg-white rounded-xl border border-gray-100 flex flex-col min-h-[320px]">

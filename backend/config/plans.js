@@ -8,6 +8,7 @@ export const PLANS = {
     slug: "free",
     price: 0,
     maxLinks: 10,
+    maxSellerMonitors: 1,
     stripePriceId: null, // free = no Stripe price
     features: ["Acompanhamento de links", "Análise de preços (XML)", "Dashboard básico"],
   },
@@ -16,6 +17,7 @@ export const PLANS = {
     slug: "starter",
     price: 19.9,
     maxLinks: 100,
+    maxSellerMonitors: 3,
     stripePriceId: process.env.STRIPE_PRICE_STARTER || "",
     features: [
       "Acompanhamento de links",
@@ -30,6 +32,7 @@ export const PLANS = {
     slug: "pro",
     price: 29.9,
     maxLinks: 500,
+    maxSellerMonitors: 10,
     stripePriceId: process.env.STRIPE_PRICE_PRO || "",
     features: [
       "Tudo do Starter",
@@ -42,6 +45,7 @@ export const PLANS = {
     slug: "business",
     price: 59.9,
     maxLinks: 1000,
+    maxSellerMonitors: 20,
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS || "",
     features: ["Tudo do Pro", "Multi-contas ML", "Monitor de sellers", "API access", "Suporte prioritário"],
   },
@@ -62,5 +66,5 @@ export const MODULES = {
   priceAnalyze: { name: "Análise de Preços", plans: ["free", "starter", "pro", "business"] },
   catalog: { name: "Catálogo", plans: ["pro", "business"] },
   meli: { name: "Contas Mercado Livre", plans: ["starter", "pro", "business"] },
-  sellerMonitor: { name: "Monitor de Sellers", plans: ["pro", "business"] },
+  sellerMonitor: { name: "Monitor de Sellers", plans: ["free", "starter", "pro", "business"] },
 };

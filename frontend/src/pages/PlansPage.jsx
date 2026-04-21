@@ -180,6 +180,11 @@ export default function PlansPage() {
               <p className="text-sm text-gray-500 mb-4">
                 Até <strong>{plan.maxLinks.toLocaleString()}</strong> links
               </p>
+              {plan.maxSellerMonitors != null && (
+                <p className="text-sm text-gray-500 mb-4">
+                  Até <strong>{plan.maxSellerMonitors.toLocaleString()}</strong> sellers monitorados
+                </p>
+              )}
 
               <ul className="space-y-2.5 mb-6 flex-1">
                 {plan.features?.map((f) => (

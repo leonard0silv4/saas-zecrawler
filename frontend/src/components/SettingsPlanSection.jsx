@@ -43,6 +43,12 @@ export default function SettingsPlanSection() {
             Limite de links: <strong className="text-gray-900">{planConfig.maxLinks.toLocaleString("pt-BR")}</strong>
           </p>
         )}
+        {planConfig?.maxSellerMonitors != null && (
+          <p className="text-sm text-gray-600">
+            Limite de sellers monitorados:{" "}
+            <strong className="text-gray-900">{planConfig.maxSellerMonitors.toLocaleString("pt-BR")}</strong>
+          </p>
+        )}
         {subStatus?.subscription?.currentPeriodEnd && (
           <p className="text-sm text-gray-600">
             {subStatus.subscription.cancelAtPeriodEnd ? "Acesso até" : "Renova em"}{" "}

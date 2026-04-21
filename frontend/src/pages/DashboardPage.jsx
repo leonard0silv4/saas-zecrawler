@@ -19,7 +19,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-900">Olá, {user?.name?.split(" ")[0]} 👋</h1>
         <p className="text-gray-500 mt-1">
           Plano <span className="font-medium text-brand-600">{user?.planConfig?.name}</span>
-          {" — "}{user?.planConfig?.maxLinks} links disponíveis
+          {" — "}{user?.planConfig?.maxLinks} links e {user?.planConfig?.maxSellerMonitors ?? 0} sellers monitorados
         </p>
       </div>
 
