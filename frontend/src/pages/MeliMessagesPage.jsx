@@ -316,43 +316,37 @@ export default function MeliMessagesPage() {
   const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-brand-700 sticky top-0 z-20 border-b border-brand-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-white/10 flex items-center justify-center">
-                <MessageCircle className="size-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-white">Mensagens Mercado Livre</h1>
-                <p className="text-xs text-white/70">Gerencie perguntas, respostas e templates</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={loadQuestions}
-                disabled={loadingQuestions || !selectedUserId}
-                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm border border-white/20 disabled:opacity-50"
-              >
-                {loadingQuestions ? "Carregando..." : "Atualizar"}
-              </button>
-              <button
-                type="button"
-                onClick={syncNow}
-                disabled={syncing}
-                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm border border-white/20 disabled:opacity-50 flex items-center gap-2"
-              >
-                <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
-                {syncing ? "Sincronizando..." : "Sincronizar"}
-              </button>
-            </div>
-          </div>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <MessageCircle className="text-brand-600" />
+            Mensagens Mercado Livre
+          </h1>
+          <p className="text-gray-500 mt-1">Gerencie perguntas, respostas e templates.</p>
         </div>
-      </header>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={loadQuestions}
+            disabled={loadingQuestions || !selectedUserId}
+            className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm disabled:opacity-50"
+          >
+            {loadingQuestions ? "Carregando..." : "Atualizar"}
+          </button>
+          <button
+            type="button"
+            onClick={syncNow}
+            disabled={syncing}
+            className="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm disabled:opacity-50 flex items-center gap-2"
+          >
+            <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Sincronizando..." : "Sincronizar"}
+          </button>
+        </div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="space-y-6">
       <div className="bg-white rounded-xl border border-gray-100 p-4">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
@@ -492,27 +486,37 @@ export default function MeliMessagesPage() {
                 )}
               </div>
 
-              <div>
-                <label className="text-xs text-gray-500 block mb-1">Sua resposta</label>
-                <textarea
-                  ref={replyTextareaRef}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[140px]"
-                  placeholder="Escreva sua resposta..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                />
-              </div>
+              {selectedQuestion.status !== "ANSWERED" && (
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Sua resposta</label>
+                  <textarea
+                    ref={replyTextareaRef}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[140px]"
+                    placeholder="Escreva sua resposta..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {selectedQuestion.status === "ANSWERED" && (
+                <div className="text-sm rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800">
+                  Esta pergunta já foi respondida e não pode receber uma nova resposta.
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={sendManualReply}
-                  disabled={sendingReply || selectedQuestion.status === "ANSWERED"}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Send size={14} />
-                  {sendingReply ? "Enviando..." : "Enviar resposta"}
-                </button>
+                {selectedQuestion.status !== "ANSWERED" && (
+                  <button
+                    type="button"
+                    onClick={sendManualReply}
+                    disabled={sendingReply}
+                    className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Send size={14} />
+                    {sendingReply ? "Enviando..." : "Enviar resposta"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={openSelectedQuestionListing}
