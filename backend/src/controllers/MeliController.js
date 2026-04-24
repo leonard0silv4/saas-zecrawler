@@ -112,6 +112,17 @@ async function upsertProductsFromItems(items, context) {
   return items.length;
 }
 
+function mapProductsToAutocompleteItems(products) {
+  return products.map((p) => ({
+    _id: p._id,
+    id: p.id,
+    title: p.title,
+    permalink: p.permalink,
+    SKU: p.SKU || null,
+    user_id: p.user_id,
+  }));
+}
+
 export default {
   async authRedirect(req, res) {
     try {
@@ -202,13 +213,11 @@ export default {
   async autocompleteProducts(req, res) {
     try {
       const { user_id, q = "" } = req.query;
-      if (!user_id) return res.status(400).json({ error: "user_id é obrigatório" });
-
-      const { ownerObjectId, uid, conta } = await findAuthorizedConta(getOwnerId(req), user_id);
-      if (!conta) return res.status(403).json({ error: "Conta não encontrada ou sem permissão" });
+      const ownerId = getOwnerId(req);
+      const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
 
       const query = String(q).trim();
-      const mongoFilter = { user_id: uid, ownerId: ownerObjectId };
+      const mongoFilter = { ownerId: ownerObjectId };
       if (query) {
         mongoFilter.$or = [
           { title: { $regex: query, $options: "i" } },
@@ -216,9 +225,14 @@ export default {
           { id: { $regex: query, $options: "i" } },
         ];
       }
+      if (user_id) {
+        const { uid, conta } = await findAuthorizedConta(ownerId, user_id);
+        if (!conta) return res.status(403).json({ error: "Conta não encontrada ou sem permissão" });
+        mongoFilter.user_id = uid;
+      }
 
       const cached = await MeliProduct.find(mongoFilter)
-        .select({ _id: 1, id: 1, title: 1, SKU: 1, permalink: 1 })
+        .select({ _id: 1, id: 1, title: 1, SKU: 1, permalink: 1, user_id: 1 })
         .sort({ updatedAt: -1 })
         .limit(10)
         .lean();
@@ -227,21 +241,47 @@ export default {
         return res.json({ source: "cache", items: cached });
       }
 
-      const token = await renewToken(conta);
-      const itemIds = await fetchSellerItemIds(token, uid, { query, limit: 10, offset: 0 });
-      if (itemIds.length === 0) return res.json({ source: "api", items: [] });
+      const contas = user_id
+        ? [(await findAuthorizedConta(ownerId, user_id)).conta]
+        : await getActiveContas(ownerId);
+      if (!contas.length) return res.json({ source: "api", items: [] });
 
-      const detailedItems = await fetchItemsDetails(token, itemIds);
-      await upsertProductsFromItems(detailedItems, { ownerObjectId, conta });
+      const allItems = [];
+      for (const conta of contas) {
+        try {
+          const token = await renewToken(conta);
+          const itemIds = await fetchSellerItemIds(token, conta.user_id, { query, limit: 10, offset: 0 });
+          if (!itemIds.length) continue;
+          const detailedItems = await fetchItemsDetails(token, itemIds);
+          if (!detailedItems.length) continue;
+          await upsertProductsFromItems(detailedItems, { ownerObjectId, conta });
+          allItems.push(
+            ...detailedItems.map((item) => ({
+              id: item.id,
+              title: item.title,
+              permalink: item.permalink,
+              SKU: item.seller_custom_field || null,
+              user_id: conta.user_id,
+            }))
+          );
+        } catch (err) {
+          const status = err.response?.status;
+          if (status === 401 || status === 403) continue;
+          throw err;
+        }
+      }
 
-      const items = detailedItems.map((item) => ({
-        id: item.id,
-        title: item.title,
-        permalink: item.permalink,
-        SKU: item.seller_custom_field || null,
-      }));
+      const deduped = Array.from(new Map(allItems.map((item) => [item.id, item])).values()).slice(0, 10);
+      if (deduped.length > 0) return res.json({ source: "api", items: deduped });
 
-      return res.json({ source: "api", items });
+      // fallback final: retorna qualquer coisa do cache do owner após sync
+      const refreshedCache = await MeliProduct.find(mongoFilter)
+        .select({ _id: 1, id: 1, title: 1, SKU: 1, permalink: 1, user_id: 1 })
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .lean();
+
+      return res.json({ source: "api", items: mapProductsToAutocompleteItems(refreshedCache) });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar sugestões de produtos" });
     }

@@ -1,10 +1,42 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MessageCircle, RefreshCcw, Send } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  MessageCircle,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Search,
+  Send,
+  Store,
+  Trash2,
+  X,
+} from "lucide-react";
 import api from "../services/api";
 
 function formatDate(value) {
   if (!value) return "-";
   return new Date(value).toLocaleString("pt-BR");
+}
+
+function formatRelativeTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffMins < 1) return "agora";
+  if (diffMins < 60) return `${diffMins}min`;
+  if (diffHours < 24) return `${diffHours}h`;
+  return `${diffDays}d`;
+}
+
+function cn(...classes) {
+  return classes.filter(Boolean).join(" ");
 }
 
 export default function MeliMessagesPage() {
@@ -61,14 +93,14 @@ export default function MeliMessagesPage() {
   }
 
   async function loadProducts(query = "") {
-    if (!selectedUserId) {
+    if (!accounts.length) {
       setProducts([]);
       return;
     }
     setLoadingProducts(true);
     try {
       const { data } = await api.get("/meli/products/autocomplete", {
-        params: { user_id: selectedUserId, q: query },
+        params: { q: query },
       });
       setProducts(Array.isArray(data?.items) ? data.items : []);
     } catch (error) {
@@ -98,12 +130,12 @@ export default function MeliMessagesPage() {
   }, [selectedUserId, statusFilter]);
 
   useEffect(() => {
-    if (!selectedUserId) return;
+    if (!selectedUserId || !accounts.length) return;
     const handle = setTimeout(() => {
       loadProducts(productSearch);
     }, 300);
     return () => clearTimeout(handle);
-  }, [selectedUserId, productSearch]);
+  }, [selectedUserId, productSearch, accounts.length]);
 
   const selectedQuestion = useMemo(
     () => questions.find((q) => q.question_id === selectedQuestionId) || null,
@@ -137,6 +169,26 @@ export default function MeliMessagesPage() {
     });
   }
 
+  function insertTemplateInReply(templateContent) {
+    const content = String(templateContent || "").trim();
+    if (!content) return;
+    const ta = replyTextareaRef.current;
+    if (!ta) {
+      setReplyText((prev) => `${prev}${prev ? "\n\n" : ""}${content}`);
+      return;
+    }
+    const start = ta.selectionStart ?? replyText.length;
+    const end = ta.selectionEnd ?? replyText.length;
+    const spacerBefore = replyText && start > 0 ? "\n\n" : "";
+    const next = `${replyText.slice(0, start)}${spacerBefore}${content}${replyText.slice(end)}`;
+    setReplyText(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const cursor = start + spacerBefore.length + content.length;
+      ta.setSelectionRange(cursor, cursor);
+    });
+  }
+
   async function syncNow() {
     setSyncing(true);
     try {
@@ -165,6 +217,35 @@ export default function MeliMessagesPage() {
       alert(error.response?.data?.error || "Erro ao enviar resposta manual");
     } finally {
       setSendingReply(false);
+    }
+  }
+
+  async function openSelectedQuestionListing() {
+    if (!selectedQuestion?.item_id || !selectedUserId) {
+      alert("A pergunta selecionada não possui item_id");
+      return;
+    }
+
+    const localMatch = products.find((p) => String(p.id || "") === String(selectedQuestion.item_id));
+    if (localMatch?.permalink) {
+      window.open(localMatch.permalink, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    try {
+      const { data } = await api.get("/meli/products/autocomplete", {
+        params: { user_id: selectedUserId, q: selectedQuestion.item_id },
+      });
+      const items = Array.isArray(data?.items) ? data.items : [];
+      const exact = items.find((p) => String(p.id || "") === String(selectedQuestion.item_id));
+      const picked = exact || items[0];
+      if (picked?.permalink) {
+        window.open(picked.permalink, "_blank", "noopener,noreferrer");
+        return;
+      }
+      alert("Não foi possível localizar o permalink do anúncio desta pergunta");
+    } catch (error) {
+      alert(error.response?.data?.error || "Erro ao localizar o anúncio da pergunta");
     }
   }
 
@@ -232,71 +313,104 @@ export default function MeliMessagesPage() {
     }
   }
 
+  const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
+
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <MessageCircle className="text-brand-600" />
-          Mensagens Mercado Livre
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Liste perguntas por conta conectada, responda manualmente e use templates 1 clique.
-        </p>
+    <div className="min-h-screen">
+      <header className="bg-brand-700 sticky top-0 z-20 border-b border-brand-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-white/10 flex items-center justify-center">
+                <MessageCircle className="size-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-white">Mensagens Mercado Livre</h1>
+                <p className="text-xs text-white/70">Gerencie perguntas, respostas e templates</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={loadQuestions}
+                disabled={loadingQuestions || !selectedUserId}
+                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm border border-white/20 disabled:opacity-50"
+              >
+                {loadingQuestions ? "Carregando..." : "Atualizar"}
+              </button>
+              <button
+                type="button"
+                onClick={syncNow}
+                disabled={syncing}
+                className="px-3 py-2 rounded-lg bg-white/10 text-white text-sm border border-white/20 disabled:opacity-50 flex items-center gap-2"
+              >
+                <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
+                {syncing ? "Sincronizando..." : "Sincronizar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className="bg-white rounded-xl border border-gray-100 p-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
+            <Store size={14} />
+            Conta:
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {accounts.map((a) => (
+              <button
+                key={a.user_id}
+                type="button"
+                onClick={() => setSelectedUserId(String(a.user_id))}
+                className={cn(
+                  "px-3 py-2 rounded-lg text-sm transition",
+                  selectedUserId === String(a.user_id)
+                    ? "bg-brand-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                )}
+              >
+                {a.nickname || a.user_id}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <section className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6">
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Conta conectada</label>
-            <select
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm min-w-[220px]"
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-            >
-              {accounts.map((a) => (
-                <option key={a.user_id} value={a.user_id}>
-                  {a.nickname || a.user_id} ({a.user_id})
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("UNANSWERED")}
+          className={cn(
+            "px-3 py-2 rounded-lg text-sm border flex items-center gap-2",
+            statusFilter === "UNANSWERED" ? "bg-brand-50 border-brand-200 text-brand-700" : "bg-white border-gray-200 text-gray-600"
+          )}
+        >
+          <Clock size={14} /> Pendentes
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("ANSWERED")}
+          className={cn(
+            "px-3 py-2 rounded-lg text-sm border flex items-center gap-2",
+            statusFilter === "ANSWERED" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-white border-gray-200 text-gray-600"
+          )}
+        >
+          <CheckCircle2 size={14} /> Respondidas
+        </button>
+        <span className="ml-auto text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+          {questions.length} {questions.length === 1 ? "pergunta" : "perguntas"}
+        </span>
+      </div>
 
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Status</label>
-            <select
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="UNANSWERED">Não respondidas</option>
-              <option value="ANSWERED">Respondidas</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={loadQuestions}
-            disabled={loadingQuestions || !selectedUserId}
-            className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
-          >
-            {loadingQuestions ? "Carregando..." : "Atualizar lista"}
-          </button>
-
-          <button
-            type="button"
-            onClick={syncNow}
-            disabled={syncing}
-            className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-          >
-            <RefreshCcw size={14} />
-            {syncing ? "Sincronizando..." : "Sincronizar agora"}
-          </button>
-        </div>
-      </section>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6">
-          <h2 className="font-semibold text-gray-900 mb-3">Perguntas</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <section className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6 lg:col-span-2">
+          <h2 className="font-semibold text-gray-900 mb-1">Perguntas</h2>
+          <p className="text-xs text-gray-500 mb-3">
+            {selectedAccount ? `Conta: ${selectedAccount.nickname || selectedAccount.user_id}` : "Selecione uma conta"}
+          </p>
           {!selectedUserId ? (
             <p className="text-sm text-gray-500">Conecte e selecione uma conta para listar perguntas.</p>
           ) : questions.length === 0 ? (
@@ -311,21 +425,34 @@ export default function MeliMessagesPage() {
                     setSelectedQuestionId(q.question_id);
                     setReplyText("");
                   }}
-                  className={`w-full text-left p-3 hover:bg-gray-50 transition ${selectedQuestionId === q.question_id ? "bg-brand-50" : ""}`}
+                  className={cn(
+                    "w-full text-left p-3 transition",
+                    selectedQuestionId === q.question_id ? "bg-brand-50" : "hover:bg-gray-50"
+                  )}
                 >
-                  <p className="text-xs text-gray-500 mb-1">
-                    #{q.question_id} · {q.status} · {formatDate(q.date_created)}
-                  </p>
-                  <p className="text-sm text-gray-900 font-medium line-clamp-2">{q.item_title || q.item_id || "Sem item"}</p>
-                  <p className="text-sm text-gray-700 mt-1 line-clamp-3">{q.text}</p>
-                  {q.answer_text && <p className="text-xs text-emerald-700 mt-2 line-clamp-2">Resposta: {q.answer_text}</p>}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={cn(
+                      "text-[10px] px-2 py-0.5 rounded-full",
+                      q.status === "ANSWERED" ? "bg-emerald-100 text-emerald-700" : "bg-brand-100 text-brand-700"
+                    )}>
+                      {q.status === "ANSWERED" ? "Respondida" : "Pendente"}
+                    </span>
+                    <span className="text-xs text-gray-500">{formatRelativeTime(q.date_created)}</span>
+                  </div>
+                  <p className="text-sm text-gray-900 font-medium line-clamp-1">{q.item_title || q.item_id || "Sem item"}</p>
+                  <p className="text-sm text-gray-700 mt-1 line-clamp-2">{q.text}</p>
+                  {q.answer_text && (
+                    <p className="text-xs text-emerald-700 mt-2 line-clamp-1 flex items-center gap-1">
+                      <Check size={12} /> {q.answer_text}
+                    </p>
+                  )}
                 </button>
               ))}
             </div>
           )}
         </section>
 
-        <section className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6 space-y-4">
+        <section className="bg-white rounded-xl border border-gray-100 p-4 sm:p-6 space-y-4 lg:col-span-3">
           <h2 className="font-semibold text-gray-900">Responder</h2>
           {!selectedQuestion ? (
             <p className="text-sm text-gray-500">Selecione uma pergunta para responder.</p>
@@ -338,8 +465,8 @@ export default function MeliMessagesPage() {
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 block mb-1">
-                  Link do anúncio (autocomplete de produtos da conta)
+                <label className="text-xs text-gray-500 block mb-1 flex items-center gap-1">
+                  <Search size={12} /> Link do anúncio (autocomplete de todas as contas conectadas)
                 </label>
                 <input
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
@@ -363,15 +490,10 @@ export default function MeliMessagesPage() {
                     ))}
                   </div>
                 )}
-                {!loadingProducts && filteredProducts.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Nenhum produto encontrado para esta conta. Digite mais termos ou sincronize os produtos.
-                  </p>
-                )}
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Resposta manual</label>
+                <label className="text-xs text-gray-500 block mb-1">Sua resposta</label>
                 <textarea
                   ref={replyTextareaRef}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[140px]"
@@ -381,7 +503,7 @@ export default function MeliMessagesPage() {
                 />
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={sendManualReply}
@@ -389,22 +511,41 @@ export default function MeliMessagesPage() {
                   className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                 >
                   <Send size={14} />
-                  {sendingReply ? "Enviando..." : "Enviar manual"}
+                  {sendingReply ? "Enviando..." : "Enviar resposta"}
+                </button>
+                <button
+                  type="button"
+                  onClick={openSelectedQuestionListing}
+                  disabled={!selectedQuestion.item_id}
+                  className="ml-auto p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  title="Abrir anúncio da pergunta selecionada"
+                  aria-label="Abrir anúncio da pergunta selecionada"
+                >
+                  <ExternalLink size={16} />
                 </button>
                 {templates
                   .filter((t) => t.isActive)
-                  .slice(0, 4)
+                  .slice(0, 3)
                   .map((t) => (
-                    <button
-                      key={t._id}
-                      type="button"
-                      onClick={() => sendTemplateReply(t._id)}
-                      disabled={sendingReply || selectedQuestion.status === "ANSWERED"}
-                      className="px-3 py-2 rounded-lg border border-gray-200 text-sm disabled:opacity-50"
-                      title={t.content}
-                    >
-                      Template: {t.name}
-                    </button>
+                    <div key={t._id} className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => insertTemplateInReply(t.content)}
+                        disabled={selectedQuestion.status === "ANSWERED"}
+                        className="px-3 py-2 rounded-lg border border-gray-200 text-sm disabled:opacity-50"
+                        title={t.content}
+                      >
+                        Inserir: {t.name}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sendTemplateReply(t._id)}
+                        disabled={sendingReply || selectedQuestion.status === "ANSWERED"}
+                        className="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs disabled:opacity-50"
+                      >
+                        Enviar
+                      </button>
+                    </div>
                   ))}
               </div>
             </>
@@ -428,12 +569,8 @@ export default function MeliMessagesPage() {
             onChange={(e) => setNewTemplateContent(e.target.value)}
           />
         </div>
-        <button
-          type="button"
-          onClick={createTemplate}
-          className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium"
-        >
-          Criar template
+        <button type="button" onClick={createTemplate} className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium flex items-center gap-2">
+          <Plus size={14} /> Criar template
         </button>
         {templates.length > 0 && (
           <div className="border border-gray-100 rounded-lg divide-y divide-gray-100">
@@ -452,15 +589,15 @@ export default function MeliMessagesPage() {
                       onChange={(e) => setEditingTemplateContent(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <button type="button" onClick={saveTemplateEdit} className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs">
-                        Salvar
+                      <button type="button" onClick={saveTemplateEdit} className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs flex items-center gap-1">
+                        <Check size={12} /> Salvar
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingTemplateId(null)}
-                        className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs"
+                        className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs flex items-center gap-1"
                       >
-                        Cancelar
+                        <X size={12} /> Cancelar
                       </button>
                     </div>
                   </div>
@@ -475,17 +612,24 @@ export default function MeliMessagesPage() {
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => startEditTemplate(t)}
+                        onClick={() => insertTemplateInReply(t.content)}
                         className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs"
                       >
-                        Editar
+                        Inserir na resposta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEditTemplate(t)}
+                        className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs flex items-center gap-1"
+                      >
+                        <Pencil size={12} /> Editar
                       </button>
                       <button
                         type="button"
                         onClick={() => deleteTemplate(t._id)}
-                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs"
+                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs flex items-center gap-1"
                       >
-                        Excluir
+                        <Trash2 size={12} /> Excluir
                       </button>
                     </div>
                   </>
@@ -495,6 +639,7 @@ export default function MeliMessagesPage() {
           </div>
         )}
       </section>
+      </main>
     </div>
   );
 }

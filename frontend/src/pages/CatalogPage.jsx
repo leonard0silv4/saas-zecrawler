@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, Plus, Search, Trash2, Upload } from "lucide-react";
+import {
+  BookOpen,
+  Calculator,
+  CheckCircle2,
+  PackageCheck,
+  PackagePlus,
+  Plus,
+  Ruler,
+  Search,
+  Trash2,
+  Upload,
+  Weight,
+  XCircle,
+} from "lucide-react";
 import api from "../services/api";
 
 const empty = {
@@ -23,7 +36,15 @@ export default function CatalogPage() {
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [packageItems, setPackageItems] = useState([]);
+  const [packageModal, setPackageModal] = useState(false);
+  const [pkgLargura, setPkgLargura] = useState("");
+  const [pkgComprimento, setPkgComprimento] = useState("");
+  const [pkgAltura, setPkgAltura] = useState("");
+  const [pkgPeso, setPkgPeso] = useState("");
+  const [pkgResult, setPkgResult] = useState(null);
   const cursorRef = useRef(null);
+  const MARGEM_PESO = 0.05;
 
   const fetchList = useCallback(async (reset) => {
     setLoading(true);
@@ -109,6 +130,64 @@ export default function CatalogPage() {
     }
   }
 
+  function addToPackage(product) {
+    setPackageItems((prev) => {
+      if (prev.some((i) => i.product._id === product._id)) return prev;
+      return [...prev, { product, qty: "1" }];
+    });
+  }
+
+  function removeFromPackage(id) {
+    setPackageItems((prev) => prev.filter((i) => i.product._id !== id));
+  }
+
+  function updatePackageQty(id, qty) {
+    setPackageItems((prev) => prev.map((i) => (i.product._id === id ? { ...i, qty } : i)));
+    setPkgResult(null);
+  }
+
+  function clearPackage() {
+    setPackageItems([]);
+    setPkgLargura("");
+    setPkgComprimento("");
+    setPkgAltura("");
+    setPkgPeso("");
+    setPkgResult(null);
+  }
+
+  function verifyPackage() {
+    const l = Number(String(pkgLargura).replace(",", ".")) || 0;
+    const c = Number(String(pkgComprimento).replace(",", ".")) || 0;
+    const a = Number(String(pkgAltura).replace(",", ".")) || 0;
+    const p = Number(String(pkgPeso).replace(",", ".")) || 0;
+
+    const cubadoCaixa = (l * c * a) / 5900;
+    const cubadoLimiteTotal = packageItems.reduce((sum, item) => {
+      const q = Number(String(item.qty).replace(",", ".")) || 1;
+      return sum + (item.product.pesoCubico || 0) * q;
+    }, 0);
+    const cubadoAprovado = cubadoCaixa <= cubadoLimiteTotal;
+
+    const pesoEsperado = packageItems.reduce((sum, item) => {
+      const q = Number(String(item.qty).replace(",", ".")) || 1;
+      return sum + (item.product.peso || 0) * q;
+    }, 0);
+    const diferencaPeso = p - pesoEsperado;
+    const diferencaPercent = pesoEsperado > 0 ? Math.abs(diferencaPeso) / pesoEsperado : 0;
+    const pesoDivergente = pesoEsperado > 0 && diferencaPercent > MARGEM_PESO;
+
+    setPkgResult({
+      cubadoCaixa,
+      cubadoLimiteTotal,
+      cubadoAprovado,
+      pesoInformado: p,
+      pesoEsperado,
+      diferencaPeso,
+      diferencaPercent,
+      pesoDivergente,
+    });
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -136,6 +215,26 @@ export default function CatalogPage() {
             <Plus size={16} />
             Novo
           </button>
+          {packageItems.length > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setPackageModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
+              >
+                <PackageCheck size={16} />
+                Verificar pacote ({packageItems.length})
+              </button>
+              <button
+                type="button"
+                onClick={clearPackage}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50"
+              >
+                <Trash2 size={16} />
+                Limpar pacote
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -172,9 +271,19 @@ export default function CatalogPage() {
                 </td>
                 <td className="px-3 py-2">{p.pesoCubico}</td>
                 <td className="px-3 py-2">
-                  <button type="button" onClick={() => remove(p._id)} className="text-red-500 p-1 rounded hover:bg-red-50">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => addToPackage(p)}
+                      title="Adicionar ao pacote"
+                      className="text-emerald-600 p-1 rounded hover:bg-emerald-50"
+                    >
+                      <PackagePlus size={16} />
+                    </button>
+                    <button type="button" onClick={() => remove(p._id)} className="text-red-500 p-1 rounded hover:bg-red-50">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -236,6 +345,109 @@ export default function CatalogPage() {
                 className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
               >
                 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {packageModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setPackageModal(false)}>
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full shadow-xl space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <PackageCheck size={18} />
+                Verificar Pacote
+              </h3>
+              <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                {packageItems.length} item(ns)
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {packageItems.map((item) => (
+                <div key={item.product._id} className="border border-gray-100 rounded-lg p-2 flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate">{item.product.produto}</p>
+                    <p className="text-xs text-gray-500">
+                      SKU: {item.product.sku1} · P.Cúbico: {Number(item.product.pesoCubico || 0).toFixed(3)} kg · Peso: {Number(item.product.peso || 0).toFixed(3)} kg
+                    </p>
+                  </div>
+                  <input
+                    className="w-20 border border-gray-200 rounded px-2 py-1 text-sm text-center"
+                    value={item.qty}
+                    onChange={(e) => updatePackageQty(item.product._id, e.target.value)}
+                    placeholder="Qtd"
+                  />
+                  <button type="button" onClick={() => removeFromPackage(item.product._id)} className="text-red-500 p-1 rounded hover:bg-red-50">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-gray-600 flex items-center gap-1"><Ruler size={12} />Largura (cm)</label>
+                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgLargura} onChange={(e) => { setPkgLargura(e.target.value); setPkgResult(null); }} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 flex items-center gap-1"><Ruler size={12} />Comprimento (cm)</label>
+                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgComprimento} onChange={(e) => { setPkgComprimento(e.target.value); setPkgResult(null); }} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 flex items-center gap-1"><Ruler size={12} />Altura (cm)</label>
+                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgAltura} onChange={(e) => { setPkgAltura(e.target.value); setPkgResult(null); }} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 flex items-center gap-1"><Weight size={12} />Peso total (kg)</label>
+                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgPeso} onChange={(e) => { setPkgPeso(e.target.value); setPkgResult(null); }} />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={verifyPackage}
+              disabled={!pkgLargura || !pkgComprimento || !pkgAltura || !pkgPeso || packageItems.length === 0}
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+            >
+              <Calculator size={16} />
+              Conferir pacote
+            </button>
+
+            {pkgResult && (
+              <div className={`border rounded-lg p-4 space-y-3 ${pkgResult.cubadoAprovado ? "border-emerald-300 bg-emerald-50" : "border-red-300 bg-red-50"}`}>
+                <div className="flex items-center gap-2">
+                  {pkgResult.cubadoAprovado ? <CheckCircle2 size={18} className="text-emerald-600" /> : <XCircle size={18} className="text-red-600" />}
+                  <p className={`font-semibold ${pkgResult.cubadoAprovado ? "text-emerald-700" : "text-red-700"}`}>
+                    {pkgResult.cubadoAprovado ? "APROVADO" : "REPROVADO"}
+                  </p>
+                  {pkgResult.pesoDivergente && <span className="text-amber-600 text-xs font-semibold">PESO DIVERGENTE</span>}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Cubado do pacote</p>
+                    <p className="font-mono font-semibold">{pkgResult.cubadoCaixa.toFixed(3)} kg</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Limite total catálogo</p>
+                    <p className="font-mono font-semibold text-blue-700">{pkgResult.cubadoLimiteTotal.toFixed(3)} kg</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Peso informado</p>
+                    <p className="font-mono">{pkgResult.pesoInformado.toFixed(3)} kg</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Peso esperado</p>
+                    <p className="font-mono">{pkgResult.pesoEsperado.toFixed(3)} kg</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => setPackageModal(false)}>
+                Fechar
               </button>
             </div>
           </div>

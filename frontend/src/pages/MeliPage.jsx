@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Package, ShoppingBag, Truck } from "lucide-react";
+import { ExternalLink, Package, ShoppingBag, Truck, Unplug } from "lucide-react";
 import api from "../services/api";
 
 export default function MeliPage() {
@@ -70,10 +70,10 @@ export default function MeliPage() {
     <div className="space-y-10 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <ShoppingBag className="text-yellow-500" />
+          <Unplug className="text-yellow-500" />
           Mercado Livre
         </h1>
-        <p className="text-gray-500 mt-1">Conecte contas OAuth e consulte produtos indexados e envios.</p>
+        <p className="text-gray-500 mt-1">Conecte contas OAuth e consulte produtos indexados.</p>
       </div>
 
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
@@ -106,11 +106,11 @@ export default function MeliPage() {
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2">
           <Package size={18} />
-          Produtos (cache local)
+          Produtos 
         </h2>
         <div className="flex flex-wrap gap-2 items-end">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Conta (user_id)</label>
+            <label className="text-xs text-gray-500 block mb-1">Conta </label>
             <select
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm min-w-[200px]"
               value={userId}
@@ -149,7 +149,7 @@ export default function MeliPage() {
         )}
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
+      <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4 hidden">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2">
           <Truck size={18} />
           Consultar envio
