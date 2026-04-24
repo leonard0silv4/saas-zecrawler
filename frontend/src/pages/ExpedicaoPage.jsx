@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Package, Scan } from "lucide-react";
 import api from "../services/api";
+import { notifyError, notifyWarning } from "../utils/notify.js";
 
 function identificarSeller(codigo) {
   const c = codigo.trim();
@@ -74,13 +75,13 @@ export default function ExpedicaoPage() {
     } catch (err) {
       if (err.response?.status !== 404) {
         setBusy(false);
-        alert("Erro ao verificar código");
+        notifyError("Erro ao verificar código");
         return;
       }
     }
     const id = identificarSeller(raw);
     if (!id.ok) {
-      alert(id.err);
+      notifyWarning(id.err);
       setBusy(false);
       return;
     }
@@ -106,7 +107,7 @@ export default function ExpedicaoPage() {
     } catch (err) {
       if (err.response?.status === 409) {
         setDup(err.response.data.registroAnterior);
-      } else alert(err.response?.data?.error || "Erro ao registrar");
+      } else notifyError(err.response?.data?.error || "Erro ao registrar");
     } finally {
       setBusy(false);
       inputRef.current?.focus();

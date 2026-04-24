@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Conta from "../models/Conta.js";
 import MeliProduct from "../models/MeliProduct.js";
+import MeliQuestion from "../models/MeliQuestion.js";
 import { renewToken } from "../utils/meliToken.js";
 import { getOwnerId } from "../middleware/auth.js";
 
@@ -128,7 +129,8 @@ export default {
     try {
       const token = req.query.token;
       const decoded = jwt.verify(token, process.env.SECRET);
-      const url = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${ML_CLIENT_ID}&redirect_uri=${ML_REDIRECT_URI}&state=${decoded.userId}`;
+      const scope = encodeURIComponent("offline_access read write");
+      const url = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${ML_CLIENT_ID}&redirect_uri=${ML_REDIRECT_URI}&state=${decoded.userId}&scope=${scope}`;
       res.redirect(url);
     } catch (err) {
       res.status(400).send("Token inválido");
@@ -180,6 +182,30 @@ export default {
       return res.json(contas);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar contas" });
+    }
+  },
+
+  async disconnectAccount(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+      const raw = req.params.userId;
+      if (!raw || !/^\d+$/.test(String(raw))) {
+        return res.status(400).json({ error: "ID da conta inválido" });
+      }
+      const uid = Number(raw);
+      const deleted = await Conta.findOneAndDelete({ ownerId: ownerObjectId, user_id: uid });
+      if (!deleted) {
+        return res.status(404).json({ error: "Conta não encontrada" });
+      }
+      await Promise.all([
+        MeliProduct.deleteMany({ ownerId: ownerObjectId, user_id: uid }),
+        MeliQuestion.deleteMany({ ownerId: ownerObjectId, user_id: uid }),
+      ]);
+      return res.json({ ok: true, user_id: uid });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Erro ao desconectar conta" });
     }
   },
 

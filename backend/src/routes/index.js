@@ -75,6 +75,7 @@ r.put("/seller-monitor/alerts/:alertId/read", requireModule("sellerMonitor"), Se
 
 // ─── Mercado Livre ─────────────────────────────────────────────
 r.get("/meli/accounts", requireModule("meli"), MeliController.getAccounts);
+r.delete("/meli/accounts/:userId", requireModule("meli"), MeliController.disconnectAccount);
 r.get("/meli/products", requireModule("meli"), MeliController.getProducts);
 r.get("/meli/products/autocomplete", requireModule("meli"), MeliController.autocompleteProducts);
 r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShipment);

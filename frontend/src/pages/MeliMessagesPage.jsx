@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   CheckCircle2,
@@ -15,6 +15,9 @@ import {
   X,
 } from "lucide-react";
 import api from "../services/api";
+import { apiErrorMessage, notifyError, notifyWarning } from "../utils/notify.js";
+
+const QUESTIONS_POLL_MS = 5 * 60 * 1000;
 
 function formatDate(value) {
   if (!value) return "-";
@@ -73,24 +76,32 @@ export default function MeliMessagesPage() {
     setTemplates(Array.isArray(data) ? data : []);
   }
 
-  async function loadQuestions() {
-    if (!selectedUserId) return;
-    setLoadingQuestions(true);
-    try {
-      const { data } = await api.get("/meli/messages/questions", {
-        params: { user_id: selectedUserId, status: statusFilter, page: 1, limit: 50 },
-      });
-      const items = Array.isArray(data?.items) ? data.items : [];
-      setQuestions(items);
-      if (items.length > 0 && !selectedQuestionId) {
-        setSelectedQuestionId(items[0].question_id);
+  const loadQuestions = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!selectedUserId) return;
+      if (!silent) setLoadingQuestions(true);
+      try {
+        const { data } = await api.get("/meli/messages/questions", {
+          params: { user_id: selectedUserId, status: statusFilter, page: 1, limit: 50 },
+        });
+        const items = Array.isArray(data?.items) ? data.items : [];
+        setQuestions(items);
+        setSelectedQuestionId((prev) => {
+          if (items.length === 0) return null;
+          if (prev != null && items.some((q) => q.question_id === prev)) return prev;
+          if (prev == null) return items[0].question_id;
+          return items[0]?.question_id ?? null;
+        });
+      } catch (error) {
+        if (!silent) {
+          notifyError(error.response?.data?.error || "Erro ao carregar perguntas");
+        }
+      } finally {
+        if (!silent) setLoadingQuestions(false);
       }
-    } catch (error) {
-      alert(error.response?.data?.error || "Erro ao carregar perguntas");
-    } finally {
-      setLoadingQuestions(false);
-    }
-  }
+    },
+    [selectedUserId, statusFilter]
+  );
 
   async function loadProducts(query = "") {
     if (!accounts.length) {
@@ -105,7 +116,7 @@ export default function MeliMessagesPage() {
       setProducts(Array.isArray(data?.items) ? data.items : []);
     } catch (error) {
       setProducts([]);
-      alert(error.response?.data?.error || "Erro ao carregar produtos da conta");
+      notifyError(error.response?.data?.error || "Erro ao carregar produtos da conta");
     } finally {
       setLoadingProducts(false);
     }
@@ -116,7 +127,7 @@ export default function MeliMessagesPage() {
       try {
         await Promise.all([loadAccounts(), loadTemplates()]);
       } catch (error) {
-        alert("Erro ao carregar dados iniciais de Mensagens ML");
+        notifyError("Erro ao carregar dados iniciais de Mensagens ML");
       }
     })();
   }, []);
@@ -127,7 +138,16 @@ export default function MeliMessagesPage() {
     setReplyText("");
     loadQuestions();
     loadProducts("");
-  }, [selectedUserId, statusFilter]);
+  }, [selectedUserId, statusFilter, loadQuestions]);
+
+  useEffect(() => {
+    if (!selectedUserId) return;
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      loadQuestions({ silent: true });
+    }, QUESTIONS_POLL_MS);
+    return () => clearInterval(id);
+  }, [selectedUserId, statusFilter, loadQuestions]);
 
   useEffect(() => {
     if (!selectedUserId || !accounts.length) return;
@@ -195,7 +215,7 @@ export default function MeliMessagesPage() {
       await api.post("/meli/messages/sync");
       await loadQuestions();
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao sincronizar perguntas");
+      notifyError(error.response?.data?.error || "Erro ao sincronizar perguntas");
     } finally {
       setSyncing(false);
     }
@@ -205,7 +225,7 @@ export default function MeliMessagesPage() {
     if (!selectedQuestion) return;
     const text = replyText.trim();
     if (!text) {
-      alert("Digite uma resposta antes de enviar");
+      notifyWarning("Digite uma resposta antes de enviar");
       return;
     }
     setSendingReply(true);
@@ -214,7 +234,7 @@ export default function MeliMessagesPage() {
       setReplyText("");
       await loadQuestions();
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao enviar resposta manual");
+      notifyError(apiErrorMessage(error, "Erro ao enviar resposta manual"));
     } finally {
       setSendingReply(false);
     }
@@ -222,7 +242,7 @@ export default function MeliMessagesPage() {
 
   async function openSelectedQuestionListing() {
     if (!selectedQuestion?.item_id || !selectedUserId) {
-      alert("A pergunta selecionada não possui item_id");
+      notifyWarning("A pergunta selecionada não possui item_id");
       return;
     }
 
@@ -243,9 +263,9 @@ export default function MeliMessagesPage() {
         window.open(picked.permalink, "_blank", "noopener,noreferrer");
         return;
       }
-      alert("Não foi possível localizar o permalink do anúncio desta pergunta");
+      notifyWarning("Não foi possível localizar o permalink do anúncio desta pergunta");
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao localizar o anúncio da pergunta");
+      notifyError(error.response?.data?.error || "Erro ao localizar o anúncio da pergunta");
     }
   }
 
@@ -256,7 +276,7 @@ export default function MeliMessagesPage() {
       await api.post(`/meli/messages/questions/${selectedQuestion.question_id}/reply`, { templateId });
       await loadQuestions();
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao enviar resposta por template");
+      notifyError(apiErrorMessage(error, "Erro ao enviar resposta por template"));
     } finally {
       setSendingReply(false);
     }
@@ -266,7 +286,7 @@ export default function MeliMessagesPage() {
     const name = newTemplateName.trim();
     const content = newTemplateContent.trim();
     if (!name || !content) {
-      alert("Informe nome e conteúdo do template");
+      notifyWarning("Informe nome e conteúdo do template");
       return;
     }
     try {
@@ -275,7 +295,7 @@ export default function MeliMessagesPage() {
       setNewTemplateContent("");
       await loadTemplates();
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao criar template");
+      notifyError(error.response?.data?.error || "Erro ao criar template");
     }
   }
 
@@ -284,7 +304,7 @@ export default function MeliMessagesPage() {
       await api.delete(`/meli/messages/templates/${id}`);
       await loadTemplates();
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao excluir template");
+      notifyError(error.response?.data?.error || "Erro ao excluir template");
     }
   }
 
@@ -299,7 +319,7 @@ export default function MeliMessagesPage() {
     const name = editingTemplateName.trim();
     const content = editingTemplateContent.trim();
     if (!name || !content) {
-      alert("Nome e conteúdo do template são obrigatórios");
+      notifyWarning("Nome e conteúdo do template são obrigatórios");
       return;
     }
     try {
@@ -309,7 +329,7 @@ export default function MeliMessagesPage() {
       setEditingTemplateContent("");
       await loadTemplates();
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao atualizar template");
+      notifyError(error.response?.data?.error || "Erro ao atualizar template");
     }
   }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Plus, Search, Trash2, Upload } from "lucide-react";
 import api from "../services/api";
+import { notifyError, notifyWarning } from "../utils/notify.js";
 
 function mapXmlToNota(parsed) {
   const nota = parsed?.nfeProc?.NFe?.infNFe;
@@ -80,7 +81,7 @@ export default function NfePage() {
         setHasMore(data.hasNextPage);
         cursorRef.current = data.nextCursor;
       } catch {
-        alert("Erro ao listar notas");
+        notifyError("Erro ao listar notas");
       } finally {
         setLoading(false);
       }
@@ -103,14 +104,14 @@ export default function NfePage() {
       const { data } = await api.post("/nfe/parse", fd);
       const mapped = mapXmlToNota(data.data);
       if (!mapped) {
-        alert("XML não parece ser uma NFe válida (nfeProc.NFe.infNFe)");
+        notifyWarning("XML não parece ser uma NFe válida (nfeProc.NFe.infNFe)");
         return;
       }
       setForm(mapped);
       setTab("xml");
       setModal(true);
     } catch {
-      alert("Erro ao ler XML");
+      notifyError("Erro ao ler XML");
     } finally {
       setParsing(false);
       e.target.value = "";
@@ -126,7 +127,7 @@ export default function NfePage() {
   async function saveNota() {
     if (!form) return;
     if (!form.numeroNota?.trim()) {
-      alert("Número da nota é obrigatório");
+      notifyWarning("Número da nota é obrigatório");
       return;
     }
     setSaving(true);
@@ -141,7 +142,7 @@ export default function NfePage() {
       cursorRef.current = null;
       fetchList(true);
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao salvar");
+      notifyError(err.response?.data?.error || "Erro ao salvar");
     } finally {
       setSaving(false);
     }

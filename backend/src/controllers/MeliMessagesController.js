@@ -94,6 +94,19 @@ export default {
       if (error.code === "QUESTION_NOT_ACCESSIBLE") {
         return res.status(404).json({ error: error.message });
       }
+      if (error.code === "ML_API_ERROR" && error.mlStatus) {
+        const status = Number(error.mlStatus);
+        const safeStatus = status === 401 || status === 403 || status === 404 ? status : 502;
+        return res.status(safeStatus).json({
+          error: error.message,
+          meliCode: error.mlBody?.code,
+          hint:
+            status === 403
+              ? "Conecte a conta do Mercado Livre de novo em Contas conectadas e aceite as permissões de leitura e escrita. Autorizações antigas podem não permitir enviar respostas."
+              : undefined,
+        });
+      }
+      console.log(error);
       return res.status(500).json({ error: "Erro ao responder pergunta" });
     }
   },

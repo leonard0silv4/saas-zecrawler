@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Package, ShoppingBag, Truck, Unplug } from "lucide-react";
+import { ExternalLink, Package, Truck, Unlink, Unplug } from "lucide-react";
 import api from "../services/api";
+import { notifyError, notifyWarning } from "../utils/notify.js";
 
 export default function MeliPage() {
   const [accounts, setAccounts] = useState([]);
@@ -11,6 +12,7 @@ export default function MeliPage() {
   const [shipmentId, setShipmentId] = useState("");
   const [shipment, setShipment] = useState(null);
   const [loadingShip, setLoadingShip] = useState(false);
+  const [disconnectingId, setDisconnectingId] = useState(null);
 
   async function loadAccounts() {
     setLoading(true);
@@ -19,7 +21,7 @@ export default function MeliPage() {
       setAccounts(data);
       if (data.length && !userId) setUserId(String(data[0].user_id));
     } catch {
-      alert("Erro ao carregar contas");
+      notifyError("Erro ao carregar contas");
     } finally {
       setLoading(false);
     }
@@ -34,6 +36,31 @@ export default function MeliPage() {
     window.location.href = `/api/meli/auth?token=${encodeURIComponent(token)}`;
   }
 
+  async function disconnectAccount(mlUserId) {
+    const acc = accounts.find((a) => String(a.user_id) === String(mlUserId));
+    const label = acc?.nickname || `ID ${mlUserId}`;
+    if (
+      !confirm(
+        `Desconectar "${label}"?\n\nOs tokens serão removidos deste app. Perguntas e produtos em cache dessa loja serão apagados. Para usar de novo, conecte e autorize no Mercado Livre.`
+      )
+    ) {
+      return;
+    }
+    setDisconnectingId(mlUserId);
+    try {
+      await api.delete(`/meli/accounts/${mlUserId}`);
+      if (String(userId) === String(mlUserId)) {
+        setUserId("");
+        setProducts([]);
+      }
+      await loadAccounts();
+    } catch (err) {
+      notifyError(err.response?.data?.error || "Erro ao desconectar");
+    } finally {
+      setDisconnectingId(null);
+    }
+  }
+
   async function loadProducts() {
     if (!userId) return;
     setLoadingProd(true);
@@ -41,7 +68,7 @@ export default function MeliPage() {
       const { data } = await api.get("/meli/products", { params: { user_id: userId } });
       setProducts(data);
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao listar produtos");
+      notifyError(err.response?.data?.error || "Erro ao listar produtos");
       setProducts([]);
     } finally {
       setLoadingProd(false);
@@ -51,7 +78,7 @@ export default function MeliPage() {
   async function loadShipment() {
     const id = shipmentId.trim();
     if (!id || !/^\d+$/.test(id)) {
-      alert("Informe um ID numérico de envio");
+      notifyWarning("Informe um ID numérico de envio");
       return;
     }
     setLoadingShip(true);
@@ -60,7 +87,7 @@ export default function MeliPage() {
       const { data } = await api.get(`/meli/shipment/${id}`);
       setShipment(data);
     } catch (err) {
-      alert(err.response?.data?.error || "Envio não encontrado");
+      notifyError(err.response?.data?.error || "Envio não encontrado");
     } finally {
       setLoadingShip(false);
     }
@@ -94,9 +121,20 @@ export default function MeliPage() {
         ) : (
           <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
             {accounts.map((a) => (
-              <li key={a.user_id} className="px-4 py-3 flex justify-between items-center text-sm">
-                <span className="font-medium">{a.nickname || `User ${a.user_id}`}</span>
-                <span className="text-gray-500 font-mono text-xs">ID {a.user_id}</span>
+              <li key={a.user_id} className="px-4 py-3 flex flex-wrap items-center gap-3 justify-between text-sm">
+                <div className="min-w-0 flex-1">
+                  <span className="font-medium">{a.nickname || `User ${a.user_id}`}</span>
+                  <span className="text-gray-500 font-mono text-xs ml-2">ID {a.user_id}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => disconnectAccount(a.user_id)}
+                  disabled={disconnectingId !== null}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-medium hover:bg-red-50 disabled:opacity-50"
+                >
+                  <Unlink size={14} />
+                  {disconnectingId === a.user_id ? "Desconectando…" : "Desconectar"}
+                </button>
               </li>
             ))}
           </ul>

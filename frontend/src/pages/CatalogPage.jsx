@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import api from "../services/api";
+import { notifyError, notifySuccess, notifyWarning } from "../utils/notify.js";
 
 const empty = {
   sku1: "",
@@ -57,7 +58,7 @@ export default function CatalogPage() {
       setHasMore(data.hasNextPage);
       cursorRef.current = data.nextCursor;
     } catch {
-      alert("Erro ao carregar catálogo");
+      notifyError("Erro ao carregar catálogo");
     } finally {
       setLoading(false);
     }
@@ -70,14 +71,14 @@ export default function CatalogPage() {
 
   async function save() {
     if (!form.sku1.trim() || !form.produto.trim() || !form.medidas.trim()) {
-      alert("SKU-1, produto e medidas são obrigatórios");
+      notifyWarning("SKU-1, produto e medidas são obrigatórios");
       return;
     }
     const L = Number(String(form.largura).replace(",", ".")) || 0;
     const C = Number(String(form.comprimento).replace(",", ".")) || 0;
     const A = Number(String(form.altura).replace(",", ".")) || 0;
     if (!L || !C || !A) {
-      alert("Largura, comprimento e altura devem ser números válidos");
+      notifyWarning("Largura, comprimento e altura devem ser números válidos");
       return;
     }
     setSaving(true);
@@ -98,7 +99,7 @@ export default function CatalogPage() {
       cursorRef.current = null;
       fetchList(true);
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao salvar");
+      notifyError(err.response?.data?.error || "Erro ao salvar");
     } finally {
       setSaving(false);
     }
@@ -119,11 +120,11 @@ export default function CatalogPage() {
       const fd = new FormData();
       fd.append("file", f);
       const { data } = await api.post("/catalog/import", fd);
-      alert(`Importação: ${data.imported} novos, ${data.skipped} ignorados de ${data.total} linhas.`);
+      notifySuccess(`Importação: ${data.imported} novos, ${data.skipped} ignorados de ${data.total} linhas.`);
       cursorRef.current = null;
       fetchList(true);
     } catch {
-      alert("Erro na importação (planilha precisa colunas SKU-1, PRODUTO, MEDIDAS, LARG, COMP, ALTURA, KG…)");
+      notifyError("Erro na importação (planilha precisa colunas SKU-1, PRODUTO, MEDIDAS, LARG, COMP, ALTURA, KG…)");
     } finally {
       setImporting(false);
       e.target.value = "";

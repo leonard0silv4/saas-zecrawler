@@ -168,11 +168,28 @@ export async function answerQuestion({ ownerId, questionId, text, answeredBy = "
   const token = await renewToken(conta);
   const headers = { Authorization: `Bearer ${token}` };
 
-  const { data } = await axios.post(
-    `${ML_API_BASE}/answers`,
-    { question_id: questionNumericId, text: normalizedText },
-    { headers }
-  );
+  let data;
+  try {
+    ({ data } = await axios.post(
+      `${ML_API_BASE}/answers`,
+      { question_id: questionNumericId, text: normalizedText },
+      { headers }
+    ));
+  } catch (err) {
+    const status = err.response?.status;
+    const body = err.response?.data;
+    const msg =
+      body?.message ||
+      body?.error ||
+      (status === 403
+        ? "Mercado Livre negou permissão para responder (token sem escrita ou política da conta)."
+        : "Falha ao enviar resposta ao Mercado Livre");
+    const wrapped = new Error(msg);
+    wrapped.code = "ML_API_ERROR";
+    wrapped.mlStatus = status;
+    wrapped.mlBody = body;
+    throw wrapped;
+  }
 
   const answerPayload = data || {};
   const questionPayload = answerPayload.question || null;

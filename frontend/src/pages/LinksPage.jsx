@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, RefreshCw, Trash2, ExternalLink, Tag, TrendingUp, TrendingDown, Minus, Search, X } from "lucide-react";
 import api from "../services/api";
+import { notifyError } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function LinksPage() {
@@ -43,7 +44,7 @@ export default function LinksPage() {
       setNewLink({ link: "", myPrice: "", tag: "" });
       fetchLinks();
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao adicionar link");
+      notifyError(err.response?.data?.error || "Erro ao adicionar link");
     } finally {
       setAdding(false);
     }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Loader2, Package, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
+import { notifyError, notifyWarning } from "../utils/notify.js";
 import { format } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -37,7 +38,7 @@ export default function SellerMonitorPage() {
       setSellers(data);
       prevRef.current = new Map(data.map((s) => [s._id, s]));
     } catch {
-      alert("Erro ao carregar sellers");
+      notifyError("Erro ao carregar sellers");
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,7 @@ export default function SellerMonitorPage() {
       const { data } = await api.get(`/seller-monitor/${id}/products`);
       setProducts(data);
     } catch {
-      alert("Erro ao carregar produtos");
+      notifyError("Erro ao carregar produtos");
     } finally {
       setLoadingDetail(false);
     }
@@ -64,7 +65,7 @@ export default function SellerMonitorPage() {
       const { data } = await api.get(`/seller-monitor/${id}/alerts`);
       setAlerts(data);
     } catch {
-      alert("Erro ao carregar alertas");
+      notifyError("Erro ao carregar alertas");
     }
   }, []);
 
@@ -114,7 +115,7 @@ export default function SellerMonitorPage() {
       setNewUrl("");
       setNewName("");
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao cadastrar");
+      notifyError(err.response?.data?.error || "Erro ao cadastrar");
     } finally {
       setAdding(false);
     }
@@ -125,8 +126,8 @@ export default function SellerMonitorPage() {
       await api.post(`/seller-monitor/${s._id}/run`);
       setSellers((prev) => prev.map((x) => (x._id === s._id ? { ...x, scraping: true } : x)));
     } catch (err) {
-      if (err.response?.status === 409) alert("Scraping já em andamento");
-      else alert("Erro ao iniciar");
+      if (err.response?.status === 409) notifyWarning("Scraping já em andamento");
+      else notifyError("Erro ao iniciar");
     }
   }
 
