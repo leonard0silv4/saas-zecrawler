@@ -9,6 +9,7 @@ import PlansPage from "./pages/PlansPage";
 import LinksPage from "./pages/LinksPage";
 import CatalogPage from "./pages/CatalogPage";
 import MeliPage from "./pages/MeliPage";
+import MeliMessagesPage from "./pages/MeliMessagesPage";
 import PriceAnalyzePage from "./pages/PriceAnalyzePage";
 import SellerMonitorPage from "./pages/SellerMonitorPage";
 import MlCookiesPage from "./pages/MlCookiesPage";
@@ -32,6 +33,13 @@ function PublicRoute({ children }) {
   return children;
 }
 
+function ModuleRoute({ module, children }) {
+  const { canAccess, loading } = useAuth();
+  if (loading) return null;
+  if (!canAccess(module)) return <Navigate to="/plans" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -49,7 +57,8 @@ export default function App() {
             <Route path="/expedicao" element={<Navigate to="/dashboard" replace />} />
             <Route path="/nfe" element={<Navigate to="/dashboard" replace />} />
             <Route path="/catalog" element={<CatalogPage />} />
-            <Route path="/meli" element={<MeliPage />} />
+            <Route exatc path="/meli" element={<MeliPage />} />
+            <Route exatc path="/meli/messages" element={<ModuleRoute module="meliMessages"><MeliMessagesPage /></ModuleRoute>} />
             <Route path="/ml-cookies" element={<MlCookiesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

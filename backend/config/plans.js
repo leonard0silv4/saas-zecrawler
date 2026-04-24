@@ -23,7 +23,7 @@ export const PLANS = {
       "Acompanhamento de links",
       "Análise de preços",
       "Dashboard completo",
-      "Notificações por email",
+      // "Notificações por email",
       "Cookies / sessão ML",
     ],
   },
@@ -47,7 +47,7 @@ export const PLANS = {
     maxLinks: 1000,
     maxSellerMonitors: 20,
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS || "",
-    features: ["Tudo do Pro", "Multi-contas ML", "Monitor de sellers", "API access", "Suporte prioritário"],
+    features: ["Tudo do Pro", "Multi-contas ML", "Mensagens ML", "Monitor de sellers"],
   },
 };
 
@@ -66,5 +66,6 @@ export const MODULES = {
   priceAnalyze: { name: "Análise de Preços", plans: ["free", "starter", "pro", "business"] },
   catalog: { name: "Catálogo", plans: ["pro", "business"] },
   meli: { name: "Contas Mercado Livre", plans: ["starter", "pro", "business"] },
+  meliMessages: { name: "Mensagens Mercado Livre", plans: ["business"] },
   sellerMonitor: { name: "Monitor de Sellers", plans: ["free", "starter", "pro", "business"] },
 };

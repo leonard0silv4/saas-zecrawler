@@ -37,6 +37,81 @@ async function fetchShipmentWithAnyAccount(shipmentId, ownerId) {
   throw new Error("Nenhuma conta autorizada para este envio");
 }
 
+async function findAuthorizedConta(ownerId, userId) {
+  const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+  const uid = Number(userId);
+  const conta = await Conta.findOne({ ownerId: ownerObjectId, user_id: uid, disabled: { $ne: true } });
+  return { ownerObjectId, uid, conta };
+}
+
+async function fetchSellerItemIds(token, sellerId, { query = "", limit = 50, offset = 0 } = {}) {
+  const params = { limit, offset };
+  if (query) params.q = query;
+  const { data } = await axios.get(`https://api.mercadolibre.com/users/${sellerId}/items/search`, {
+    headers: { Authorization: `Bearer ${token}` },
+    params,
+  });
+  return Array.isArray(data?.results) ? data.results : [];
+}
+
+async function fetchItemsDetails(token, itemIds) {
+  if (!itemIds.length) return [];
+  const details = await Promise.allSettled(
+    itemIds.map((itemId) =>
+      axios.get(`https://api.mercadolibre.com/items/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    )
+  );
+  return details
+    .filter((entry) => entry.status === "fulfilled")
+    .map((entry) => entry.value.data);
+}
+
+function mapItemToProductDoc(item, { ownerObjectId, conta }) {
+  const sku = item.seller_custom_field || null;
+  return {
+    id: item.id,
+    title: item.title || "",
+    permalink: item.permalink || null,
+    thumbnail: item.thumbnail || null,
+    image: item.pictures?.[0]?.url || item.thumbnail || null,
+    price: item.price || 0,
+    available_quantity: item.available_quantity || 0,
+    sold_quantity: item.sold_quantity || 0,
+    status: item.status || null,
+    start_time: item.start_time ? new Date(item.start_time) : null,
+    listingTypeId: item.listing_type_id || null,
+    SKU: sku,
+    user_id: conta.user_id,
+    ownerId: ownerObjectId,
+    contaId: conta._id,
+    nickname: conta.nickname || null,
+    variations: Array.isArray(item.variations)
+      ? item.variations.map((v) => ({
+          id: String(v.id),
+          available_quantity: v.available_quantity || 0,
+          attributes: Array.isArray(v.attribute_combinations)
+            ? v.attribute_combinations.map((a) => ({ name: a.name, value_name: a.value_name }))
+            : [],
+        }))
+      : [],
+  };
+}
+
+async function upsertProductsFromItems(items, context) {
+  if (!items.length) return 0;
+  const operations = items.map((item) => ({
+    updateOne: {
+      filter: { ownerId: context.ownerObjectId, id: item.id },
+      update: { $set: mapItemToProductDoc(item, context) },
+      upsert: true,
+    },
+  }));
+  await MeliProduct.bulkWrite(operations, { ordered: false });
+  return items.length;
+}
+
 export default {
   async authRedirect(req, res) {
     try {
@@ -102,15 +177,73 @@ export default {
       const { user_id } = req.query;
       if (!user_id) return res.status(400).json({ error: "user_id é obrigatório" });
 
-      const ownerId = new mongoose.Types.ObjectId(getOwnerId(req));
-      const uid = Number(user_id);
-      const contaOk = await Conta.findOne({ ownerId, user_id: uid, disabled: { $ne: true } });
-      if (!contaOk) return res.status(403).json({ error: "Conta não encontrada ou sem permissão" });
+      const { ownerObjectId, uid, conta } = await findAuthorizedConta(getOwnerId(req), user_id);
+      if (!conta) return res.status(403).json({ error: "Conta não encontrada ou sem permissão" });
 
-      const produtos = await MeliProduct.find({ user_id: uid, ownerId });
+      let produtos = await MeliProduct.find({ user_id: uid, ownerId: ownerObjectId }).sort({ updatedAt: -1 });
+
+      // Se o cache estiver vazio, sincroniza da API do ML.
+      if (produtos.length === 0) {
+        const token = await renewToken(conta);
+        const itemIds = await fetchSellerItemIds(token, uid, { limit: 50, offset: 0 });
+        const items = await fetchItemsDetails(token, itemIds);
+        if (items.length > 0) {
+          await upsertProductsFromItems(items, { ownerObjectId, conta });
+          produtos = await MeliProduct.find({ user_id: uid, ownerId: ownerObjectId }).sort({ updatedAt: -1 });
+        }
+      }
+
       return res.json(produtos);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao listar produtos" });
+    }
+  },
+
+  async autocompleteProducts(req, res) {
+    try {
+      const { user_id, q = "" } = req.query;
+      if (!user_id) return res.status(400).json({ error: "user_id é obrigatório" });
+
+      const { ownerObjectId, uid, conta } = await findAuthorizedConta(getOwnerId(req), user_id);
+      if (!conta) return res.status(403).json({ error: "Conta não encontrada ou sem permissão" });
+
+      const query = String(q).trim();
+      const mongoFilter = { user_id: uid, ownerId: ownerObjectId };
+      if (query) {
+        mongoFilter.$or = [
+          { title: { $regex: query, $options: "i" } },
+          { SKU: { $regex: query, $options: "i" } },
+          { id: { $regex: query, $options: "i" } },
+        ];
+      }
+
+      const cached = await MeliProduct.find(mongoFilter)
+        .select({ _id: 1, id: 1, title: 1, SKU: 1, permalink: 1 })
+        .sort({ updatedAt: -1 })
+        .limit(10)
+        .lean();
+
+      if (cached.length > 0 || !query) {
+        return res.json({ source: "cache", items: cached });
+      }
+
+      const token = await renewToken(conta);
+      const itemIds = await fetchSellerItemIds(token, uid, { query, limit: 10, offset: 0 });
+      if (itemIds.length === 0) return res.json({ source: "api", items: [] });
+
+      const detailedItems = await fetchItemsDetails(token, itemIds);
+      await upsertProductsFromItems(detailedItems, { ownerObjectId, conta });
+
+      const items = detailedItems.map((item) => ({
+        id: item.id,
+        title: item.title,
+        permalink: item.permalink,
+        SKU: item.seller_custom_field || null,
+      }));
+
+      return res.json({ source: "api", items });
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar sugestões de produtos" });
     }
   },
 

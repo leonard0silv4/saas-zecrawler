@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import {
   Link2, BookOpen, ShoppingBag,
   LogOut, LayoutDashboard, Crown, Menu, X, CreditCard,
-  LineChart, Store, Settings,
+  LineChart, Store, Settings, MessageCircle, Unplug
 } from "lucide-react";
 import { useState } from "react";
 
@@ -15,7 +15,8 @@ const NAV = [
   { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze" },
   { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor" },
   { to: "/catalog", icon: BookOpen, label: "Catálogo", module: "catalog" },
-  { to: "/meli", icon: ShoppingBag, label: "Mercado Livre", module: "meli" },
+  { to: "/meli", icon: Unplug, label: "Contas conectadas", module: "meli" },
+  { to: "/meli/messages", icon: MessageCircle, label: "Mensagens ML", module: "meliMessages" },
 ];
 
 export default function AppLayout() {
@@ -55,9 +56,10 @@ export default function AppLayout() {
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {NAV.map((item) => {
-              const active = location.pathname.startsWith(item.to);
+              const active = location.pathname === item.to;
               const locked = item.module && !canAccess(item.module);
-
+              
+              console.log(location.pathname, item.to, active);
               return (
                 <Link
                   key={item.to}

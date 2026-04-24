@@ -1,15 +1,18 @@
 import cron from "node-cron";
 import User from "../models/User.js";
 import Link from "../models/Link.js";
+import Conta from "../models/Conta.js";
 import { scrapeProductData } from "../utils/scraper.js";
 import { resetStaleByTimeout } from "./scraperQueue.js";
 import { runAllActiveSellers } from "./sellerScraper.js";
+import { syncQuestionsForOwner } from "./meliMessagesService.js";
 
 /**
  * Cron: atualiza links de todos os usuários com sendEmail habilitado.
  * Roda a cada 30 min por padrão. Cada user pode ter seu cronInterval.
  */
 const activeCrons = new Map();
+const activeMeliSyncLocks = new Set();
 
 export function startCronJobs() {
   // Master cron: checks users every 30 min and schedules individual crons
@@ -51,6 +54,34 @@ export function startCronJobs() {
       console.log("[Cron] Seller monitor diário enfileirado");
     } catch (e) {
       console.error("[Cron] runAllActiveSellers:", e);
+    }
+  });
+
+  // Mensagens ML: sincroniza perguntas não respondidas periodicamente
+  cron.schedule("*/5 * * * *", async () => {
+    try {
+      const ownerIds = await Conta.distinct("ownerId", {
+        access_token: { $exists: true },
+        disabled: { $ne: true },
+      });
+
+      for (const ownerId of ownerIds) {
+        const ownerKey = String(ownerId);
+        if (activeMeliSyncLocks.has(ownerKey)) continue;
+        activeMeliSyncLocks.add(ownerKey);
+        try {
+          const result = await syncQuestionsForOwner(ownerKey);
+          if (result.syncedCount > 0) {
+            console.log(`[Cron] MeliMessages owner=${ownerKey} synced=${result.syncedCount}`);
+          }
+        } catch (error) {
+          console.error(`[Cron] MeliMessages owner=${ownerKey}:`, error.message);
+        } finally {
+          activeMeliSyncLocks.delete(ownerKey);
+        }
+      }
+    } catch (error) {
+      console.error("[Cron] MeliMessages schedule:", error.message);
     }
   });
 

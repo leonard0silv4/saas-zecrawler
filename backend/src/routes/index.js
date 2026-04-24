@@ -8,6 +8,7 @@ import AuthController from "../controllers/AuthController.js";
 import StripeController from "../controllers/StripeController.js";
 import LinkController from "../controllers/LinkController.js";
 import MeliController from "../controllers/MeliController.js";
+import MeliMessagesController from "../controllers/MeliMessagesController.js";
 import CatalogProductController from "../controllers/CatalogProductController.js";
 import CookieController from "../controllers/CookieController.js";
 import PriceAnalyzeController from "../controllers/PriceAnalyzeController.js";
@@ -75,7 +76,15 @@ r.put("/seller-monitor/alerts/:alertId/read", requireModule("sellerMonitor"), Se
 // ─── Mercado Livre ─────────────────────────────────────────────
 r.get("/meli/accounts", requireModule("meli"), MeliController.getAccounts);
 r.get("/meli/products", requireModule("meli"), MeliController.getProducts);
+r.get("/meli/products/autocomplete", requireModule("meli"), MeliController.autocompleteProducts);
 r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShipment);
+r.get("/meli/messages/questions", requireModule("meliMessages"), MeliMessagesController.listQuestions);
+r.post("/meli/messages/questions/:questionId/reply", requireModule("meliMessages"), MeliMessagesController.replyQuestion);
+r.get("/meli/messages/templates", requireModule("meliMessages"), MeliMessagesController.listTemplates);
+r.post("/meli/messages/templates", requireModule("meliMessages"), MeliMessagesController.createTemplate);
+r.put("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessagesController.updateTemplate);
+r.delete("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessagesController.deleteTemplate);
+r.post("/meli/messages/sync", requireModule("meliMessages"), MeliMessagesController.sync);
 
 // ─── Catálogo ──────────────────────────────────────────────────
 r.get("/catalog", requireModule("catalog"), CatalogProductController.index);

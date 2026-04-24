@@ -9,7 +9,7 @@ const historySellSchema = new mongoose.Schema({
 
 const meliProductSchema = new mongoose.Schema(
   {
-    id: { type: String, unique: true },
+    id: { type: String, required: true },
     SKU: String,
     title: String,
     image: String,
@@ -43,5 +43,7 @@ const meliProductSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+meliProductSchema.index({ ownerId: 1, id: 1 }, { unique: true });
 
 export default mongoose.model("MeliProduct", meliProductSchema);
