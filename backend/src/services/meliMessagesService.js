@@ -21,6 +21,35 @@ async function getActiveContas(ownerId) {
   });
 }
 
+/**
+ * POST /answers devolve o objeto da pergunta: `text` no nível raiz é a pergunta do comprador;
+ * o texto enviado pelo vendedor fica em `answer.text`. Usar `body.text` como resposta grava a pergunta em `answer_text`.
+ */
+export function resolveAnswerFieldsAfterPost(mlResponse, normalizedText, existingQuestionText = "") {
+  const body = mlResponse && typeof mlResponse === "object" ? mlResponse : {};
+  const innerQuestion = body.question && typeof body.question === "object" ? body.question : null;
+  const answerObj = body.answer || innerQuestion?.answer;
+  const fromAnswer =
+    answerObj && typeof answerObj === "object" ? String(answerObj.text ?? "").trim() : "";
+
+  const rootText = String(body.text ?? "").trim();
+  const qText = String(existingQuestionText ?? "").trim();
+
+  let answerText = normalizedText;
+  if (fromAnswer) answerText = fromAnswer;
+  else if (rootText && rootText !== qText) answerText = rootText;
+
+  const dateRaw =
+    (answerObj && answerObj.date_created) ||
+    innerQuestion?.answer?.date_created ||
+    new Date().toISOString();
+
+  const resolvedStatus =
+    (answerObj && answerObj.status) || innerQuestion?.answer?.status || "ACTIVE";
+
+  return { answerText, answerDate: dateRaw, resolvedStatus };
+}
+
 export function mapQuestionPayload(question, ownerId, contaUserId) {
   const answer = question.answer || null;
   return {
@@ -191,11 +220,16 @@ export async function answerQuestion({ ownerId, questionId, text, answeredBy = "
     throw wrapped;
   }
 
-  const answerPayload = data || {};
-  const questionPayload = answerPayload.question || null;
-  const answerDate = answerPayload.date_created || questionPayload?.answer?.date_created || new Date().toISOString();
-  const resolvedStatus = answerPayload.status || questionPayload?.answer?.status || "ANSWERED";
-  const answerText = answerPayload.text || normalizedText;
+  const { answerText, answerDate, resolvedStatus } = resolveAnswerFieldsAfterPost(
+    data,
+    normalizedText,
+    existingQuestion?.text
+  );
+
+  const mlBody = data && typeof data === "object" ? data : {};
+  const insertInnerQ = mlBody.question && typeof mlBody.question === "object" ? mlBody.question : null;
+  const insertDateRaw = insertInnerQ?.date_created || mlBody.date_created;
+  const insertQuestionText = String(insertInnerQ?.text ?? mlBody.text ?? "").trim() || "";
 
   await MeliQuestion.updateOne(
     { ownerId: ownerObjectId, question_id: questionNumericId },
@@ -211,8 +245,8 @@ export async function answerQuestion({ ownerId, questionId, text, answeredBy = "
         last_synced_at: new Date(),
       },
       $setOnInsert: {
-        date_created: questionPayload?.date_created ? new Date(questionPayload.date_created) : new Date(),
-        text: questionPayload?.text || "",
+        date_created: insertDateRaw ? new Date(insertDateRaw) : new Date(),
+        text: insertQuestionText,
       },
     },
     { upsert: true }
