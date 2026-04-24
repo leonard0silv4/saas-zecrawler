@@ -478,9 +478,20 @@ export default function MeliMessagesPage() {
                 <p className="text-gray-700">{selectedQuestion.text}</p>
               </div>
 
+              {selectedQuestion.status === "ANSWERED" && selectedQuestion.answer_text && (
+                <div className="text-sm rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3 text-emerald-950 space-y-1">
+                  <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wide">Sua resposta</p>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedQuestion.answer_text}</p>
+                  {selectedQuestion.answer_date_created && (
+                    <p className="text-xs text-emerald-800/90 pt-1">Enviada em {formatDate(selectedQuestion.answer_date_created)}</p>
+                  )}
+                </div>
+              )}
+
+              {selectedQuestion.status !== "ANSWERED" && (
               <div>
                 <label className="text-xs text-gray-500 block mb-1 flex items-center gap-1">
-                  <Search size={12} /> Link do anúncio (autocomplete de todas as contas conectadas)
+                  <Search size={12} /> Link do anúncio (disponibilidade conferida na API do Mercado Livre)
                 </label>
                 <input
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
@@ -489,6 +500,11 @@ export default function MeliMessagesPage() {
                   onChange={(e) => setProductSearch(e.target.value)}
                 />
                 {loadingProducts && <p className="text-xs text-gray-500 mt-1">Buscando produtos...</p>}
+                {!loadingProducts && productSearch.trim() && filteredProducts.length === 0 && (
+                  <p className="text-xs text-amber-700 mt-1">
+                    Nenhum anúncio ativo com estoque no momento (dados ao vivo do ML).
+                  </p>
+                )}
                 {filteredProducts.length > 0 && (
                   <div className="mt-2 border border-gray-100 rounded-lg max-h-40 overflow-y-auto divide-y divide-gray-100">
                     {filteredProducts.map((p) => (
@@ -496,15 +512,32 @@ export default function MeliMessagesPage() {
                         key={p._id || p.id}
                         type="button"
                         onClick={() => insertProductLink(p.permalink || "")}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-50"
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50 flex gap-3 items-center"
                       >
-                        <p className="text-sm text-gray-900 line-clamp-1">{p.title || p.SKU || "Produto sem título"}</p>
-                        <p className="text-xs text-brand-700 truncate">{p.permalink || "Sem permalink"}</p>
+                        <div className="w-11 h-11 shrink-0 rounded-md border border-gray-100 bg-gray-100 overflow-hidden">
+                          {p.thumbnail ? (
+                            <img
+                              src={p.thumbnail}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1 text-left">
+                          <p className="text-sm text-gray-900 line-clamp-1">{p.title || p.SKU || "Produto sem título"}</p>
+                          <p className="text-xs text-brand-700 truncate">{p.permalink || "Sem permalink"}</p>
+                        </div>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
+              )}
 
               {selectedQuestion.status !== "ANSWERED" && (
                 <div>
@@ -519,11 +552,11 @@ export default function MeliMessagesPage() {
                 </div>
               )}
 
-              {selectedQuestion.status === "ANSWERED" && (
-                <div className="text-sm rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800">
+              {/* {selectedQuestion.status === "ANSWERED" && (
+                <div className="text-sm rounded-lg border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-emerald-800">
                   Esta pergunta já foi respondida e não pode receber uma nova resposta.
                 </div>
-              )}
+              )} */}
 
               <div className="flex flex-wrap items-center gap-2">
                 {selectedQuestion.status !== "ANSWERED" && (

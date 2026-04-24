@@ -113,15 +113,92 @@ async function upsertProductsFromItems(items, context) {
   return items.length;
 }
 
-function mapProductsToAutocompleteItems(products) {
-  return products.map((p) => ({
-    _id: p._id,
-    id: p.id,
-    title: p.title,
-    permalink: p.permalink,
-    SKU: p.SKU || null,
-    user_id: p.user_id,
-  }));
+function itemHasAvailableStock(item) {
+  const n = (x) => Number(x ?? 0) || 0;
+  if (n(item.available_quantity) > 0) return true;
+  const vars = Array.isArray(item.variations) ? item.variations : [];
+  return vars.some((v) => n(v.available_quantity) > 0);
+}
+
+/** Critérios alinhados ao GET /items/:id — só anúncio atualmente comprável. */
+function isMeliItemEligibleForAnswerLink(item) {
+  if (!item || typeof item !== "object") return false;
+  const status = String(item.status || "").toLowerCase();
+  if (status !== "active") return false;
+  const sub = String(item.sub_status || "").toLowerCase();
+  if (sub === "deleted" || sub === "forbidden") return false;
+  if (!itemHasAvailableStock(item)) return false;
+  const link = String(item.permalink || "").trim();
+  return Boolean(link);
+}
+
+function itemThumbnailFromMlItem(item) {
+  if (!item || typeof item !== "object") return null;
+  const pic = Array.isArray(item.pictures) && item.pictures[0]?.url;
+  return item.thumbnail || pic || item.secure_thumbnail || null;
+}
+
+function mapMeliApiItemToAutocompleteRow(item, userId) {
+  return {
+    id: item.id,
+    title: item.title,
+    permalink: item.permalink,
+    SKU: item.seller_custom_field || null,
+    user_id: userId,
+    thumbnail: itemThumbnailFromMlItem(item),
+  };
+}
+
+/**
+ * Reconsulta GET /items/:id na API do ML (dados do cache podem estar defasados).
+ * Atualiza o Mongo e devolve só itens ativos com estoque no momento da chamada.
+ */
+async function revalidateMeliItemsForAutocomplete(ownerObjectId, cachedDocs, { maxResults = 10 } = {}) {
+  if (!Array.isArray(cachedDocs) || cachedDocs.length === 0) return [];
+  const byUser = new Map();
+  for (const doc of cachedDocs) {
+    const uid = Number(doc.user_id);
+    const id = doc.id != null ? String(doc.id) : "";
+    if (!uid || !id) continue;
+    if (!byUser.has(uid)) byUser.set(uid, []);
+    const arr = byUser.get(uid);
+    if (!arr.includes(id)) arr.push(id);
+  }
+
+  const out = [];
+  const seen = new Set();
+
+  for (const [uid, idList] of byUser) {
+    if (out.length >= maxResults) break;
+    try {
+      const conta = await Conta.findOne({
+        ownerId: ownerObjectId,
+        user_id: uid,
+        disabled: { $ne: true },
+        access_token: { $exists: true },
+      });
+      if (!conta) continue;
+
+      const token = await renewToken(conta);
+      const idsToFetch = idList.slice(0, 25);
+      const freshList = await fetchItemsDetails(token, idsToFetch);
+      if (freshList.length) {
+        await upsertProductsFromItems(freshList, { ownerObjectId, conta });
+      }
+      for (const item of freshList) {
+        if (out.length >= maxResults) break;
+        if (!isMeliItemEligibleForAnswerLink(item)) continue;
+        const idKey = item.id;
+        if (seen.has(idKey)) continue;
+        seen.add(idKey);
+        out.push(mapMeliApiItemToAutocompleteRow(item, uid));
+      }
+    } catch {
+      /* token ou ML indisponível para esta conta */
+    }
+  }
+
+  return out.slice(0, maxResults);
 }
 
 export default {
@@ -257,14 +334,42 @@ export default {
         mongoFilter.user_id = uid;
       }
 
-      const cached = await MeliProduct.find(mongoFilter)
-        .select({ _id: 1, id: 1, title: 1, SKU: 1, permalink: 1, user_id: 1 })
+      const CANDIDATE_LIMIT = 25;
+      const RESULT_LIMIT = 10;
+
+      const cacheSelect = {
+        _id: 1,
+        id: 1,
+        title: 1,
+        SKU: 1,
+        permalink: 1,
+        user_id: 1,
+        status: 1,
+        available_quantity: 1,
+        variations: 1,
+      };
+
+      const cachedRaw = await MeliProduct.find(mongoFilter)
+        .select(cacheSelect)
         .sort({ updatedAt: -1 })
-        .limit(10)
+        .limit(CANDIDATE_LIMIT)
         .lean();
 
-      if (cached.length > 0 || !query) {
-        return res.json({ source: "cache", items: cached });
+      if (cachedRaw.length === 0 && !query) {
+        return res.json({ source: "cache", items: [] });
+      }
+
+      if (cachedRaw.length > 0) {
+        const liveFromCache = await revalidateMeliItemsForAutocomplete(ownerObjectId, cachedRaw, {
+          maxResults: RESULT_LIMIT,
+        });
+        if (liveFromCache.length > 0) {
+          return res.json({ source: "cache", items: liveFromCache });
+        }
+      }
+
+      if (!query) {
+        return res.json({ source: "cache", items: [] });
       }
 
       const contas = user_id
@@ -276,19 +381,15 @@ export default {
       for (const conta of contas) {
         try {
           const token = await renewToken(conta);
-          const itemIds = await fetchSellerItemIds(token, conta.user_id, { query, limit: 10, offset: 0 });
+          const itemIds = await fetchSellerItemIds(token, conta.user_id, { query, limit: 25, offset: 0 });
           if (!itemIds.length) continue;
           const detailedItems = await fetchItemsDetails(token, itemIds);
           if (!detailedItems.length) continue;
           await upsertProductsFromItems(detailedItems, { ownerObjectId, conta });
           allItems.push(
-            ...detailedItems.map((item) => ({
-              id: item.id,
-              title: item.title,
-              permalink: item.permalink,
-              SKU: item.seller_custom_field || null,
-              user_id: conta.user_id,
-            }))
+            ...detailedItems
+              .filter(isMeliItemEligibleForAnswerLink)
+              .map((item) => mapMeliApiItemToAutocompleteRow(item, conta.user_id))
           );
         } catch (err) {
           const status = err.response?.status;
@@ -297,17 +398,19 @@ export default {
         }
       }
 
-      const deduped = Array.from(new Map(allItems.map((item) => [item.id, item])).values()).slice(0, 10);
+      const deduped = Array.from(new Map(allItems.map((item) => [item.id, item])).values()).slice(0, RESULT_LIMIT);
       if (deduped.length > 0) return res.json({ source: "api", items: deduped });
 
-      // fallback final: retorna qualquer coisa do cache do owner após sync
-      const refreshedCache = await MeliProduct.find(mongoFilter)
-        .select({ _id: 1, id: 1, title: 1, SKU: 1, permalink: 1, user_id: 1 })
+      const refreshedRaw = await MeliProduct.find(mongoFilter)
+        .select(cacheSelect)
         .sort({ updatedAt: -1 })
-        .limit(10)
+        .limit(CANDIDATE_LIMIT)
         .lean();
 
-      return res.json({ source: "api", items: mapProductsToAutocompleteItems(refreshedCache) });
+      const refreshedLive = await revalidateMeliItemsForAutocomplete(ownerObjectId, refreshedRaw, {
+        maxResults: RESULT_LIMIT,
+      });
+      return res.json({ source: "api", items: refreshedLive });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar sugestões de produtos" });
     }
