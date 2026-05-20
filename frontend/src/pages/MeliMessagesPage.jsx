@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Check,
   CheckCircle2,
   Clock,
@@ -61,6 +62,8 @@ export default function MeliMessagesPage() {
   const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [editingTemplateName, setEditingTemplateName] = useState("");
   const [editingTemplateContent, setEditingTemplateContent] = useState("");
+  const [deleteQuestionModal, setDeleteQuestionModal] = useState(null); // { question_id, text, status }
+  const [deletingQuestion, setDeletingQuestion] = useState(false);
   const replyTextareaRef = useRef(null);
 
   async function loadAccounts() {
@@ -299,6 +302,21 @@ export default function MeliMessagesPage() {
     }
   }
 
+  async function confirmDeleteQuestion() {
+    if (!deleteQuestionModal) return;
+    setDeletingQuestion(true);
+    try {
+      await api.delete(`/meli/messages/questions/${deleteQuestionModal.question_id}`);
+      setDeleteQuestionModal(null);
+      setSelectedQuestionId(null);
+      await loadQuestions();
+    } catch (error) {
+      notifyError(error.response?.data?.error || "Erro ao excluir pergunta");
+    } finally {
+      setDeletingQuestion(false);
+    }
+  }
+
   async function deleteTemplate(id) {
     try {
       await api.delete(`/meli/messages/templates/${id}`);
@@ -432,35 +450,50 @@ export default function MeliMessagesPage() {
           ) : (
             <div className="max-h-[560px] overflow-y-auto border border-gray-100 rounded-lg divide-y divide-gray-100">
               {questions.map((q) => (
-                <button
+                <div
                   key={q.question_id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedQuestionId(q.question_id);
-                    setReplyText("");
-                  }}
                   className={cn(
-                    "w-full text-left p-3 transition",
+                    "relative group",
                     selectedQuestionId === q.question_id ? "bg-brand-50" : "hover:bg-gray-50"
                   )}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-full",
-                      q.status === "ANSWERED" ? "bg-emerald-100 text-emerald-700" : "bg-brand-100 text-brand-700"
-                    )}>
-                      {q.status === "ANSWERED" ? "Respondida" : "Pendente"}
-                    </span>
-                    <span className="text-xs text-gray-500">{formatRelativeTime(q.date_created)}</span>
-                  </div>
-                  <p className="text-sm text-gray-900 font-medium line-clamp-1">{q.item_title || q.item_id || "Sem item"}</p>
-                  <p className="text-sm text-gray-700 mt-1 line-clamp-2">{q.text}</p>
-                  {q.answer_text && (
-                    <p className="text-xs text-emerald-700 mt-2 line-clamp-1 flex items-center gap-1">
-                      <Check size={12} /> {q.answer_text}
-                    </p>
-                  )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedQuestionId(q.question_id);
+                      setReplyText("");
+                    }}
+                    className="w-full text-left p-3 pr-9 transition"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={cn(
+                        "text-[10px] px-2 py-0.5 rounded-full",
+                        q.status === "ANSWERED" ? "bg-emerald-100 text-emerald-700" : "bg-brand-100 text-brand-700"
+                      )}>
+                        {q.status === "ANSWERED" ? "Respondida" : "Pendente"}
+                      </span>
+                      <span className="text-xs text-gray-500">{formatRelativeTime(q.date_created)}</span>
+                    </div>
+                    <p className="text-sm text-gray-900 font-medium line-clamp-1">{q.item_title || q.item_id || "Sem item"}</p>
+                    <p className="text-sm text-gray-700 mt-1 line-clamp-2">{q.text}</p>
+                    {q.answer_text && (
+                      <p className="text-xs text-emerald-700 mt-2 line-clamp-1 flex items-center gap-1">
+                        <Check size={12} /> {q.answer_text}
+                      </p>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    title="Excluir pergunta"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteQuestionModal({ question_id: q.question_id, text: q.text, status: q.status });
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -572,9 +605,18 @@ export default function MeliMessagesPage() {
                 )}
                 <button
                   type="button"
+                  onClick={() => setDeleteQuestionModal({ question_id: selectedQuestion.question_id, text: selectedQuestion.text, status: selectedQuestion.status })}
+                  className="ml-auto p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                  title="Excluir pergunta do sistema"
+                  aria-label="Excluir pergunta"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <button
+                  type="button"
                   onClick={openSelectedQuestionListing}
                   disabled={!selectedQuestion.item_id}
-                  className="ml-auto p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  className="p-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                   title="Abrir anúncio da pergunta selecionada"
                   aria-label="Abrir anúncio da pergunta selecionada"
                 >
@@ -697,6 +739,59 @@ export default function MeliMessagesPage() {
         )}
       </section>
       </main>
+
+      {/* Modal de confirmação: excluir pergunta */}
+      {deleteQuestionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 text-base">Excluir pergunta do sistema?</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Esta ação remove a pergunta apenas do seu sistema — ela <strong>não é excluída no Mercado Livre</strong>.
+                </p>
+              </div>
+            </div>
+
+            {deleteQuestionModal.status === "UNANSWERED" && (
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+                <AlertTriangle size={15} className="text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800">
+                  <strong>Atenção:</strong> esta pergunta ainda está <strong>pendente de resposta</strong>. O comprador pode estar aguardando. Certifique-se de respondê-la diretamente no Mercado Livre antes de excluí-la aqui.
+                </p>
+              </div>
+            )}
+
+            <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2.5">
+              <p className="text-xs text-gray-500 mb-0.5">Pergunta #{deleteQuestionModal.question_id}</p>
+              <p className="text-sm text-gray-800 line-clamp-3">{deleteQuestionModal.text}</p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setDeleteQuestionModal(null)}
+                disabled={deletingQuestion}
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteQuestion}
+                disabled={deletingQuestion}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium flex items-center gap-2 hover:bg-red-700 disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+                {deletingQuestion ? "Excluindo..." : "Excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

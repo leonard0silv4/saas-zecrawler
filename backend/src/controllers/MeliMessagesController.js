@@ -24,7 +24,12 @@ export default {
       const page = parsePage(req.query.page, 1);
       const limit = Math.min(parsePage(req.query.limit, 20), 100);
       const skip = (page - 1) * limit;
-      const filter = { ownerId };
+      const ML_INVALID_STATUSES = ["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"];
+      const filter = {
+        ownerId,
+        // Excluir perguntas cujo raw_payload indica status inválido no ML
+        "raw_payload.status": { $nin: ML_INVALID_STATUSES },
+      };
 
       if (req.query.status && ["UNANSWERED", "ANSWERED"].includes(req.query.status)) {
         filter.status = req.query.status;
@@ -181,6 +186,21 @@ export default {
       return res.json({ ok: true });
     } catch (error) {
       return res.status(500).json({ error: "Erro ao remover template" });
+    }
+  },
+
+  async deleteQuestion(req, res) {
+    try {
+      const ownerId = toObjectId(getOwnerId(req));
+      const questionId = Number(req.params.questionId);
+      if (!Number.isFinite(questionId)) {
+        return res.status(400).json({ error: "questionId inválido" });
+      }
+      const deleted = await MeliQuestion.findOneAndDelete({ ownerId, question_id: questionId });
+      if (!deleted) return res.status(404).json({ error: "Pergunta não encontrada" });
+      return res.json({ ok: true });
+    } catch (error) {
+      return res.status(500).json({ error: "Erro ao excluir pergunta" });
     }
   },
 

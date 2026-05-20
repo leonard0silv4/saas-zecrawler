@@ -8,6 +8,9 @@ const ML_API_BASE = "https://api.mercadolibre.com";
 const PAGE_LIMIT = 50;
 const MAX_PAGES = 10;
 
+/** Status do ML que indicam pergunta inativa/cancelada — não devem aparecer no sistema */
+const ML_INVALID_STATUSES = new Set(["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"]);
+
 function toObjectId(value) {
   if (value instanceof mongoose.Types.ObjectId) return value;
   return new mongoose.Types.ObjectId(String(value));
@@ -106,6 +109,9 @@ async function syncQuestionsForConta(ownerId, conta) {
       if (sinceDate && createdAt && createdAt <= sinceDate) {
         shouldStop = true;
       }
+
+      // Ignorar perguntas com status inválido do ML (canceladas, sob revisão, etc.)
+      if (ML_INVALID_STATUSES.has(String(q.status || "").toUpperCase())) continue;
 
       await MeliQuestion.updateOne(
         { ownerId: toObjectId(ownerId), question_id: Number(q.id) },
