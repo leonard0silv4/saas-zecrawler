@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const { user, canAccess } = useAuth();
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Olá, {user?.name?.split(" ")[0]} 👋</h1>
         <p className="text-gray-500 mt-1">

@@ -3,24 +3,25 @@ import { useAuth } from "../contexts/AuthContext";
 import {
   Link2, BookOpen, ShoppingBag,
   LogOut, LayoutDashboard, Crown, Menu, X, CreditCard,
-  LineChart, Store, Settings, MessageCircle, Unplug
+  LineChart, Store, Settings, MessageCircle, Unplug, Users
 } from "lucide-react";
 import { useState } from "react";
 
 const NAV = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", module: null },
-  { to: "/plans", icon: Crown, label: "Planos", module: null },
-  { to: "/settings", icon: Settings, label: "Configurações", module: null },
-  { to: "/links", icon: Link2, label: "Links", module: "links" },
-  { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze" },
-  { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor" },
-  { to: "/catalog", icon: BookOpen, label: "Catálogo", module: "catalog" },
-  { to: "/meli", icon: Unplug, label: "Contas conectadas", module: "meli" },
-  { to: "/meli/messages", icon: MessageCircle, label: "Mensagens ML", module: "meliMessages" },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", module: null, ownerOnly: false },
+  { to: "/plans", icon: Crown, label: "Planos", module: null, ownerOnly: true },
+  { to: "/settings", icon: Settings, label: "Configurações", module: null, ownerOnly: false },
+  { to: "/team", icon: Users, label: "Time", module: null, ownerOnly: true },
+  { to: "/links", icon: Link2, label: "Links", module: "links", ownerOnly: false },
+  { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze", ownerOnly: false },
+  { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor", ownerOnly: false },
+  { to: "/catalog", icon: BookOpen, label: "Catálogo", module: "catalog", ownerOnly: false },
+  { to: "/meli", icon: Unplug, label: "Contas conectadas", module: "meli", ownerOnly: false },
+  { to: "/meli/messages", icon: MessageCircle, label: "Mensagens ML", module: "meliMessages", ownerOnly: false },
 ];
 
 export default function AppLayout() {
-  const { user, logout, canAccess, manageBilling } = useAuth();
+  const { user, logout, canAccess, manageBilling, isOwner } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -56,10 +57,12 @@ export default function AppLayout() {
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {NAV.map((item) => {
+              // Oculta itens exclusivos do owner para membros/admins
+              if (item.ownerOnly && !isOwner) return null;
+
               const active = location.pathname === item.to;
               const locked = item.module && !canAccess(item.module);
-              
-              console.log(location.pathname, item.to, active);
+
               return (
                 <Link
                   key={item.to}
@@ -92,7 +95,7 @@ export default function AppLayout() {
                 </span>
               </div>
             </div>
-            {user?.hasSubscription && (
+            {user?.hasSubscription && isOwner && (
               <button
                 onClick={manageBilling}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"

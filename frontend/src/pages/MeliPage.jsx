@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { ExternalLink, Package, Truck, Unlink, Unplug } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function MeliPage() {
+  const { isOwner } = useAuth();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState("");
@@ -94,7 +96,7 @@ export default function MeliPage() {
   }
 
   return (
-    <div className="space-y-10 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Unplug className="text-yellow-500" />
@@ -106,13 +108,15 @@ export default function MeliPage() {
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="font-semibold text-gray-900">Contas conectadas</h2>
-          <button
-            type="button"
-            onClick={connectAccount}
-            className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-medium"
-          >
-            Conectar nova conta
-          </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={connectAccount}
+              className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-medium"
+            >
+              Conectar nova conta
+            </button>
+          )}
         </div>
         {loading ? (
           <p className="text-sm text-gray-500">Carregando…</p>
@@ -126,15 +130,17 @@ export default function MeliPage() {
                   <span className="font-medium">{a.nickname || `User ${a.user_id}`}</span>
                   <span className="text-gray-500 font-mono text-xs ml-2">ID {a.user_id}</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => disconnectAccount(a.user_id)}
-                  disabled={disconnectingId !== null}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-medium hover:bg-red-50 disabled:opacity-50"
-                >
-                  <Unlink size={14} />
-                  {disconnectingId === a.user_id ? "Desconectando…" : "Desconectar"}
-                </button>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => disconnectAccount(a.user_id)}
+                    disabled={disconnectingId !== null}
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-medium hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <Unlink size={14} />
+                    {disconnectingId === a.user_id ? "Desconectando…" : "Desconectar"}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

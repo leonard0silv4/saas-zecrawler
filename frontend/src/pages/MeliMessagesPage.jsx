@@ -244,31 +244,32 @@ export default function MeliMessagesPage() {
   }
 
   async function openSelectedQuestionListing() {
-    if (!selectedQuestion?.item_id || !selectedUserId) {
+    if (!selectedQuestion?.item_id) {
       notifyWarning("A pergunta selecionada não possui item_id");
       return;
     }
 
+    // 1. Tenta no estado local primeiro (já carregado na sidebar de produtos)
     const localMatch = products.find((p) => String(p.id || "") === String(selectedQuestion.item_id));
     if (localMatch?.permalink) {
       window.open(localMatch.permalink, "_blank", "noopener,noreferrer");
       return;
     }
 
+    // 2. Busca diretamente pelo ID do anúncio — sem filtro de status/estoque
     try {
-      const { data } = await api.get("/meli/products/autocomplete", {
-        params: { user_id: selectedUserId, q: selectedQuestion.item_id },
-      });
-      const items = Array.isArray(data?.items) ? data.items : [];
-      const exact = items.find((p) => String(p.id || "") === String(selectedQuestion.item_id));
-      const picked = exact || items[0];
-      if (picked?.permalink) {
-        window.open(picked.permalink, "_blank", "noopener,noreferrer");
+      const { data } = await api.get(`/meli/items/${selectedQuestion.item_id}/permalink`);
+      if (data?.permalink) {
+        window.open(data.permalink, "_blank", "noopener,noreferrer");
         return;
       }
       notifyWarning("Não foi possível localizar o permalink do anúncio desta pergunta");
     } catch (error) {
-      notifyError(error.response?.data?.error || "Erro ao localizar o anúncio da pergunta");
+      if (error.response?.status === 404) {
+        notifyWarning("Anúncio não encontrado nas contas conectadas");
+      } else {
+        notifyError(error.response?.data?.error || "Erro ao localizar o anúncio da pergunta");
+      }
     }
   }
 

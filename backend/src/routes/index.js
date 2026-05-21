@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
-import { requireModule, checkLinkLimit, checkSellerMonitorLimit } from "../middleware/plan.js";
+import { requireModule, checkLinkLimit, checkSellerMonitorLimit, requireOwner, checkTeamUserLimit, checkTeamLimit } from "../middleware/plan.js";
 import { addSSEClient, removeSSEClient } from "../utils/sse.js";
 import { getOwnerId } from "../middleware/auth.js";
 
@@ -14,6 +14,7 @@ import CookieController from "../controllers/CookieController.js";
 import PriceAnalyzeController from "../controllers/PriceAnalyzeController.js";
 import SellerMonitorController from "../controllers/SellerMonitorController.js";
 import SettingsController from "../controllers/SettingsController.js";
+import TeamController from "../controllers/TeamController.js";
 
 const r = Router();
 
@@ -78,6 +79,7 @@ r.get("/meli/accounts", requireModule("meli"), MeliController.getAccounts);
 r.delete("/meli/accounts/:userId", requireModule("meli"), MeliController.disconnectAccount);
 r.get("/meli/products", requireModule("meli"), MeliController.getProducts);
 r.get("/meli/products/autocomplete", requireModule("meli"), MeliController.autocompleteProducts);
+r.get("/meli/items/:itemId/permalink", requireModule("meli"), MeliController.getItemPermalink);
 r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShipment);
 r.get("/meli/messages/questions", requireModule("meliMessages"), MeliMessagesController.listQuestions);
 r.post("/meli/messages/questions/:questionId/reply", requireModule("meliMessages"), MeliMessagesController.replyQuestion);
@@ -99,6 +101,20 @@ r.post("/catalog/import", requireModule("catalog"), CatalogProductController.imp
 r.get("/cookies", CookieController.index);
 r.post("/cookies", CookieController.update);
 r.delete("/cookies", CookieController.destroy);
+
+// ─── Time & Usuários (owner only) ──────────────────────────────
+r.get("/team/users",                        requireOwner, TeamController.listUsers);
+r.post("/team/users",                       requireOwner, checkTeamUserLimit, TeamController.createUser);
+r.put("/team/users/:id",                    requireOwner, TeamController.updateUser);
+r.put("/team/users/:id/password",           requireOwner, TeamController.updateUserPassword);
+r.delete("/team/users/:id",                 requireOwner, TeamController.deleteUser);
+
+r.get("/team/teams",                        requireOwner, TeamController.listTeams);
+r.post("/team/teams",                       requireOwner, checkTeamLimit, TeamController.createTeam);
+r.put("/team/teams/:id",                    requireOwner, TeamController.updateTeam);
+r.delete("/team/teams/:id",                 requireOwner, TeamController.deleteTeam);
+r.post("/team/teams/:id/members",           requireOwner, TeamController.addMember);
+r.delete("/team/teams/:id/members/:userId", requireOwner, TeamController.removeMember);
 
 // ─── SSE (Server-Sent Events) ──────────────────────────────────
 r.get("/events", (req, res) => {

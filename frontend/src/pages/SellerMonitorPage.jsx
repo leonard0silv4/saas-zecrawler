@@ -159,8 +159,8 @@ export default function SellerMonitorPage() {
   const canAddSeller = sellers.length < maxSellerMonitors;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-8rem)]">
-      <aside className="lg:w-72 shrink-0 bg-white rounded-xl border border-gray-100 flex flex-col max-h-[40vh] lg:max-h-none">
+    <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-8rem)] max-w-7xl mx-auto">
+      <aside className="lg:w-72 shrink-0 bg-white rounded-xl border border-gray-100 flex flex-col max-h-[40vh] lg:sticky lg:top-0 lg:self-start lg:h-[calc(100vh-4rem)] lg:max-h-none">
         <div className="p-3 border-b border-gray-100 flex items-center justify-between">
           <div>
             <span className="font-semibold text-gray-900 flex items-center gap-2">

@@ -77,8 +77,10 @@ export function AuthProvider({ children }) {
     window.location.href = data.url;
   }
 
+  const isOwner = user?.role === "owner";
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, canAccess, refreshUser, manageBilling }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, canAccess, refreshUser, manageBilling, isOwner }}>
       {children}
     </AuthContext.Provider>
   );

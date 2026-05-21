@@ -416,6 +416,50 @@ export default {
     }
   },
 
+  /**
+   * GET /meli/items/:itemId/permalink
+   * Busca o permalink de um anúncio pelo ID (ex: MLB1234567890).
+   * Não filtra por status/estoque — apenas localiza o link do anúncio.
+   * Ordem: cache MongoDB → API ML direta (fetchItemsDetails).
+   */
+  async getItemPermalink(req, res) {
+    const { itemId } = req.params;
+    if (!itemId) return res.status(400).json({ error: "itemId é obrigatório" });
+
+    try {
+      const ownerId = getOwnerId(req);
+      const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+
+      // 1. Tenta no cache — sem filtro de status
+      const cached = await MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId })
+        .select("permalink")
+        .lean();
+      if (cached?.permalink) {
+        return res.json({ permalink: cached.permalink, source: "cache" });
+      }
+
+      // 2. Busca direto na API do ML pelo ID (não keyword search)
+      const contas = await getActiveContas(ownerObjectId);
+      for (const conta of contas) {
+        try {
+          const token = await renewToken(conta);
+          const details = await fetchItemsDetails(token, [itemId]);
+          if (details.length > 0 && details[0]?.permalink) {
+            await upsertProductsFromItems(details, { ownerObjectId, conta });
+            return res.json({ permalink: details[0].permalink, source: "api" });
+          }
+        } catch (err) {
+          const status = err.response?.status;
+          if (status === 401 || status === 403) continue;
+        }
+      }
+
+      return res.status(404).json({ error: "Anúncio não encontrado" });
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar permalink do anúncio" });
+    }
+  },
+
   async getShipment(req, res) {
     const { shipmentId } = req.params;
     if (!shipmentId || !/^\d+$/.test(shipmentId)) {

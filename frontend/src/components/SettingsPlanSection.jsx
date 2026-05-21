@@ -6,7 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { MODULE_LABELS } from "../lib/moduleLabels";
 
 export default function SettingsPlanSection() {
-  const { user, manageBilling } = useAuth();
+  const { user, manageBilling, isOwner } = useAuth();
   const [subStatus, setSubStatus] = useState(null);
 
   useEffect(() => {
@@ -83,24 +83,26 @@ export default function SettingsPlanSection() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 pt-2">
-        <Link
-          to="/plans"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
-        >
-          Ver todos os planos
-        </Link>
-        {user?.hasSubscription && (
-          <button
-            type="button"
-            onClick={() => manageBilling()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-800 text-sm font-medium hover:bg-gray-50"
+      {isOwner && (
+        <div className="flex flex-wrap gap-3 pt-2">
+          <Link
+            to="/plans"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
           >
-            <CreditCard size={18} />
-            Gerenciar assinatura
-          </button>
-        )}
-      </div>
+            Ver todos os planos
+          </Link>
+          {user?.hasSubscription && (
+            <button
+              type="button"
+              onClick={() => manageBilling()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-800 text-sm font-medium hover:bg-gray-50"
+            >
+              <CreditCard size={18} />
+              Gerenciar assinatura
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

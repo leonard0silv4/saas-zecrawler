@@ -9,6 +9,8 @@ export const PLANS = {
     price: 0,
     maxLinks: 10,
     maxSellerMonitors: 1,
+    maxTeamUsers: 1,
+    maxTeams: 1,
     stripePriceId: null, // free = no Stripe price
     features: ["Acompanhamento de links", "Análise de preços (XML)", "Dashboard básico"],
   },
@@ -18,6 +20,8 @@ export const PLANS = {
     price: 19.9,
     maxLinks: 100,
     maxSellerMonitors: 3,
+    maxTeamUsers: 5,
+    maxTeams: 2,
     stripePriceId: process.env.STRIPE_PRICE_STARTER || "",
     features: [
       "Acompanhamento de links",
@@ -33,6 +37,8 @@ export const PLANS = {
     price: 29.9,
     maxLinks: 500,
     maxSellerMonitors: 10,
+    maxTeamUsers: 10,
+    maxTeams: 5,
     stripePriceId: process.env.STRIPE_PRICE_PRO || "",
     features: [
       "Tudo do Starter",
@@ -46,6 +52,8 @@ export const PLANS = {
     price: 59.9,
     maxLinks: 1000,
     maxSellerMonitors: 20,
+    maxTeamUsers: 30,
+    maxTeams: 20,
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS || "",
     features: ["Tudo do Pro", "Multi-contas ML", "Mensagens ML", "Monitor de sellers"],
   },

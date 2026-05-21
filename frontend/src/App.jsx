@@ -15,6 +15,7 @@ import PriceAnalyzePage from "./pages/PriceAnalyzePage";
 import SellerMonitorPage from "./pages/SellerMonitorPage";
 import MlCookiesPage from "./pages/MlCookiesPage";
 import SettingsPage from "./pages/SettingsPage";
+import TeamPage from "./pages/TeamPage";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -41,6 +42,13 @@ function ModuleRoute({ module, children }) {
   return children;
 }
 
+function OwnerRoute({ children }) {
+  const { isOwner, loading } = useAuth();
+  if (loading) return null;
+  if (!isOwner) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -63,6 +71,7 @@ export default function App() {
             <Route exatc path="/meli/messages" element={<ModuleRoute module="meliMessages"><MeliMessagesPage /></ModuleRoute>} />
             <Route path="/ml-cookies" element={<MlCookiesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/team" element={<OwnerRoute><TeamPage /></OwnerRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

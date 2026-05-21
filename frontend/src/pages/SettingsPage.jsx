@@ -35,7 +35,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
         <div className="p-2 rounded-xl bg-brand-50 text-brand-700">
           <Settings size={26} />

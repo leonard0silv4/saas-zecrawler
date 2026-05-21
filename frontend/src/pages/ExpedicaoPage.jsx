@@ -122,7 +122,7 @@ export default function ExpedicaoPage() {
     }));
 
   return (
-    <div className="space-y-10 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Package className="text-brand-600" />

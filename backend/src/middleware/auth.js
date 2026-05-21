@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import { computeAccess } from "../utils/access.js";
+import { computeAccess, loadTeamPermissions } from "../utils/access.js";
 
 /**
  * Extracts and verifies JWT from Authorization header.
@@ -23,7 +23,8 @@ export async function authenticate(req, res, next) {
       if (o) ownerUser = o;
     }
 
-    const { effectivePlan, allowedModules } = computeAccess(user, ownerUser);
+    const teamPerms = await loadTeamPermissions(user);
+    const { effectivePlan, allowedModules } = computeAccess(user, ownerUser, teamPerms);
 
     req.user = {
       id: user._id,

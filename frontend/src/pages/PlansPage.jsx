@@ -90,7 +90,7 @@ export default function PlansPage() {
   const cancelPending = subStatus?.subscription?.cancelAtPeriodEnd;
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
       {/* Toast */}
       {toast && (
         <div className={`mb-6 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${

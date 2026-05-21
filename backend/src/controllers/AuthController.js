@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { PLANS } from "../../config/plans.js";
-import { computeAccess } from "../utils/access.js";
+import { computeAccess, loadTeamPermissions } from "../utils/access.js";
 
 export default {
   async register(req, res) {
@@ -28,7 +28,7 @@ export default {
 
       return res.status(201).json({
         token,
-        user: sanitizeUser(user, user),
+        user: await sanitizeUser(user, user),
       });
     } catch (err) {
       console.error("Erro no registro:", err);
@@ -51,7 +51,7 @@ export default {
       const ownerDoc = await loadOwnerDoc(user);
       return res.json({
         token,
-        user: sanitizeUser(user, ownerDoc),
+        user: await sanitizeUser(user, ownerDoc),
       });
     } catch (err) {
       console.error("Erro no login:", err);
@@ -65,7 +65,7 @@ export default {
       if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
       const ownerDoc = await loadOwnerDoc(user);
-      return res.json({ user: sanitizeUser(user, ownerDoc) });
+      return res.json({ user: await sanitizeUser(user, ownerDoc) });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar perfil" });
     }
@@ -86,7 +86,7 @@ export default {
       await user.save();
 
       const ownerDoc = await loadOwnerDoc(user);
-      return res.json({ user: sanitizeUser(user, ownerDoc) });
+      return res.json({ user: await sanitizeUser(user, ownerDoc) });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao atualizar plano" });
     }
@@ -112,7 +112,7 @@ async function loadOwnerDoc(user) {
   return User.findById(u.ownerId);
 }
 
-function sanitizeUser(user, ownerDoc = null) {
+async function sanitizeUser(user, ownerDoc = null) {
   const obj = user.toJSON ? user.toJSON() : user;
   const { password, ...rest } = obj;
   const ownerPlain = ownerDoc
@@ -120,9 +120,12 @@ function sanitizeUser(user, ownerDoc = null) {
       ? ownerDoc.toJSON()
       : ownerDoc
     : obj;
+
+  const teamPerms = await loadTeamPermissions(obj);
   const { effectivePlan, allowedModules, planModules } = computeAccess(
     obj,
-    obj.role === "owner" ? obj : ownerPlain
+    obj.role === "owner" ? obj : ownerPlain,
+    teamPerms
   );
 
   const ownerForStripe = obj.role === "owner" ? obj : ownerPlain;

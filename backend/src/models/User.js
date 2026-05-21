@@ -20,6 +20,9 @@ const userSchema = new mongoose.Schema(
     // Permissions (granular override)
     permissions: [{ type: String }],
 
+    // Times aos quais este usuário pertence (apenas para role member)
+    teamIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Team", default: [] }],
+
     // Settings (conta — documento do owner; membros leem via getOwnerId)
     mySellerNames: [{ type: String, trim: true }],
 
