@@ -15,6 +15,35 @@ const ML_INVALID_STATUSES = new Set(["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED",
 const ML_INACTIVE_ITEM_STATUSES = new Set(["paused", "closed", "under_review", "inactive"]);
 
 /**
+ * Busca nicknames de até 20 compradores por chamada usando o endpoint multi-id do ML.
+ * Retorna um mapa { user_id: nickname }. Em caso de erro, retorna objeto vazio (falha silenciosa).
+ */
+async function fetchBuyerNicknames(headers, fromIds) {
+  if (!fromIds.length) return {};
+  const BATCH_SIZE = 20;
+  const result = {};
+  for (let i = 0; i < fromIds.length; i += BATCH_SIZE) {
+    const batch = fromIds.slice(i, i + BATCH_SIZE);
+    try {
+      const { data } = await axios.get(`${ML_API_BASE}/users`, {
+        headers,
+        params: { ids: batch.join(",") },
+      });
+      if (Array.isArray(data)) {
+        for (const entry of data) {
+          if (entry.code === 200 && entry.body?.id) {
+            result[entry.body.id] = entry.body.nickname || null;
+          }
+        }
+      }
+    } catch {
+      // falha silenciosa — nickname é opcional, não bloqueia o sync
+    }
+  }
+  return result;
+}
+
+/**
  * Busca o status de até 20 anúncios por chamada usando o endpoint multi-id do ML.
  * Retorna um mapa { item_id: status }. Em caso de erro, retorna objeto vazio (falha silenciosa).
  */
@@ -85,16 +114,17 @@ export function resolveAnswerFieldsAfterPost(mlResponse, normalizedText, existin
   return { answerText, answerDate: dateRaw, resolvedStatus };
 }
 
-export function mapQuestionPayload(question, ownerId, contaUserId, itemStatus = null) {
+export function mapQuestionPayload(question, ownerId, contaUserId, itemStatus = null, buyerNicknames = {}) {
   const answer = question.answer || null;
+  const fromId = question.from?.id || null;
   return {
     ownerId: toObjectId(ownerId),
     user_id: contaUserId,
     question_id: Number(question.id),
     item_id: question.item_id || null,
     item_title: question.item_title || null,
-    from_id: question.from?.id || null,
-    from_nickname: question.from?.nickname || null,
+    from_id: fromId,
+    from_nickname: question.from?.nickname || (fromId ? (buyerNicknames[fromId] ?? null) : null),
     text: question.text || "",
     status: answer?.text ? "ANSWERED" : "UNANSWERED",
     date_created: question.date_created ? new Date(question.date_created) : new Date(),
@@ -137,9 +167,13 @@ async function syncQuestionsForConta(ownerId, conta) {
     const questions = Array.isArray(data?.questions) ? data.questions : [];
     if (!questions.length) break;
 
-    // Busca status dos anúncios em lote para filtrar perguntas de anúncios pausados/excluídos
+    // Busca status dos anúncios e nicknames dos compradores em lote
     const uniqueItemIds = [...new Set(questions.map((q) => q.item_id).filter(Boolean))];
-    const itemStatuses = await fetchItemStatuses(headers, uniqueItemIds);
+    const uniqueFromIds = [...new Set(questions.map((q) => q.from?.id).filter(Boolean))];
+    const [itemStatuses, buyerNicknames] = await Promise.all([
+      fetchItemStatuses(headers, uniqueItemIds),
+      fetchBuyerNicknames(headers, uniqueFromIds),
+    ]);
 
     for (const q of questions) {
       const createdAt = q?.date_created ? new Date(q.date_created) : null;
@@ -154,7 +188,7 @@ async function syncQuestionsForConta(ownerId, conta) {
 
       await MeliQuestion.updateOne(
         { ownerId: toObjectId(ownerId), question_id: Number(q.id) },
-        { $set: mapQuestionPayload(q, ownerId, conta.user_id, itemStatus) },
+        { $set: mapQuestionPayload(q, ownerId, conta.user_id, itemStatus, buyerNicknames) },
         { upsert: true }
       );
       insertedOrUpdated += 1;

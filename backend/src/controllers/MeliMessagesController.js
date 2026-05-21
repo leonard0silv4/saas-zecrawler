@@ -194,6 +194,29 @@ export default {
     }
   },
 
+  async buyerThread(req, res) {
+    try {
+      const ownerId = toObjectId(getOwnerId(req));
+      const rawFromId = req.query.from_id;
+      if (!rawFromId || !/^\d+$/.test(String(rawFromId))) {
+        return res.status(400).json({ error: "from_id inválido" });
+      }
+      const filter = { ownerId, from_id: Number(rawFromId) };
+      if (req.query.user_id && /^\d+$/.test(String(req.query.user_id))) {
+        filter.user_id = Number(req.query.user_id);
+      }
+      const items = await MeliQuestion.find(filter)
+        .sort({ date_created: 1 })
+        .limit(30)
+        .select("question_id text status date_created answer_text answer_date_created answered_by item_title item_id from_nickname")
+        .lean();
+      const from_nickname = items.length > 0 ? items[0].from_nickname || null : null;
+      return res.json({ items, from_nickname });
+    } catch (error) {
+      return res.status(500).json({ error: "Erro ao buscar histórico do comprador" });
+    }
+  },
+
   async deleteQuestion(req, res) {
     try {
       const ownerId = toObjectId(getOwnerId(req));

@@ -64,6 +64,8 @@ export default function MeliMessagesPage() {
   const [editingTemplateContent, setEditingTemplateContent] = useState("");
   const [deleteQuestionModal, setDeleteQuestionModal] = useState(null); // { question_id, text, status }
   const [deletingQuestion, setDeletingQuestion] = useState(false);
+  const [buyerThread, setBuyerThread] = useState([]);
+  const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
   const replyTextareaRef = useRef(null);
 
   async function loadAccounts() {
@@ -172,6 +174,31 @@ export default function MeliMessagesPage() {
       .filter((p) => String(p.title || p.SKU || "").toLowerCase().includes(search))
       .slice(0, 8);
   }, [products, productSearch]);
+
+  useEffect(() => {
+    if (!selectedQuestion?.from_id) {
+      setBuyerThread([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingBuyerThread(true);
+    api
+      .get("/meli/messages/questions/buyer-thread", {
+        params: { from_id: selectedQuestion.from_id, user_id: selectedUserId },
+      })
+      .then(({ data }) => {
+        if (!cancelled) setBuyerThread(Array.isArray(data?.items) ? data.items : []);
+      })
+      .catch(() => {
+        if (!cancelled) setBuyerThread([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBuyerThread(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedQuestion?.from_id, selectedUserId]);
 
   function insertProductLink(permalink) {
     if (!permalink) return;
@@ -506,6 +533,59 @@ export default function MeliMessagesPage() {
             <p className="text-sm text-gray-500">Selecione uma pergunta para responder.</p>
           ) : (
             <>
+              {/* Thread de histórico do comprador */}
+              {loadingBuyerThread && (
+                <p className="text-xs text-gray-400">Carregando histórico do comprador...</p>
+              )}
+              {!loadingBuyerThread && buyerThread.length >= 2 && (
+                <div className="rounded-lg border-2 border-violet-200 bg-violet-50/40 text-sm overflow-hidden">
+                  <p className="text-xs font-semibold text-violet-700 px-3 pt-2.5 pb-1.5 flex items-center gap-1.5">
+                    <MessageCircle size={12} />
+                    Histórico com{" "}
+                    <span className="text-violet-900">
+                      {selectedQuestion.from_nickname ||
+                        buyerThread.find((i) => i.from_nickname)?.from_nickname ||
+                        `comprador #${selectedQuestion.from_id}`}
+                    </span>
+                    <span className="ml-auto font-normal text-violet-500">
+                      {buyerThread.length} {buyerThread.length === 1 ? "interação" : "interações"}
+                    </span>
+                  </p>
+                  <div className="divide-y divide-violet-100 max-h-52 overflow-y-auto">
+                    {buyerThread.map((item) => {
+                      const isCurrent = item.question_id === selectedQuestion.question_id;
+                      return (
+                        <div
+                          key={item.question_id}
+                          className={cn(
+                            "px-3 py-2 space-y-1",
+                            isCurrent ? "border-l-2 border-violet-400 bg-white" : "bg-violet-50/30"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400">{formatDate(item.date_created)}</span>
+                            {isCurrent && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-100 text-brand-700">atual</span>
+                            )}
+                          </div>
+                          <p className={cn("text-gray-800 leading-snug", isCurrent ? "font-medium" : "")}>
+                            {item.text}
+                          </p>
+                          {item.answer_text ? (
+                            <p className="text-xs text-emerald-700 flex items-start gap-1">
+                              <Check size={11} className="mt-0.5 shrink-0" />
+                              <span>{item.answer_text}</span>
+                            </p>
+                          ) : !isCurrent ? (
+                            <p className="text-xs text-gray-400 italic">Sem resposta ainda</p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="text-sm bg-gray-50 rounded-lg border border-gray-100 p-3 space-y-1">
                 <p className="text-gray-500">Pergunta selecionada #{selectedQuestion.question_id}</p>
                 <p className="font-medium text-gray-900">{selectedQuestion.item_title || selectedQuestion.item_id || "Sem item"}</p>
