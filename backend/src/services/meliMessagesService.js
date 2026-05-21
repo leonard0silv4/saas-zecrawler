@@ -11,6 +11,38 @@ const MAX_PAGES = 10;
 /** Status do ML que indicam pergunta inativa/cancelada — não devem aparecer no sistema */
 const ML_INVALID_STATUSES = new Set(["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"]);
 
+/** Status de anúncio que tornam a pergunta dispensável (sem resposta necessária) */
+const ML_INACTIVE_ITEM_STATUSES = new Set(["paused", "closed", "under_review", "inactive"]);
+
+/**
+ * Busca o status de até 20 anúncios por chamada usando o endpoint multi-id do ML.
+ * Retorna um mapa { item_id: status }. Em caso de erro, retorna objeto vazio (falha silenciosa).
+ */
+async function fetchItemStatuses(headers, itemIds) {
+  if (!itemIds.length) return {};
+  const BATCH_SIZE = 20;
+  const result = {};
+  for (let i = 0; i < itemIds.length; i += BATCH_SIZE) {
+    const batch = itemIds.slice(i, i + BATCH_SIZE);
+    try {
+      const { data } = await axios.get(`${ML_API_BASE}/items`, {
+        headers,
+        params: { ids: batch.join(",") },
+      });
+      if (Array.isArray(data)) {
+        for (const entry of data) {
+          if (entry.code === 200 && entry.body?.id) {
+            result[entry.body.id] = String(entry.body.status || "").toLowerCase() || null;
+          }
+        }
+      }
+    } catch {
+      // falha silenciosa — preferimos mostrar a pergunta do que bloquear o sync
+    }
+  }
+  return result;
+}
+
 function toObjectId(value) {
   if (value instanceof mongoose.Types.ObjectId) return value;
   return new mongoose.Types.ObjectId(String(value));
@@ -53,7 +85,7 @@ export function resolveAnswerFieldsAfterPost(mlResponse, normalizedText, existin
   return { answerText, answerDate: dateRaw, resolvedStatus };
 }
 
-export function mapQuestionPayload(question, ownerId, contaUserId) {
+export function mapQuestionPayload(question, ownerId, contaUserId, itemStatus = null) {
   const answer = question.answer || null;
   return {
     ownerId: toObjectId(ownerId),
@@ -69,6 +101,7 @@ export function mapQuestionPayload(question, ownerId, contaUserId) {
     answer_text: answer?.text || null,
     answer_status: answer?.status || null,
     answer_date_created: answer?.date_created ? new Date(answer.date_created) : null,
+    item_status: itemStatus,
     raw_payload: question,
     last_synced_at: new Date(),
   };
@@ -104,6 +137,10 @@ async function syncQuestionsForConta(ownerId, conta) {
     const questions = Array.isArray(data?.questions) ? data.questions : [];
     if (!questions.length) break;
 
+    // Busca status dos anúncios em lote para filtrar perguntas de anúncios pausados/excluídos
+    const uniqueItemIds = [...new Set(questions.map((q) => q.item_id).filter(Boolean))];
+    const itemStatuses = await fetchItemStatuses(headers, uniqueItemIds);
+
     for (const q of questions) {
       const createdAt = q?.date_created ? new Date(q.date_created) : null;
       if (sinceDate && createdAt && createdAt <= sinceDate) {
@@ -113,9 +150,11 @@ async function syncQuestionsForConta(ownerId, conta) {
       // Ignorar perguntas com status inválido do ML (canceladas, sob revisão, etc.)
       if (ML_INVALID_STATUSES.has(String(q.status || "").toUpperCase())) continue;
 
+      const itemStatus = q.item_id ? (itemStatuses[q.item_id] ?? null) : null;
+
       await MeliQuestion.updateOne(
         { ownerId: toObjectId(ownerId), question_id: Number(q.id) },
-        { $set: mapQuestionPayload(q, ownerId, conta.user_id) },
+        { $set: mapQuestionPayload(q, ownerId, conta.user_id, itemStatus) },
         { upsert: true }
       );
       insertedOrUpdated += 1;

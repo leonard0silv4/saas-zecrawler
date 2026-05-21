@@ -25,10 +25,15 @@ export default {
       const limit = Math.min(parsePage(req.query.limit, 20), 100);
       const skip = (page - 1) * limit;
       const ML_INVALID_STATUSES = ["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"];
+      /** Status de anúncio que tornam a pergunta dispensável */
+      const INACTIVE_ITEM_STATUSES = ["paused", "closed", "under_review", "inactive"];
       const filter = {
         ownerId,
         // Excluir perguntas cujo raw_payload indica status inválido no ML
         "raw_payload.status": { $nin: ML_INVALID_STATUSES },
+        // Excluir perguntas de anúncios pausados/excluídos.
+        // $nin com null: MongoDB retorna docs onde o campo é null ou ausente — correto para registros antigos sem item_status.
+        item_status: { $nin: INACTIVE_ITEM_STATUSES },
       };
 
       if (req.query.status && ["UNANSWERED", "ANSWERED"].includes(req.query.status)) {

@@ -16,6 +16,7 @@ const meliQuestionSchema = new mongoose.Schema(
     answer_status: { type: String, default: null },
     answer_date_created: { type: Date, default: null },
     answered_by: { type: String, enum: ["manual", "template"], default: null },
+    item_status: { type: String, default: null }, // status do anúncio no ML (active, paused, closed…)
     last_synced_at: { type: Date, default: null },
     raw_payload: { type: mongoose.Schema.Types.Mixed, default: null },
   },
