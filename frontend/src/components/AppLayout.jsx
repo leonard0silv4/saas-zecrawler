@@ -1,9 +1,10 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import {
   Link2, BookOpen, ShoppingBag,
   LogOut, LayoutDashboard, Crown, Lock, Menu, X, CreditCard,
-  LineChart, Store, Settings, MessageCircle, Unplug, Users
+  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle
 } from "lucide-react";
 import { useState } from "react";
 
@@ -22,6 +23,7 @@ const NAV = [
 
 export default function AppLayout() {
   const { user, logout, canAccess, isBlockedByPlan, manageBilling, isOwner } = useAuth();
+  const { hasAnyDot, hasCookies } = useNotifications();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -81,6 +83,9 @@ export default function AppLayout() {
                 >
                   <item.icon size={18} />
                   <span>{item.label}</span>
+                  {item.module === "meliMessages" && hasAnyDot && !locked && (
+                    <span className="ml-auto w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  )}
                   {planLocked       && <Lock size={14} className="ml-auto text-amber-500" />}
                   {permissionLocked && <Lock size={14} className="ml-auto text-gray-400" />}
                 </Link>
@@ -130,6 +135,22 @@ export default function AppLayout() {
           </button>
           <span className="ml-3 font-bold text-brand-700">ZeCrawler</span>
         </header>
+
+        {/* Banner: cookies ML não configurados */}
+        {isOwner && !hasCookies && (
+          <div className="bg-red-600 px-4 py-2.5 flex items-center gap-3 text-sm text-white">
+            <AlertTriangle size={16} className="shrink-0" />
+            <span>
+              Seus cookies do Mercado Livre não estão configurados. O sistema pode não funcionar corretamente.
+            </span>
+            <Link
+              to="/setup-cookies"
+              className="ml-auto shrink-0 px-3 py-1 rounded-lg bg-white text-red-600 text-xs font-medium hover:bg-red-50 transition-colors"
+            >
+              Configurar agora →
+            </Link>
+          </div>
+        )}
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">

@@ -241,4 +241,30 @@ export default {
       return res.status(500).json({ error: "Erro ao sincronizar perguntas" });
     }
   },
+
+  async unreadCount(req, res) {
+    try {
+      const ownerId = toObjectId(getOwnerId(req));
+      const ML_INVALID_STATUSES = ["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"];
+      const INACTIVE_ITEM_STATUSES = ["paused", "closed", "under_review", "inactive"];
+      const rows = await MeliQuestion.aggregate([
+        {
+          $match: {
+            ownerId,
+            status: "UNANSWERED",
+            "raw_payload.status": { $nin: ML_INVALID_STATUSES },
+            item_status: { $nin: INACTIVE_ITEM_STATUSES },
+          },
+        },
+        { $group: { _id: "$user_id", count: { $sum: 1 } } },
+      ]);
+      const perAccount = {};
+      for (const row of rows) {
+        perAccount[String(row._id)] = row.count;
+      }
+      return res.json({ perAccount });
+    } catch (error) {
+      return res.status(500).json({ error: "Erro ao consultar mensagens não respondidas" });
+    }
+  },
 };

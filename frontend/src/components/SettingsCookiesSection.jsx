@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Cookie, Trash2, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import api from "../services/api";
+import { useNotifications } from "../contexts/NotificationContext";
 
 function normalizePayload(parsed) {
   if (Array.isArray(parsed)) return parsed;
@@ -9,6 +10,7 @@ function normalizePayload(parsed) {
 }
 
 export default function SettingsCookiesSection() {
+  const { refreshCookieStatus } = useNotifications();
   const [jsonText, setJsonText] = useState("");
   const [savedCount, setSavedCount] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ export default function SettingsCookiesSection() {
       setMessage(`Salvos ${data.inserted} cookie(s).${data.skipped ? ` Ignorados: ${data.skipped}.` : ""}`);
       setJsonText("");
       await loadCount();
+      refreshCookieStatus(); // atualiza o banner no AppLayout
     } catch (e) {
       setError(e.response?.data?.error || e.message || "Erro ao salvar");
     } finally {

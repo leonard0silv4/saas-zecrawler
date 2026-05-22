@@ -190,7 +190,14 @@ export default function PlansPage() {
               </p>
               {plan.maxSellerMonitors != null && (
                 <p className="text-sm text-gray-500 mb-4">
-                  Até <strong>{plan.maxSellerMonitors.toLocaleString()}</strong> sellers monitorados
+                  Até <strong>{plan.maxSellerMonitors.toLocaleString()}</strong>{" "}
+                  {plan.maxSellerMonitors === 1 ? "seller monitorado" : "sellers monitorados"}
+                </p>
+              )}
+              {plan.maxTeamUsers != null && (
+                <p className="text-sm text-gray-500 mb-4">
+                  Até <strong>{plan.maxTeamUsers.toLocaleString()}</strong>{" "}
+                  {plan.maxTeamUsers === 1 ? "usuário no time" : "usuários no time"}
                 </p>
               )}
 

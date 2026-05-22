@@ -90,6 +90,7 @@ r.post("/meli/messages/templates", requireModule("meliMessages"), MeliMessagesCo
 r.put("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessagesController.updateTemplate);
 r.delete("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessagesController.deleteTemplate);
 r.post("/meli/messages/sync", requireModule("meliMessages"), MeliMessagesController.sync);
+r.get("/meli/messages/unread-count", requireModule("meliMessages"), MeliMessagesController.unreadCount);
 
 // ─── Catálogo ──────────────────────────────────────────────────
 r.get("/catalog", requireModule("catalog"), CatalogProductController.index);
@@ -99,6 +100,7 @@ r.delete("/catalog/:id", requireModule("catalog"), CatalogProductController.dest
 r.post("/catalog/import", requireModule("catalog"), CatalogProductController.importFromXLS);
 
 // ─── Cookies ML ────────────────────────────────────────────────
+r.get("/cookies/status", CookieController.status); // deve vir antes de /cookies para não ser capturado como parâmetro
 r.get("/cookies", CookieController.index);
 r.post("/cookies", CookieController.update);
 r.delete("/cookies", CookieController.destroy);

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 import AppLayout from "./components/AppLayout";
 import LoginPage from "./pages/LoginPage";
@@ -11,6 +12,7 @@ import LinksPage from "./pages/LinksPage";
 import CatalogPage from "./pages/CatalogPage";
 import MeliPage from "./pages/MeliPage";
 import MeliMessagesPage from "./pages/MeliMessagesPage";
+import SetupCookiesPage from "./pages/SetupCookiesPage";
 import PriceAnalyzePage from "./pages/PriceAnalyzePage";
 import SellerMonitorPage from "./pages/SellerMonitorPage";
 import MlCookiesPage from "./pages/MlCookiesPage";
@@ -58,7 +60,7 @@ export default function App() {
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+          <Route element={<ProtectedRoute><NotificationProvider><AppLayout /></NotificationProvider></ProtectedRoute>}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/plans" element={<PlansPage />} />
             <Route path="/links" element={<LinksPage />} />
@@ -72,6 +74,7 @@ export default function App() {
             <Route path="/ml-cookies" element={<MlCookiesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/team" element={<OwnerRoute><TeamPage /></OwnerRoute>} />
+            <Route path="/setup-cookies" element={<SetupCookiesPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

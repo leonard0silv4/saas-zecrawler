@@ -14,9 +14,12 @@ import {
   Store,
   Trash2,
   X,
+  Zap,
 } from "lucide-react";
 import api from "../services/api";
 import { apiErrorMessage, notifyError, notifyWarning } from "../utils/notify.js";
+import { useNotifications } from "../contexts/NotificationContext";
+import { useSmartSuggestions } from "../hooks/useSmartSuggestions";
 
 const QUESTIONS_POLL_MS = 5 * 60 * 1000;
 
@@ -43,7 +46,15 @@ function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 12) return "Bom dia";
+  if (h >= 12 && h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 export default function MeliMessagesPage() {
+  const { hasDotForUserId, fetchUnread } = useNotifications();
   const [accounts, setAccounts] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [statusFilter, setStatusFilter] = useState("UNANSWERED");
@@ -67,6 +78,10 @@ export default function MeliMessagesPage() {
   const [buyerThread, setBuyerThread] = useState([]);
   const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
   const replyTextareaRef = useRef(null);
+  const hashAnchorRef = useRef(null);
+  const [hashQuery, setHashQuery] = useState("");
+  const [hashDropdownOpen, setHashDropdownOpen] = useState(false);
+  const [hashDropdownIndex, setHashDropdownIndex] = useState(0);
 
   async function loadAccounts() {
     const { data } = await api.get("/meli/accounts");
@@ -167,6 +182,30 @@ export default function MeliMessagesPage() {
     [questions, selectedQuestionId]
   );
 
+  const smartSuggestions = useSmartSuggestions(selectedQuestion?.text);
+
+  function applySuggestion(text) {
+    setReplyText((prev) => (prev.trim() ? `${prev.trimEnd()}\n${text}` : text));
+    requestAnimationFrame(() => {
+      const ta = replyTextareaRef.current;
+      if (!ta) return;
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    });
+  }
+
+  // Fechar dropdown de hashtag ao clicar fora
+  useEffect(() => {
+    if (!hashDropdownOpen) return;
+    function handleClickOutside(e) {
+      if (hashAnchorRef.current && !hashAnchorRef.current.contains(e.target)) {
+        setHashDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [hashDropdownOpen]);
+
   const filteredProducts = useMemo(() => {
     const search = productSearch.trim().toLowerCase();
     if (!search) return products.slice(0, 8);
@@ -202,19 +241,22 @@ export default function MeliMessagesPage() {
 
   function insertProductLink(permalink) {
     if (!permalink) return;
+    const greeting = getGreeting();
+    const formattedText = `${greeting}! Aqui está o anúncio que você procura. ${permalink}`;
     const ta = replyTextareaRef.current;
     if (!ta) {
-      setReplyText((prev) => `${prev}${prev ? "\n" : ""}${permalink}`);
+      setReplyText((prev) => `${prev}${prev ? "\n" : ""}${formattedText}`);
+      setProductSearch("");
       return;
     }
     const start = ta.selectionStart ?? replyText.length;
     const end = ta.selectionEnd ?? replyText.length;
-    const next = `${replyText.slice(0, start)}${permalink}${replyText.slice(end)}`;
+    const next = `${replyText.slice(0, start)}${formattedText}${replyText.slice(end)}`;
     setReplyText(next);
     setProductSearch("");
     requestAnimationFrame(() => {
       ta.focus();
-      const cursor = start + permalink.length;
+      const cursor = start + formattedText.length;
       ta.setSelectionRange(cursor, cursor);
     });
   }
@@ -244,6 +286,7 @@ export default function MeliMessagesPage() {
     try {
       await api.post("/meli/messages/sync");
       await loadQuestions();
+      fetchUnread(); // atualiza contagem de não respondidas no badge
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao sincronizar perguntas");
     } finally {
@@ -263,6 +306,7 @@ export default function MeliMessagesPage() {
       await api.post(`/meli/messages/questions/${selectedQuestion.question_id}/reply`, { text });
       setReplyText("");
       await loadQuestions();
+      fetchUnread();
     } catch (error) {
       notifyError(apiErrorMessage(error, "Erro ao enviar resposta manual"));
     } finally {
@@ -300,17 +344,66 @@ export default function MeliMessagesPage() {
     }
   }
 
-  async function sendTemplateReply(templateId) {
-    if (!selectedQuestion || !templateId) return;
-    setSendingReply(true);
-    try {
-      await api.post(`/meli/messages/questions/${selectedQuestion.question_id}/reply`, { templateId });
-      await loadQuestions();
-    } catch (error) {
-      notifyError(apiErrorMessage(error, "Erro ao enviar resposta por template"));
-    } finally {
-      setSendingReply(false);
+  // Hashtag autocomplete: sugestões filtradas por nome
+  const hashSuggestions = useMemo(() => {
+    if (!hashDropdownOpen) return [];
+    return templates
+      .filter((t) => t.isActive && t.name.toLowerCase().includes(hashQuery))
+      .slice(0, 6);
+  }, [hashDropdownOpen, hashQuery, templates]);
+
+  function handleReplyChange(e) {
+    const val = e.target.value;
+    setReplyText(val);
+    const cursor = e.target.selectionStart;
+    const prefix = val.slice(0, cursor);
+    const match = /(^|\s)#(\w*)$/.exec(prefix);
+    if (match) {
+      setHashQuery(match[2].toLowerCase());
+      setHashDropdownOpen(true);
+      setHashDropdownIndex(0);
+    } else {
+      setHashDropdownOpen(false);
+      setHashQuery("");
     }
+  }
+
+  function handleReplyKeyDown(e) {
+    if (!hashDropdownOpen || hashSuggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHashDropdownIndex((i) => (i + 1) % hashSuggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHashDropdownIndex((i) => (i - 1 + hashSuggestions.length) % hashSuggestions.length);
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      if (hashSuggestions[hashDropdownIndex]) {
+        e.preventDefault();
+        applyHashTemplate(hashSuggestions[hashDropdownIndex]);
+      }
+    } else if (e.key === "Escape") {
+      setHashDropdownOpen(false);
+    }
+  }
+
+  function applyHashTemplate(template) {
+    const ta = replyTextareaRef.current;
+    const cursor = ta ? ta.selectionStart : replyText.length;
+    const prefix = replyText.slice(0, cursor);
+    const match = /(^|\s)(#\w*)$/.exec(prefix);
+    if (!match) return;
+    const tokenStart = cursor - match[2].length;
+    const next = replyText.slice(0, tokenStart) + template.content + replyText.slice(cursor);
+    setReplyText(next);
+    setHashDropdownOpen(false);
+    setHashQuery("");
+    requestAnimationFrame(() => {
+      if (ta) {
+        ta.focus();
+        const pos = tokenStart + template.content.length;
+        ta.setSelectionRange(pos, pos);
+      }
+    });
   }
 
   async function createTemplate() {
@@ -420,21 +513,28 @@ export default function MeliMessagesPage() {
             Conta:
           </span>
           <div className="flex flex-wrap gap-2">
-            {accounts.map((a) => (
-              <button
-                key={a.user_id}
-                type="button"
-                onClick={() => setSelectedUserId(String(a.user_id))}
-                className={cn(
-                  "px-3 py-2 rounded-lg text-sm transition",
-                  selectedUserId === String(a.user_id)
-                    ? "bg-brand-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                )}
-              >
-                {a.nickname || a.user_id}
-              </button>
-            ))}
+            {accounts.map((a) => {
+              const uid = String(a.user_id);
+              const hasDot = hasDotForUserId(uid);
+              return (
+                <button
+                  key={a.user_id}
+                  type="button"
+                  onClick={() => setSelectedUserId(uid)}
+                  className={cn(
+                    "relative px-3 py-2 rounded-lg text-sm transition",
+                    selectedUserId === uid
+                      ? "bg-brand-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  )}
+                >
+                  {a.nickname || a.user_id}
+                  {hasDot && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -602,6 +702,26 @@ export default function MeliMessagesPage() {
                 </div>
               )}
 
+              {selectedQuestion.status !== "ANSWERED" && smartSuggestions.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-400 mb-1.5 flex items-center gap-1">
+                    <Zap size={11} /> Sugestões rápidas
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {smartSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => applySuggestion(s)}
+                        className="text-xs px-2.5 py-1 rounded-full border border-brand-200 text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedQuestion.status !== "ANSWERED" && (
               <div>
                 <label className="text-xs text-gray-500 block mb-1 flex items-center gap-1">
@@ -656,13 +776,39 @@ export default function MeliMessagesPage() {
               {selectedQuestion.status !== "ANSWERED" && (
                 <div>
                   <label className="text-xs text-gray-500 block mb-1">Sua resposta</label>
-                  <textarea
-                    ref={replyTextareaRef}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[140px]"
-                    placeholder="Escreva sua resposta..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                  />
+                  <div className="relative" ref={hashAnchorRef}>
+                    <textarea
+                      ref={replyTextareaRef}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm min-h-[140px]"
+                      placeholder="Escreva sua resposta... (# para templates)"
+                      value={replyText}
+                      onChange={handleReplyChange}
+                      onKeyDown={handleReplyKeyDown}
+                    />
+                    {hashDropdownOpen && hashSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                        {hashSuggestions.map((t, idx) => (
+                          <button
+                            key={t._id}
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); applyHashTemplate(t); }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-sm flex items-center gap-2",
+                              idx === hashDropdownIndex
+                                ? "bg-brand-50 text-brand-700"
+                                : "hover:bg-gray-50 text-gray-700"
+                            )}
+                          >
+                            <span className="font-medium shrink-0">#{t.name}</span>
+                            <span className="text-xs text-gray-400 line-clamp-1 flex-1">{t.content}</span>
+                          </button>
+                        ))}
+                        <p className="px-3 py-1.5 text-[10px] text-gray-400 border-t border-gray-100">
+                          Enter para inserir · Esc para fechar
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -703,30 +849,6 @@ export default function MeliMessagesPage() {
                 >
                   <ExternalLink size={16} />
                 </button>
-                {templates
-                  .filter((t) => t.isActive)
-                  .slice(0, 3)
-                  .map((t) => (
-                    <div key={t._id} className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => insertTemplateInReply(t.content)}
-                        disabled={selectedQuestion.status === "ANSWERED"}
-                        className="px-3 py-2 rounded-lg border border-gray-200 text-sm disabled:opacity-50"
-                        title={t.content}
-                      >
-                        Inserir: {t.name}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => sendTemplateReply(t._id)}
-                        disabled={sendingReply || selectedQuestion.status === "ANSWERED"}
-                        className="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs disabled:opacity-50"
-                      >
-                        Enviar
-                      </button>
-                    </div>
-                  ))}
               </div>
             </>
           )}
@@ -755,7 +877,7 @@ export default function MeliMessagesPage() {
         {templates.length > 0 && (
           <div className="border border-gray-100 rounded-lg divide-y divide-gray-100">
             {templates.map((t) => (
-              <div key={t._id} className="p-3 flex flex-wrap items-center gap-2 justify-between">
+              <div key={t._id} className="p-3 flex items-center gap-2 justify-between">
                 {editingTemplateId === t._id ? (
                   <div className="w-full space-y-2">
                     <input
@@ -783,7 +905,7 @@ export default function MeliMessagesPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {t.name} {!t.isActive && <span className="text-xs text-gray-500">(inativo)</span>}
                       </p>

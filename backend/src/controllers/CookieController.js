@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Cookie from "../models/Cookie.js";
 import { getOwnerId } from "../middleware/auth.js";
 
@@ -61,6 +62,16 @@ export default {
       return res.json({ ok: true });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao limpar cookies" });
+    }
+  },
+
+  async status(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const exists = await Cookie.exists({ ownerId: new mongoose.Types.ObjectId(String(ownerId)) });
+      return res.json({ hasCookies: exists !== null });
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao verificar cookies" });
     }
   },
 };
