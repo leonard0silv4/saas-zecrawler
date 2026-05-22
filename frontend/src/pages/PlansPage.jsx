@@ -5,7 +5,7 @@ import { Check, Zap, CreditCard, AlertCircle, CheckCircle2, XCircle } from "luci
 import api from "../services/api";
 
 export default function PlansPage() {
-  const { user } = useAuth();
+  const { user, isOwner } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [plans, setPlans] = useState({});
   const [subStatus, setSubStatus] = useState(null);
@@ -227,8 +227,8 @@ export default function PlansPage() {
         })}
       </div>
 
-      {/* Billing management */}
-      {user?.hasSubscription && (
+      {/* Billing management — visível apenas para o owner */}
+      {user?.hasSubscription && isOwner && (
         <div className="text-center mt-10 space-y-3">
           <button onClick={openPortal}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all">

@@ -1,5 +1,5 @@
 import { useAuth } from "../contexts/AuthContext";
-import { Link2, BookOpen, ShoppingBag, Crown, LineChart, Store } from "lucide-react";
+import { Link2, BookOpen, ShoppingBag, Lock, LineChart, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CARDS = [
@@ -11,7 +11,7 @@ const CARDS = [
 ];
 
 export default function DashboardPage() {
-  const { user, canAccess } = useAuth();
+  const { user, canAccess, isBlockedByPlan } = useAuth();
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -26,19 +26,22 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {CARDS.map((card) => {
           const locked = !canAccess(card.module);
+          const planLocked = locked && isBlockedByPlan(card.module);
+          const permissionLocked = locked && !planLocked;
           return (
-            <Link key={card.to} to={locked ? "/plans" : card.to}
-              className={`group relative bg-white rounded-xl border border-gray-100 p-5 transition-all hover:shadow-md hover:border-gray-200 ${locked ? "opacity-60" : ""}`}>
+            <Link
+              key={card.to}
+              to={planLocked ? "/plans" : card.to}
+              onClick={(e) => { if (permissionLocked) e.preventDefault(); }}
+              className={`group relative bg-white rounded-xl border border-gray-100 p-5 transition-all hover:shadow-md hover:border-gray-200 ${locked ? "opacity-60 cursor-default" : ""}`}
+            >
               <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-4`}>
                 <card.icon size={20} className="text-white" />
               </div>
               <h3 className="font-semibold text-gray-900 group-hover:text-brand-700 transition-colors">{card.label}</h3>
               <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
-              {locked && (
-                <div className="absolute top-4 right-4 flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-                  <Crown size={12} /> Upgrade
-                </div>
-              )}
+              {planLocked       && <Lock size={14} className="absolute top-4 right-4 text-amber-500" />}
+              {permissionLocked && <Lock size={14} className="absolute top-4 right-4 text-gray-400" />}
             </Link>
           );
         })}

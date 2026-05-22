@@ -2,7 +2,7 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Link2, BookOpen, ShoppingBag,
-  LogOut, LayoutDashboard, Crown, Menu, X, CreditCard,
+  LogOut, LayoutDashboard, Crown, Lock, Menu, X, CreditCard,
   LineChart, Store, Settings, MessageCircle, Unplug, Users
 } from "lucide-react";
 import { useState } from "react";
@@ -21,7 +21,7 @@ const NAV = [
 ];
 
 export default function AppLayout() {
-  const { user, logout, canAccess, manageBilling, isOwner } = useAuth();
+  const { user, logout, canAccess, isBlockedByPlan, manageBilling, isOwner } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -62,21 +62,27 @@ export default function AppLayout() {
 
               const active = location.pathname === item.to;
               const locked = item.module && !canAccess(item.module);
+              const planLocked = locked && isBlockedByPlan(item.module);
+              const permissionLocked = locked && !planLocked;
 
               return (
                 <Link
                   key={item.to}
-                  to={locked ? "/plans" : item.to}
-                  onClick={() => setSidebarOpen(false)}
+                  to={planLocked ? "/plans" : item.to}
+                  onClick={(e) => {
+                    if (permissionLocked) e.preventDefault();
+                    setSidebarOpen(false);
+                  }}
                   className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
                     ${active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}
-                    ${locked ? "opacity-50" : ""}
+                    ${locked ? "opacity-50 cursor-default" : ""}
                   `}
                 >
                   <item.icon size={18} />
                   <span>{item.label}</span>
-                  {locked && <Crown size={14} className="ml-auto text-amber-500" />}
+                  {planLocked       && <Lock size={14} className="ml-auto text-amber-500" />}
+                  {permissionLocked && <Lock size={14} className="ml-auto text-gray-400" />}
                 </Link>
               );
             })}

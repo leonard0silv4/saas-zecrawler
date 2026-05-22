@@ -62,6 +62,25 @@ export function AuthProvider({ children }) {
     return moduleMap[module]?.includes(plan) || false;
   }
 
+  function isBlockedByPlan(module) {
+    if (module == null) return false;
+    const planMods = user?.planModules;
+    if (Array.isArray(planMods)) {
+      return !planMods.includes(module);
+    }
+    // fallback via moduleMap quando planModules ainda não está no payload
+    const plan = user?.effectivePlan || user?.plan || "free";
+    const moduleMap = {
+      links: ["free", "starter", "pro", "business"],
+      priceAnalyze: ["free", "starter", "pro", "business"],
+      catalog: ["pro", "business"],
+      meli: ["starter", "pro", "business"],
+      meliMessages: ["business"],
+      sellerMonitor: ["free", "starter", "pro", "business"],
+    };
+    return !(moduleMap[module]?.includes(plan) || false);
+  }
+
   async function refreshUser() {
     try {
       const { data } = await api.get("/auth/me");
@@ -80,7 +99,7 @@ export function AuthProvider({ children }) {
   const isOwner = user?.role === "owner";
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, canAccess, refreshUser, manageBilling, isOwner }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, canAccess, isBlockedByPlan, refreshUser, manageBilling, isOwner }}>
       {children}
     </AuthContext.Provider>
   );
