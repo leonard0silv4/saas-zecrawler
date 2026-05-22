@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
-import { Check, Zap, CreditCard, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { Check, Zap, CreditCard, AlertCircle, CheckCircle2, XCircle, Info } from "lucide-react";
 import api from "../services/api";
 
 export default function PlansPage() {
@@ -112,6 +112,14 @@ export default function PlansPage() {
         <p className="text-gray-500 mt-1">Escolha o plano ideal para o seu negócio</p>
       </div>
 
+      {/* Aviso para não-owners */}
+      {!isOwner && (
+        <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 text-sm max-w-3xl mx-auto">
+          <Info size={18} className="shrink-0" />
+          <span>Somente o administrador da conta pode alterar o plano ou gerenciar a assinatura.</span>
+        </div>
+      )}
+
       {/* Cancel pending banner */}
       {cancelPending && (
         <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 text-amber-700 text-sm max-w-3xl mx-auto">
@@ -199,7 +207,7 @@ export default function PlansPage() {
                 <div className="text-center text-sm font-medium text-brand-600 bg-brand-50 py-2.5 rounded-lg">
                   Plano atual
                 </div>
-              ) : (
+              ) : isOwner ? (
                 <button
                   onClick={() => handleUpgrade(plan.slug)}
                   disabled={!!upgrading}
@@ -217,11 +225,11 @@ export default function PlansPage() {
                   ) : (
                     <>
                       {plan.price > 0 && <Zap size={14} />}
-                      {plan.price === 0 ? "Usar gratuito" : isCurrent ? "Plano atual" : "Assinar"}
+                      {plan.price === 0 ? "Usar gratuito" : "Assinar"}
                     </>
                   )}
                 </button>
-              )}
+              ) : null}
             </div>
           );
         })}
