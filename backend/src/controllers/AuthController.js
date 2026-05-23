@@ -1,8 +1,10 @@
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { PLANS } from "../../config/plans.js";
 import { computeAccess, loadTeamPermissions } from "../utils/access.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 export default {
   async register(req, res) {
@@ -94,6 +96,64 @@ export default {
 
   async getPlans(req, res) {
     return res.json(PLANS);
+  },
+
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: "Email é obrigatório" });
+
+      // Sempre retorna 200 para não revelar se o email existe
+      const user = await User.findOne({ email: email.toLowerCase().trim() });
+      if (!user) return res.json({ message: "Se o email estiver cadastrado, você receberá o link em breve." });
+
+      // Gera token aleatório e salva hash no banco
+      const tokenPlain = crypto.randomBytes(32).toString("hex");
+      const tokenHash  = crypto.createHash("sha256").update(tokenPlain).digest("hex");
+
+      user.resetToken          = tokenHash;
+      user.resetTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      await user.save();
+
+      await sendPasswordResetEmail(user.email, tokenPlain);
+
+      return res.json({ message: "Se o email estiver cadastrado, você receberá o link em breve." });
+    } catch (err) {
+      console.error("Erro em forgotPassword:", err);
+      return res.status(500).json({ error: "Erro ao processar solicitação" });
+    }
+  },
+
+  async resetPassword(req, res) {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: "Token e nova senha são obrigatórios" });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Senha deve ter pelo menos 6 caracteres" });
+      }
+
+      const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      const user = await User.findOne({
+        resetToken: tokenHash,
+        resetTokenExpiresAt: { $gt: new Date() },
+      });
+
+      if (!user) {
+        return res.status(400).json({ error: "Token inválido ou expirado" });
+      }
+
+      user.password            = await bcrypt.hash(newPassword, 10);
+      user.resetToken          = null;
+      user.resetTokenExpiresAt = null;
+      await user.save();
+
+      return res.json({ message: "Senha atualizada com sucesso" });
+    } catch (err) {
+      console.error("Erro em resetPassword:", err);
+      return res.status(500).json({ error: "Erro ao redefinir senha" });
+    }
   },
 };
 

@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema(
     emailNotify: { type: String },
     cronInterval: { type: String, default: "0 * * * *" },
     sendEmail: { type: Boolean, default: false },
+
+    // Password reset
+    resetToken:          { type: String, default: null },
+    resetTokenExpiresAt: { type: Date,   default: null },
   },
   { timestamps: true }
 );

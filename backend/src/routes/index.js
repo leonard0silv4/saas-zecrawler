@@ -23,11 +23,13 @@ r.get("/", (req, res) => res.json({ status: "ok", version: "2.0.0" }));
 r.get("/health", (req, res) => res.json({ status: "ok", date: new Date() }));
 
 // ─── Auth (public) ─────────────────────────────────────────────
-r.post("/auth/register", AuthController.register);
-r.post("/auth/login", AuthController.login);
-r.get("/auth/me", authenticate, AuthController.me);
-r.put("/auth/plan", authenticate, AuthController.updatePlan);
-r.get("/plans", AuthController.getPlans);
+r.post("/auth/register",         AuthController.register);
+r.post("/auth/login",            AuthController.login);
+r.get("/auth/me",                authenticate, AuthController.me);
+r.put("/auth/plan",              authenticate, AuthController.updatePlan);
+r.get("/plans",                  AuthController.getPlans);
+r.post("/auth/forgot-password",  AuthController.forgotPassword);
+r.post("/auth/reset-password",   AuthController.resetPassword);
 
 // ─── ML OAuth (public callbacks) ───────────────────────────────
 r.get("/meli/auth", MeliController.authRedirect);

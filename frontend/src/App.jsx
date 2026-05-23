@@ -9,6 +9,8 @@ import RegisterPage from "./pages/RegisterPage";
 import PublicPricingPage from "./pages/PublicPricingPage";
 import AboutPage from "./pages/AboutPage";
 import FaqPage from "./pages/FaqPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import PlansPage from "./pages/PlansPage";
 import LinksPage from "./pages/LinksPage";
@@ -64,6 +66,8 @@ export default function App() {
           <Route path="/precos" element={<PublicPricingPage />} />
           <Route path="/sobre" element={<AboutPage />} />
           <Route path="/faq" element={<FaqPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
