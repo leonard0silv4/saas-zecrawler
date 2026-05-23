@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { ExternalLink, Filter, RefreshCw, X, AlertTriangle, TrendingUp, Play } from "lucide-react";
 import api from "../services/api";
 import { parseXML, getDefaultMyStoresUppercase } from "../lib/priceAnalyzeXml";
@@ -37,6 +38,8 @@ export default function PriceAnalyzePage() {
   const [noXmlYet, setNoXmlYet] = useState(false);
   const [extractionDate, setExtractionDate] = useState(null);
   const [productGroups, setProductGroups] = useState([]);
+
+  const [cookiesAlert, setCookiesAlert] = useState(false);
 
   const [filterAlert, setFilterAlert] = useState(false);
   const [filterCompetitor, setFilterCompetitor] = useState(false);
@@ -105,12 +108,17 @@ export default function PriceAnalyzePage() {
   async function handleGenerate() {
     setGenerating(true);
     setError(null);
+    setCookiesAlert(false);
     try {
-      await api.post(
+      const { data } = await api.post(
         "/price-analyze/generate",
         { limit: 300 },
         { timeout: GENERATE_TIMEOUT_MS }
       );
+      // Tinha links cadastrados mas nenhum produto foi extraído → cookies provavelmente inválidos/expirados
+      if (data.urlsProcessadas > 0 && data.linhasProduto === 0) {
+        setCookiesAlert(true);
+      }
       await loadXml();
     } catch (e) {
       setError(e.response?.data?.error || e.message || "Erro ao gerar XML");
@@ -202,6 +210,22 @@ export default function PriceAnalyzePage() {
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
+        </div>
+      )}
+
+      {cookiesAlert && !generating && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertTriangle size={16} className="shrink-0 text-red-600" />
+          <span>
+            Nenhum produto foi extraído. Seus cookies do Mercado Livre podem estar{" "}
+            <strong>desconfigurados ou expirados</strong>. O sistema não conseguiu buscar os dados.
+          </span>
+          <Link
+            to="/setup-cookies"
+            className="ml-auto shrink-0 rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 transition-colors"
+          >
+            Configurar cookies →
+          </Link>
         </div>
       )}
 
