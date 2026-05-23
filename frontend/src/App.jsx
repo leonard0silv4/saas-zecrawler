@@ -6,6 +6,9 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import AppLayout from "./components/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import PublicPricingPage from "./pages/PublicPricingPage";
+import AboutPage from "./pages/AboutPage";
+import FaqPage from "./pages/FaqPage";
 import DashboardPage from "./pages/DashboardPage";
 import PlansPage from "./pages/PlansPage";
 import LinksPage from "./pages/LinksPage";
@@ -57,6 +60,11 @@ export default function App() {
       <AuthProvider>
         <Toaster position="top-right" richColors closeButton duration={5000} />
         <Routes>
+          {/* Páginas públicas institucionais */}
+          <Route path="/precos" element={<PublicPricingPage />} />
+          <Route path="/sobre" element={<AboutPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
