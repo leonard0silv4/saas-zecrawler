@@ -179,7 +179,7 @@ export default {
         return res.status(403).json({ error: "Apenas o proprietário pode encerrar a conta." });
       }
 
-      const ownerId = req.user._id;
+      const ownerId = req.user.id;
       const user = await User.findById(ownerId);
       if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
 
@@ -257,7 +257,16 @@ async function loadOwnerDoc(user) {
 
 async function sanitizeUser(user, ownerDoc = null) {
   const obj = user.toJSON ? user.toJSON() : user;
-  const { password, ...rest } = obj;
+  const {
+    password,
+    resetToken,
+    resetTokenExpiresAt,
+    stripeCustomerId,
+    stripeSubscriptionId,
+    stripeSubscriptionStatus,
+    __v,
+    ...rest
+  } = obj;
   const ownerPlain = ownerDoc
     ? ownerDoc.toJSON
       ? ownerDoc.toJSON()
