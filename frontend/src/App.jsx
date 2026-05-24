@@ -62,6 +62,9 @@ export default function App() {
       <AuthProvider>
         <Toaster position="top-right" richColors closeButton duration={5000} />
         <Routes>
+          {/* Home → login (URL canônica limpa para o Google) */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
           {/* Páginas públicas institucionais */}
           <Route path="/price" element={<PublicPricingPage />} />
           <Route path="/about-us" element={<AboutPage />} />

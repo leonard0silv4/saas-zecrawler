@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import PublicLayout from "../components/PublicLayout";
+import SEO from "../components/SEO";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -27,6 +28,11 @@ export default function LoginPage() {
 
   return (
     <PublicLayout>
+      <SEO
+        title="Gestão Inteligente para Mercado Livre"
+        description="Monitore links, analise preços e gerencie seus anúncios no Mercado Livre com o ML SmartHub."
+        canonical="/login"
+      />
       <div className="flex items-center justify-center">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">

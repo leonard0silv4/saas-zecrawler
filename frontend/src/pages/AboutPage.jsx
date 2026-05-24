@@ -3,6 +3,7 @@ import {
   BarChart2, ShieldCheck, Zap, Users, TrendingUp, Globe, ArrowRight
 } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
+import SEO from "../components/SEO";
 
 const DIFFERENTIALS = [
   {
@@ -59,6 +60,11 @@ const STATS = [
 export default function AboutPage() {
   return (
     <PublicLayout noPadding>
+      <SEO
+        title="Sobre Nós"
+        description="Conheça o ML SmartHub e como ajudamos vendedores do Mercado Livre a crescerem com dados e automação."
+        canonical="/about-us"
+      />
       <div className="px-4 py-12 max-w-5xl mx-auto">
 
         {/* Hero */}

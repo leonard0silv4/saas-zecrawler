@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /price
+Allow: /about-us
+Allow: /faq
+
+Disallow: /dashboard
+Disallow: /links
+Disallow: /plans
+Disallow: /price-analyze
+Disallow: /seller-monitor
+Disallow: /catalog
+Disallow: /meli
+Disallow: /settings
+Disallow: /team
+Disallow: /setup-cookies
+Disallow: /ml-cookies
+
+Sitemap: https://mlsmarthub.com.br/sitemap.xml

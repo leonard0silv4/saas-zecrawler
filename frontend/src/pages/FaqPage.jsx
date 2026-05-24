@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, MessageCircle, Zap } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
+import SEO from "../components/SEO";
 
 const FAQ_GROUPS = [
   {
@@ -113,6 +114,11 @@ function FaqItem({ q, a }) {
 export default function FaqPage() {
   return (
     <PublicLayout noPadding>
+      <SEO
+        title="Perguntas Frequentes"
+        description="Tire suas dúvidas sobre o ML SmartHub: funcionalidades, planos, integrações e suporte."
+        canonical="/faq"
+      />
       <div className="px-4 py-12 max-w-3xl mx-auto">
 
         {/* Hero */}

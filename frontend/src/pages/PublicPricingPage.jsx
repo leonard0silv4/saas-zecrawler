@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, X, Minus, Zap, ArrowRight } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
+import SEO from "../components/SEO";
 import api from "../services/api";
 
 // Matriz de features para a tabela comparativa
@@ -51,6 +52,11 @@ export default function PublicPricingPage() {
 
   return (
     <PublicLayout noPadding>
+      <SEO
+        title="Planos e Preços"
+        description="Free, Starter, Pro ou Business: escolha o plano ideal para alavancar suas vendas no Mercado Livre."
+        canonical="/price"
+      />
       <div className="px-4 py-12 max-w-6xl mx-auto">
 
         {/* Hero */}
