@@ -50,7 +50,7 @@ export default function AppLayout() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100">
-            <span className="text-lg font-bold text-brand-700 tracking-tight">ML SmartHub</span>
+            <img src="/logo.png" alt="ML SmartHub" className="h-8 w-auto" />
             <button className="lg:hidden p-1" onClick={() => setSidebarOpen(false)}>
               <X size={20} />
             </button>
@@ -133,7 +133,7 @@ export default function AppLayout() {
           <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2">
             <Menu size={20} />
           </button>
-          <span className="ml-3 font-bold text-brand-700">ML SmartHub</span>
+          <img src="/logo.png" alt="ML SmartHub" className="ml-3 h-7 w-auto" />
         </header>
 
         {/* Banner: cookies ML não configurados */}

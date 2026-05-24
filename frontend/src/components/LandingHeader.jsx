@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
   { to: "/precos", label: "Planos" },
@@ -17,11 +17,8 @@ export default function LandingHeader() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/login" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center shadow-sm group-hover:bg-brand-700 transition-colors">
-              <Zap size={16} className="text-white" />
-            </div>
-            <span className="text-lg font-bold text-brand-700 tracking-tight">ML SmartHub</span>
+          <Link to="/login" className="flex items-center group">
+            <img src="/logo.png" alt="ML SmartHub" className="h-9 w-auto" />
           </Link>
 
           {/* Desktop nav */}
