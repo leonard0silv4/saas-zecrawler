@@ -1,10 +1,27 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import Stripe from "stripe";
 import User from "../models/User.js";
+import Team from "../models/Team.js";
+import Link from "../models/Link.js";
+import Conta from "../models/Conta.js";
+import Cookie from "../models/Cookie.js";
+import MeliQuestion from "../models/MeliQuestion.js";
+import MeliProduct from "../models/MeliProduct.js";
+import MeliMessageTemplate from "../models/MeliMessageTemplate.js";
+import CatalogProduct from "../models/CatalogProduct.js";
+import Nf from "../models/Nf.js";
+import PriceAnalyzeSnapshot from "../models/PriceAnalyzeSnapshot.js";
+import SellerPage from "../models/SellerPage.js";
+import SellerProduct from "../models/SellerProduct.js";
+import SellerAlert from "../models/SellerAlert.js";
+import { ExpedicaoRegistro, ExpedicaoMeta, ExpedicaoDiaEncerrado } from "../models/Expedicao.js";
 import { PLANS } from "../../config/plans.js";
 import { computeAccess, loadTeamPermissions } from "../utils/access.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default {
   async register(req, res) {
@@ -153,6 +170,72 @@ export default {
     } catch (err) {
       console.error("Erro em resetPassword:", err);
       return res.status(500).json({ error: "Erro ao redefinir senha" });
+    }
+  },
+
+  async deleteAccount(req, res) {
+    try {
+      if (req.user.role !== "owner") {
+        return res.status(403).json({ error: "Apenas o proprietário pode encerrar a conta." });
+      }
+
+      const ownerId = req.user._id;
+      const user = await User.findById(ownerId);
+      if (!user) return res.status(404).json({ error: "Usuário não encontrado." });
+
+      // 1. Cancelar assinatura Stripe imediatamente
+      if (user.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(user.stripeSubscriptionId);
+        } catch (stripeErr) {
+          console.warn("Aviso: erro ao cancelar assinatura Stripe:", stripeErr.message);
+        }
+      }
+      // Remover customer Stripe (GDPR / limpeza)
+      if (user.stripeCustomerId) {
+        try {
+          await stripe.customers.del(user.stripeCustomerId);
+        } catch {
+          // ignora se customer não existir mais
+        }
+      }
+
+      // 2. SellerMonitor: SellerPages → SellerProducts + SellerAlerts (cascata manual)
+      const sellerPages = await SellerPage.find({ ownerId }).select("_id");
+      const sellerPageIds = sellerPages.map((sp) => sp._id);
+      if (sellerPageIds.length > 0) {
+        await SellerAlert.deleteMany({ sellerId: { $in: sellerPageIds } });
+        await SellerProduct.deleteMany({ sellerId: { $in: sellerPageIds } });
+      }
+      await SellerPage.deleteMany({ ownerId });
+
+      // 3. Dados MercadoLibre
+      await MeliQuestion.deleteMany({ ownerId });
+      await MeliProduct.deleteMany({ ownerId });
+      await MeliMessageTemplate.deleteMany({ ownerId });
+      await Conta.deleteMany({ ownerId });
+
+      // 4. Demais dados do owner
+      await Link.deleteMany({ ownerId });
+      await Cookie.deleteMany({ ownerId });
+      await CatalogProduct.deleteMany({ ownerId });
+      await Nf.deleteMany({ ownerId });
+      await PriceAnalyzeSnapshot.deleteMany({ ownerId });
+      await ExpedicaoRegistro.deleteMany({ ownerId });
+      await ExpedicaoMeta.deleteMany({ ownerId });
+      await ExpedicaoDiaEncerrado.deleteMany({ ownerId });
+
+      // 5. Sub-usuários e times
+      await User.deleteMany({ ownerId });
+      await Team.deleteMany({ ownerId });
+
+      // 6. Owner (por último)
+      await User.findByIdAndDelete(ownerId);
+
+      return res.json({ message: "Conta encerrada com sucesso." });
+    } catch (err) {
+      console.error("Erro ao encerrar conta:", err);
+      return res.status(500).json({ error: "Erro ao encerrar conta. Tente novamente." });
     }
   },
 };

@@ -38,6 +38,9 @@ r.get("/meli/callback", MeliController.authCallback);
 // ─── All routes below require authentication ───────────────────
 r.use(authenticate);
 
+// ─── Encerramento de conta (owner only) ────────────────────────
+r.delete("/auth/account", requireOwner, AuthController.deleteAccount);
+
 // ─── Configurações da conta (owner) ────────────────────────────
 r.get("/settings", SettingsController.show);
 r.put("/settings", SettingsController.update);

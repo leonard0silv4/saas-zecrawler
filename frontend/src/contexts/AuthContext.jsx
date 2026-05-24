@@ -96,10 +96,17 @@ export function AuthProvider({ children }) {
     window.location.href = data.url;
   }
 
+  async function deleteAccount() {
+    await api.delete("/auth/account");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  }
+
   const isOwner = user?.role === "owner";
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, canAccess, isBlockedByPlan, refreshUser, manageBilling, isOwner }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, canAccess, isBlockedByPlan, refreshUser, manageBilling, deleteAccount, isOwner }}>
       {children}
     </AuthContext.Provider>
   );
