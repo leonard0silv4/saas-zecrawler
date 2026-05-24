@@ -120,9 +120,13 @@ export default {
       const { email } = req.body;
       if (!email) return res.status(400).json({ error: "Email é obrigatório" });
 
-      // Sempre retorna 200 para não revelar se o email existe
       const user = await User.findOne({ email: email.toLowerCase().trim() });
-      if (!user) return res.json({ message: "Se o email estiver cadastrado, você receberá o link em breve." });
+      if (!user) {
+        return res.status(404).json({
+          error: "email_not_found",
+          message: "Nenhuma conta foi encontrada com este e-mail.",
+        });
+      }
 
       // Gera token aleatório e salva hash no banco
       const tokenPlain = crypto.randomBytes(32).toString("hex");

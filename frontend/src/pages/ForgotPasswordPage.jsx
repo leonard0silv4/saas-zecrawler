@@ -1,24 +1,30 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, AlertTriangle, UserX } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
 import api from "../services/api";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail]     = useState("");
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent]       = useState(false);
-  const [error, setError]     = useState("");
+  const [email, setEmail]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [sent, setSent]         = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [error, setError]       = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setNotFound(false);
     setLoading(true);
     try {
       await api.post("/auth/forgot-password", { email });
       setSent(true);
     } catch (err) {
-      setError(err.response?.data?.error || "Erro ao processar solicitação");
+      if (err.response?.data?.error === "email_not_found") {
+        setNotFound(true);
+      } else {
+        setError(err.response?.data?.error || "Erro ao processar solicitação");
+      }
     } finally {
       setLoading(false);
     }
@@ -30,17 +36,26 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-sm">
 
           {sent ? (
-            /* ── Estado de sucesso ── */
+            /* ── Sucesso ── */
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center space-y-4">
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-50 mx-auto">
                 <CheckCircle2 size={28} className="text-emerald-500" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Email enviado!</h2>
               <p className="text-sm text-gray-500 leading-relaxed">
-                Se o endereço <strong>{email}</strong> estiver cadastrado,
-                você receberá o link de redefinição em breve.
-                Verifique também a caixa de spam.
+                Enviamos o link de redefinição para <strong>{email}</strong>.
+                Verifique sua caixa de entrada em breve.
               </p>
+
+              {/* Aviso de spam */}
+              <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 text-left">
+                <AlertTriangle size={15} className="text-amber-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Não encontrou o e-mail? Verifique sua{" "}
+                  <strong>caixa de spam</strong> ou lixo eletrônico.
+                </p>
+              </div>
+
               <Link
                 to="/login"
                 className="inline-flex items-center gap-2 text-sm text-brand-600 font-medium hover:underline mt-2"
@@ -49,6 +64,37 @@ export default function ForgotPasswordPage() {
                 Voltar ao login
               </Link>
             </div>
+
+          ) : notFound ? (
+            /* ── E-mail não encontrado ── */
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-orange-50 mx-auto">
+                <UserX size={28} className="text-orange-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">E-mail não encontrado</h2>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Nenhuma conta foi encontrada com o e-mail{" "}
+                <strong>{email}</strong>. Verifique se digitou corretamente
+                ou crie uma nova conta.
+              </p>
+
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center w-full py-2.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium transition-colors"
+              >
+                Criar conta
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setNotFound(false)}
+                className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <ArrowLeft size={14} />
+                Tentar outro e-mail
+              </button>
+            </div>
+
           ) : (
             /* ── Formulário ── */
             <>

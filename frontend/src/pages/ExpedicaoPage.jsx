@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Package, Scan } from "lucide-react";
 import api from "../services/api";
@@ -200,9 +201,9 @@ export default function ExpedicaoPage() {
         )}
       </section>
 
-      {mesaModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !busy && setMesaModal(false)}>
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+      {mesaModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => !busy && setMesaModal(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-semibold text-lg mb-4">Escolha a mesa</h3>
             <div className="grid grid-cols-2 gap-2">
               {MESAS.map((m) => (
@@ -221,12 +222,13 @@ export default function ExpedicaoPage() {
               Cancelar
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {dup && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setDup(null)}>
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
+      {dup && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDup(null)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-semibold text-red-700">Código já registrado</h3>
             <p className="text-sm text-gray-600 mt-2">
               Mesa: <strong>{dup.mesaId}</strong>
@@ -237,7 +239,8 @@ export default function ExpedicaoPage() {
               OK
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

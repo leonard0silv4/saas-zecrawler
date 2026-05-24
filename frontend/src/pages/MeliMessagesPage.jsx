@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   Check,
@@ -944,7 +945,7 @@ export default function MeliMessagesPage() {
       </main>
 
       {/* Modal de confirmação: excluir pergunta */}
-      {deleteQuestionModal && (
+      {deleteQuestionModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-start gap-3">
@@ -993,7 +994,8 @@ export default function MeliMessagesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

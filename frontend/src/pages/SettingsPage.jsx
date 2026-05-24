@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import { Settings, AlertTriangle, Trash2 } from "lucide-react";
 import SettingsPlanSection from "../components/SettingsPlanSection";
@@ -110,7 +111,7 @@ export default function SettingsPage() {
       )}
 
       {/* ─── Modal de confirmação ─────────────────────────────────── */}
-      {showDeleteModal && (
+      {showDeleteModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             {/* Cabeçalho */}
@@ -177,7 +178,8 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

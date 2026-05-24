@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { ExternalLink, Filter, RefreshCw, X, AlertTriangle, TrendingUp, Play } from "lucide-react";
 import api from "../services/api";
@@ -397,10 +398,10 @@ export default function PriceAnalyzePage() {
         </>
       )}
 
-      {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setDetail(null)}>
+      {detail && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDetail(null)}>
           <div
-            className="bg-white rounded-xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 shadow-xl"
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start gap-4 mb-4">
@@ -435,7 +436,8 @@ export default function PriceAnalyzePage() {
                 ))}
             </ul>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

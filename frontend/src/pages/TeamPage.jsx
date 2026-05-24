@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Users,
   Plus,
@@ -59,7 +60,7 @@ function PermBadge({ module }) {
 // ─── Modal genérico ────────────────────────────────────────────────────────────
 function Modal({ open, onClose, title, children }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between">
@@ -70,7 +71,8 @@ function Modal({ open, onClose, title, children }) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -770,7 +772,7 @@ export default function TeamPage() {
       />
 
       {/* Confirmar exclusão de usuário */}
-      {deleteUserId && (
+      {deleteUserId && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Excluir usuário?</h3>
@@ -784,7 +786,8 @@ export default function TeamPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── Modais de time ───────────────────────────────────────────────── */}
@@ -810,7 +813,7 @@ export default function TeamPage() {
       </Modal>
 
       {/* Confirmar exclusão de time */}
-      {deleteTeamId && (
+      {deleteTeamId && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <h3 className="font-semibold text-gray-900">Excluir time?</h3>
@@ -824,7 +827,8 @@ export default function TeamPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

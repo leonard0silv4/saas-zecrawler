@@ -46,6 +46,13 @@ function buildResetHtml(resetUrl) {
                       Se você não solicitou a redefinição de senha, ignore este email — sua senha permanece a mesma.
                     </p>
                   </div>
+                  <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-top:16px;">
+                    <p style="margin:0;font-size:13px;color:#6b7280;text-align:center;line-height:1.6;">
+                      Precisa de ajuda? Responda este e-mail ou fale com nosso suporte em
+                      <a href="mailto:support@mlsmarthub.com.br"
+                         style="color:#2563eb;text-decoration:none;">support@mlsmarthub.com.br</a>
+                    </p>
+                  </div>
                 </td>
               </tr>
               <tr>
@@ -68,7 +75,7 @@ function buildResetHtml(resetUrl) {
 async function sendViaResend(to, resetUrl) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { error } = await resend.emails.send({
-    from: "ML SmartHub <noreply@mlsmarthub.com.br>",
+    from: "ML SmartHub <support@mlsmarthub.com.br>",
     to,
     subject: "Redefinição de senha — ML SmartHub",
     html: buildResetHtml(resetUrl),

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FileText, Plus, Search, Trash2, Upload } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
@@ -233,10 +234,10 @@ export default function NfePage() {
         )}
       </div>
 
-      {modal && form && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto" onClick={() => setModal(false)}>
+      {modal && form && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setModal(false)}>
           <div
-            className="bg-white rounded-xl p-6 max-w-lg w-full shadow-xl my-8 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold text-lg mb-4">{tab === "xml" ? "Revisar importação" : "Nova nota manual"}</h3>
@@ -320,7 +321,8 @@ export default function NfePage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bell, Loader2, Package, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
@@ -344,10 +345,10 @@ export default function SellerMonitorPage() {
         )}
       </main>
 
-      {addOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setAddOpen(false)}>
+      {addOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setAddOpen(false)}>
           <form
-            className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl space-y-4"
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4"
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleAdd}
           >
@@ -382,7 +383,8 @@ export default function SellerMonitorPage() {
               </button>
             </div>
           </form>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
