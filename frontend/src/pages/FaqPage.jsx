@@ -9,7 +9,7 @@ const FAQ_GROUPS = [
     items: [
       {
         q: "O que é o ML SmartHub?",
-        a: "O ML SmartHub é uma plataforma SaaS para vendedores do Mercado Livre que automatiza o monitoramento de preços, acompanhamento de concorrentes, gestão de catálogo e comunicação com clientes. Tudo em um único painel, sem precisar alternar entre abas ou fazer comparações manuais.",
+        a: "O ML SmartHub é uma plataforma para vendedores do Mercado Livre que automatiza o monitoramento de preços, acompanhamento de concorrentes, gestão de catálogo e comunicação com clientes. Tudo em um único painel, sem precisar alternar entre abas ou fazer comparações manuais.",
       },
       {
         q: "Para quem é indicado?",
@@ -26,7 +26,7 @@ const FAQ_GROUPS = [
     items: [
       {
         q: "Como funciona o monitoramento de links?",
-        a: "Você cadastra os links dos produtos que deseja acompanhar — seus próprios anúncios ou os dos concorrentes. O sistema verifica automaticamente, de acordo com o intervalo configurado (padrão: a cada hora), e exibe histórico de preço, posição e estoque.",
+        a: "Você cadastra os links dos produtos que deseja acompanhar — seus próprios anúncios ou os dos concorrentes. O sistema verifica automaticamente e exibe histórico de preço, posição e estoque.",
       },
       {
         q: "O que é o Monitor de Sellers?",

@@ -148,7 +148,7 @@ export default function AboutPage() {
               Criar conta grátis
             </Link>
             <Link
-              to="/precos"
+              to="/price"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
             >
               Ver planos

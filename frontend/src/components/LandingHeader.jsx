@@ -3,8 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
-  { to: "/precos", label: "Planos" },
-  { to: "/sobre", label: "Sobre Nós" },
+  { to: "/price", label: "Planos" },
+  { to: "/about-us", label: "Sobre Nós" },
   { to: "/faq", label: "FAQ" },
 ];
 

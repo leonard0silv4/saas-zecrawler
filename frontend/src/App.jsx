@@ -63,8 +63,8 @@ export default function App() {
         <Toaster position="top-right" richColors closeButton duration={5000} />
         <Routes>
           {/* Páginas públicas institucionais */}
-          <Route path="/precos" element={<PublicPricingPage />} />
-          <Route path="/sobre" element={<AboutPage />} />
+          <Route path="/price" element={<PublicPricingPage />} />
+          <Route path="/about-us" element={<AboutPage />} />
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />

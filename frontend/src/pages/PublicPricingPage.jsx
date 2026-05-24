@@ -26,13 +26,6 @@ const FEATURE_ROWS = [
       { label: "Times", free: "1", starter: "2", pro: "5", business: "20" },
     ],
   },
-  {
-    category: "Suporte",
-    features: [
-      { label: "Suporte via chat", free: false, starter: true, pro: true, business: true },
-      { label: "Prioridade de atendimento", free: false, starter: false, pro: true, business: true },
-    ],
-  },
 ];
 
 const PLANS_CONFIG = [
