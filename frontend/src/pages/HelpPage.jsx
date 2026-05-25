@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  Link2, LineChart, Store, Package, MessageCircle,
+  Link2, LineChart, Store, Package, MessageCircle, BarChart2,
   ArrowRight, Lightbulb, ChevronDown, ChevronUp, ExternalLink
 } from "lucide-react";
 import { useState } from "react";
@@ -91,6 +91,29 @@ const MODULES = [
       "O sistema calcula o cubado da caixa (÷5900), compara com o limite dos produtos e verifica a diferença de peso (margem de 5%)",
     ],
     tip: "O divisor do produto é 6000 e o da caixa é 5900 — padrão do ML. O sistema aceita divergências de até 5% no peso sem reprovar o pacote.",
+  },
+  {
+    id: "meliAnalytics",
+    module: "meliAnalytics",
+    step: "Plano Business",
+    icon: BarChart2,
+    color: "bg-green-600",
+    textColor: "text-green-600",
+    borderColor: "border-green-200",
+    bgLight: "bg-green-50",
+    label: "Analytics ML",
+    tagline: "Vendas, estoque Full e KPIs financeiros em tempo real",
+    to: "/meli/analytics",
+    what: "Painel completo de inteligência comercial para vendedores do Mercado Livre. Visualize faturamento, liquidez do marketplace (receita líquida após taxas), top produtos por receita, gestão de estoque Full com alertas automáticos de ruptura, etiquetagem Full e Normal, e análise individual por produto com histórico de vendas.",
+    steps: [
+      "Conecte suas contas ML em Contas Conectadas antes de acessar este módulo",
+      "Clique em Sincronizar para buscar os pedidos recentes do Mercado Livre",
+      "Use os filtros de período (7d, 15d, 30d, 90d) e selecione a conta desejada no topo",
+      "Acesse a aba Estoque para ver alertas de Ruptura e gerenciar produtos Full",
+      "Clique em qualquer linha da tabela de estoque para ver a análise completa do produto",
+      "Na aba Top Produtos, veja o ranking por receita no período selecionado",
+    ],
+    tip: "Produtos Full com estoque zero são marcados automaticamente como RUPTURA. Os pedidos são sincronizados automaticamente a cada 15 minutos para contas Business ativas.",
   },
   {
     id: "meliMessages",

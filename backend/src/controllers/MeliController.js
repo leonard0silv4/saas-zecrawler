@@ -78,8 +78,28 @@ async function fetchItemsDetails(token, itemIds) {
     .map((entry) => entry.value.data);
 }
 
+function computeRupturaAlert(availableQty, isFull, daysRestStock) {
+  if (isFull && availableQty === 0) return "RUPTURA";
+  if (daysRestStock !== null && daysRestStock <= 3) return "CRÍTICO";
+  if (daysRestStock !== null && daysRestStock <= 7) return "BAIXO";
+  return null;
+}
+
 function mapItemToProductDoc(item, { ownerObjectId, conta }) {
   const sku = item.seller_custom_field || null;
+  const availableQty = item.available_quantity || 0;
+  const soldQty = item.sold_quantity || 0;
+  const isFull =
+    item.shipping?.logistic_type === "fulfillment" ||
+    item.listing_type_id === "gold_pro";
+
+  const startTime = item.start_time ? new Date(item.start_time) : null;
+  const daysSinceStart = startTime
+    ? Math.max(1, Math.floor((Date.now() - startTime.getTime()) / 86400000))
+    : null;
+  const averageSellDay = daysSinceStart && soldQty > 0 ? soldQty / daysSinceStart : 0;
+  const daysRestStock = averageSellDay > 0 ? Math.floor(availableQty / averageSellDay) : null;
+
   return {
     id: item.id,
     title: item.title || "",
@@ -87,11 +107,16 @@ function mapItemToProductDoc(item, { ownerObjectId, conta }) {
     thumbnail: item.thumbnail || null,
     image: item.pictures?.[0]?.url || item.thumbnail || null,
     price: item.price || 0,
-    available_quantity: item.available_quantity || 0,
-    sold_quantity: item.sold_quantity || 0,
+    available_quantity: availableQty,
+    sold_quantity: soldQty,
     status: item.status || null,
-    start_time: item.start_time ? new Date(item.start_time) : null,
+    start_time: startTime,
     listingTypeId: item.listing_type_id || null,
+    isFull,
+    estoque_full: isFull ? availableQty : 0,
+    averageSellDay,
+    daysRestStock,
+    alertRuptura: computeRupturaAlert(availableQty, isFull, daysRestStock),
     SKU: sku,
     user_id: conta.user_id,
     ownerId: ownerObjectId,

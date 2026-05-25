@@ -55,7 +55,15 @@ export const PLANS = {
     maxTeamUsers: 30,
     maxTeams: 20,
     stripePriceId: process.env.STRIPE_PRICE_BUSINESS || "",
-    features: ["Tudo do Pro", "Multi-contas ML", "Mensagens Mercado Livre", "Monitor de sellers (até 20)"],
+    features: [
+      "Tudo do Pro",
+      "Multi-contas ML",
+      "Mensagens Mercado Livre",
+      "Analytics & Gestão de Vendas ML",
+      "Gestão de Estoque Full + Ruptura",
+      "Etiquetagem Full e Normal",
+      "Monitor de sellers (até 20)",
+    ],
   },
 };
 
@@ -75,5 +83,6 @@ export const MODULES = {
   catalog: { name: "Catálogo", plans: ["pro", "business"] },
   meli: { name: "Contas Mercado Livre", plans: ["starter", "pro", "business"] },
   meliMessages: { name: "Mensagens Mercado Livre", plans: ["business"] },
+  meliAnalytics: { name: "Analytics & Vendas ML", plans: ["business"] },
   sellerMonitor: { name: "Monitor de Sellers", plans: ["free", "starter", "pro", "business"] },
 };

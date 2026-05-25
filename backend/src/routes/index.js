@@ -9,6 +9,7 @@ import StripeController from "../controllers/StripeController.js";
 import LinkController from "../controllers/LinkController.js";
 import MeliController from "../controllers/MeliController.js";
 import MeliMessagesController from "../controllers/MeliMessagesController.js";
+import MeliAnalyticsController from "../controllers/MeliAnalyticsController.js";
 import CatalogProductController from "../controllers/CatalogProductController.js";
 import CookieController from "../controllers/CookieController.js";
 import PriceAnalyzeController from "../controllers/PriceAnalyzeController.js";
@@ -97,6 +98,14 @@ r.put("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessage
 r.delete("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessagesController.deleteTemplate);
 r.post("/meli/messages/sync", requireModule("meliMessages"), MeliMessagesController.sync);
 r.get("/meli/messages/unread-count", requireModule("meliMessages"), MeliMessagesController.unreadCount);
+
+// ─── Analytics ML (Business) ───────────────────────────────────
+r.post("/meli/analytics/sync",        requireModule("meliAnalytics"), MeliAnalyticsController.sync);
+r.get("/meli/analytics/summary",      requireModule("meliAnalytics"), MeliAnalyticsController.summary);
+r.get("/meli/analytics/sales-chart",  requireModule("meliAnalytics"), MeliAnalyticsController.salesChart);
+r.get("/meli/analytics/top-products", requireModule("meliAnalytics"), MeliAnalyticsController.topProducts);
+r.get("/meli/analytics/orders",       requireModule("meliAnalytics"), MeliAnalyticsController.orders);
+r.get("/meli/analytics/inventory",    requireModule("meliAnalytics"), MeliAnalyticsController.inventory);
 
 // ─── Catálogo ──────────────────────────────────────────────────
 r.get("/catalog", requireModule("catalog"), CatalogProductController.index);

@@ -57,6 +57,7 @@ export function AuthProvider({ children }) {
       catalog: ["pro", "business"],
       meli: ["starter", "pro", "business"],
       meliMessages: ["business"],
+      meliAnalytics: ["business"],
       sellerMonitor: ["free", "starter", "pro", "business"],
     };
     return moduleMap[module]?.includes(plan) || false;
@@ -68,7 +69,6 @@ export function AuthProvider({ children }) {
     if (Array.isArray(planMods)) {
       return !planMods.includes(module);
     }
-    // fallback via moduleMap quando planModules ainda não está no payload
     const plan = user?.effectivePlan || user?.plan || "free";
     const moduleMap = {
       links: ["free", "starter", "pro", "business"],
@@ -76,6 +76,7 @@ export function AuthProvider({ children }) {
       catalog: ["pro", "business"],
       meli: ["starter", "pro", "business"],
       meliMessages: ["business"],
+      meliAnalytics: ["business"],
       sellerMonitor: ["free", "starter", "pro", "business"],
     };
     return !(moduleMap[module]?.includes(plan) || false);

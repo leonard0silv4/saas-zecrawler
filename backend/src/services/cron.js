@@ -6,6 +6,7 @@ import { scrapeProductData } from "../utils/scraper.js";
 import { resetStaleByTimeout } from "./scraperQueue.js";
 import { runAllActiveSellers } from "./sellerScraper.js";
 import { syncQuestionsForOwner } from "./meliMessagesService.js";
+import { syncOrdersForConta } from "../controllers/MeliAnalyticsController.js";
 
 /**
  * Cron: atualiza links de todos os usuários com sendEmail habilitado.
@@ -82,6 +83,36 @@ export function startCronJobs() {
       }
     } catch (error) {
       console.error("[Cron] MeliMessages schedule:", error.message);
+    }
+  });
+
+  // Analytics ML: sincroniza pedidos a cada 15 min para owners Business
+  cron.schedule("*/15 * * * *", async () => {
+    try {
+      const businessOwners = await User.find({
+        role: "owner",
+        plan: "business",
+        stripeSubscriptionStatus: { $in: ["active", "trialing"] },
+      }).select("_id");
+
+      const ownerIds = businessOwners.map((u) => u._id);
+      if (!ownerIds.length) return;
+
+      const contas = await Conta.find({
+        ownerId: { $in: ownerIds },
+        access_token: { $exists: true },
+        disabled: { $ne: true },
+      });
+
+      for (const conta of contas) {
+        try {
+          await syncOrdersForConta(conta, conta.ownerId);
+        } catch (err) {
+          console.error(`[Cron] Analytics orders conta=${conta.user_id}:`, err.message);
+        }
+      }
+    } catch (err) {
+      console.error("[Cron] Analytics orders sync:", err.message);
     }
   });
 

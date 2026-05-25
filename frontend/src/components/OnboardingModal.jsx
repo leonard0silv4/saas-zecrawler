@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { Link2, LineChart, Store, Package, MessageCircle, X, ArrowRight, ArrowLeft } from "lucide-react";
+import { Link2, LineChart, Store, Package, MessageCircle, BarChart2, X, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 const STORAGE_KEY = "onboarding_completed";
@@ -61,6 +61,17 @@ const SLIDES = [
     icon: Package,
     color: "bg-orange-500",
     tip: "Divisor do produto: 6000 | Divisor da caixa: 5900. Margem de peso aceita: 5%.",
+  },
+  {
+    id: "meliAnalytics",
+    module: "meliAnalytics",
+    emoji: null,
+    title: "Analytics ML — Exclusivo Business",
+    subtitle: "Vendas, estoque Full e KPIs do seu negócio",
+    body: "Monitore faturamento, liquidez do marketplace, ruptura de estoque Full, etiquetagem e ranking de produtos — tudo em um único painel. Disponível apenas no plano Business.",
+    icon: BarChart2,
+    color: "bg-green-600",
+    tip: "Clique em Sincronizar ao entrar no módulo para trazer os pedidos mais recentes. Acesse a aba Estoque para ver alertas de Ruptura no Full.",
   },
   {
     id: "meliMessages",

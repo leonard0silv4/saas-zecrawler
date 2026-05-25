@@ -4,7 +4,7 @@ import { useNotifications } from "../contexts/NotificationContext";
 import {
   Link2, ShoppingBag, Package,
   LogOut, LayoutDashboard, Crown, Lock, Menu, X, CreditCard,
-  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle, HelpCircle
+  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle, HelpCircle, BarChart2
 } from "lucide-react";
 import { useState } from "react";
 import OnboardingModal from "./OnboardingModal";
@@ -20,6 +20,7 @@ const NAV = [
   { to: "/catalog", icon: Package, label: "Dimensões e Peso", module: "catalog", ownerOnly: false },
   { to: "/meli", icon: Unplug, label: "Contas conectadas", module: "meli", ownerOnly: false },
   { to: "/meli/messages", icon: MessageCircle, label: "Mensagens ML", module: "meliMessages", ownerOnly: false },
+  { to: "/meli/analytics", icon: BarChart2, label: "Analytics ML", module: "meliAnalytics", ownerOnly: false },
 ];
 
 export default function AppLayout() {
