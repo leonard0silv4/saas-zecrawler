@@ -150,6 +150,15 @@ function LoginScreen({ onLogin }) {
             {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
+
+        <div className="text-center mt-4">
+          <a
+            href="/login"
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors inline-flex items-center gap-1"
+          >
+            ← Ir para o login do app
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -245,6 +254,12 @@ function Dashboard({ onLogout }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <a
+            href="/login"
+            className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors"
+          >
+            ← App
+          </a>
           <button onClick={load} className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors">
             ↻ Atualizar
           </button>
