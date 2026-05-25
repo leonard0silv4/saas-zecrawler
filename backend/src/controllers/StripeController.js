@@ -91,6 +91,7 @@ const StripeController = {
       const sessionParams = {
         customer: customerId,
         mode: "subscription",
+        allow_promotion_codes: true,
         payment_method_types: ["card"],
         line_items: [{ price: plan.stripePriceId, quantity: 1 }],
         success_url: `${frontendUrl}/plans?session_id={CHECKOUT_SESSION_ID}&status=success`,
