@@ -28,8 +28,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), strip
 // JSON parser for everything else
 app.use(express.json({ limit: "10mb" }));
 
-// Admin panel — mounted on /panel (completely separate from /api, zero conflict)
-app.use("/panel", adminRoutes);
+// Admin panel — mounted under /api/panel so the existing proxy/nginx rule cobre em produção
+app.use("/api/panel", adminRoutes);
 
 // Main app routes
 app.use("/api", routes);

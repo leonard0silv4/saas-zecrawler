@@ -4,7 +4,7 @@ import axios from "axios";
 // ─── API client separado do app principal ────────────────────────
 // Usa /panel em vez de /api — sem qualquer conflito com o router principal
 const envUrl = import.meta.env.VITE_API_URL;
-const BASE = envUrl ? `${String(envUrl).replace(/\/$/, "")}/panel` : "/panel";
+const BASE = envUrl ? `${String(envUrl).replace(/\/$/, "")}/api/panel` : "/api/panel";
 const adminApi = axios.create({ baseURL: BASE });
 adminApi.interceptors.request.use((c) => {
   const t = localStorage.getItem("admin_token");
