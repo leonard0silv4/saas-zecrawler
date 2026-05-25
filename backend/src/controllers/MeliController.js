@@ -9,6 +9,15 @@ import { getOwnerId } from "../middleware/auth.js";
 
 const { ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI } = process.env;
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 async function getActiveContas(ownerId) {
   return Conta.find({
     ownerId,
@@ -244,7 +253,7 @@ export default {
       );
 
       res.send(
-        `<p>Conta <strong>${userInfo.nickname}</strong> conectada com sucesso!</p><p><a href="javascript:history.back()">Voltar</a></p>`
+        `<p>Conta <strong>${escapeHtml(userInfo.nickname)}</strong> conectada com sucesso!</p><p><a href="javascript:history.back()">Voltar</a></p>`
       );
     } catch (err) {
       console.error("Erro na autenticação ML:", err.response?.data || err.message);
