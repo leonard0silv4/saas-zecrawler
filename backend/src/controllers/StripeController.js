@@ -254,6 +254,12 @@ export async function stripeWebhookRoute(req, res) {
         break;
       }
 
+      // Subscription created directly (Dashboard, API, manual trials)
+      case "customer.subscription.created": {
+        await syncSubscription(event.data.object);
+        break;
+      }
+
       // Subscription updated (upgrade, downgrade, renewal)
       case "customer.subscription.updated": {
         await syncSubscription(event.data.object);
