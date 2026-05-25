@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 
 import AppLayout from "./components/AppLayout";
+import AdminPage from "./pages/AdminPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PublicPricingPage from "./pages/PublicPricingPage";
@@ -64,6 +65,9 @@ export default function App() {
         <Routes>
           {/* Home → login (URL canônica limpa para o Google) */}
           <Route path="/" element={<Navigate to="/login" replace />} />
+
+          {/* Painel de administração (acesso por credenciais próprias no .env) */}
+          <Route path="/hub-admin" element={<AdminPage />} />
 
           {/* Páginas públicas institucionais */}
           <Route path="/price" element={<PublicPricingPage />} />

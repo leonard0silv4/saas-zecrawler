@@ -26,6 +26,12 @@ export async function authenticate(req, res, next) {
     const teamPerms = await loadTeamPermissions(user);
     const { effectivePlan, allowedModules } = computeAccess(user, ownerUser, teamPerms);
 
+    // Update lastAccessAt at most once per 30 minutes (non-blocking)
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+    if (!user.lastAccessAt || user.lastAccessAt < thirtyMinAgo) {
+      User.findByIdAndUpdate(user._id, { lastAccessAt: new Date() }).exec().catch(() => {});
+    }
+
     req.user = {
       id: user._id,
       email: user.email,

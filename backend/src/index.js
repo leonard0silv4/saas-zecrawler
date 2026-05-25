@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 
 import { connectDB } from "../config/database.js";
 import routes from "./routes/index.js";
+import adminRoutes from "./routes/admin.js";
 import { stripeWebhookRoute } from "./controllers/StripeController.js";
 import { startCronJobs } from "./services/cron.js";
 import { resetStaleScrapingFlags } from "./services/scraperQueue.js";
@@ -21,7 +22,10 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), strip
 // JSON parser for everything else
 app.use(express.json({ limit: "10mb" }));
 
-// Routes
+// Admin panel — mounted on /panel (completely separate from /api, zero conflict)
+app.use("/panel", adminRoutes);
+
+// Main app routes
 app.use("/api", routes);
 
 // Start

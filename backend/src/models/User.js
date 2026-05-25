@@ -33,6 +33,9 @@ const userSchema = new mongoose.Schema(
     // Password reset
     resetToken:          { type: String, default: null },
     resetTokenExpiresAt: { type: Date,   default: null },
+
+    // Admin tracking
+    lastAccessAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
