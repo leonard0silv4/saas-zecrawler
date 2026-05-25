@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bell, Loader2, Package, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
+import { Bell, Loader2, Package, Pencil, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
 import { format } from "date-fns";
@@ -30,6 +30,11 @@ export default function SellerMonitorPage() {
   const [newUrl, setNewUrl] = useState("");
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSeller, setEditSeller] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
   const prevRef = useRef(new Map());
 
   const fetchSellers = useCallback(async () => {
@@ -132,6 +137,38 @@ export default function SellerMonitorPage() {
     }
   }
 
+  function openEditSeller(s) {
+    setEditSeller(s);
+    setEditName(s.name || "");
+    setEditUrl(s.url || "");
+    setEditOpen(true);
+  }
+
+  async function handleEditSave() {
+    if (!editSeller) return;
+    setEditSaving(true);
+    try {
+      const urlChanged = editUrl.trim() !== editSeller.url;
+      const { data } = await api.put(`/seller-monitor/${editSeller._id}`, {
+        name: editName.trim(),
+        url: editUrl.trim(),
+      });
+      setSellers((prev) => prev.map((x) => (x._id === data._id ? { ...x, ...data } : x)));
+      if (selectedId === editSeller._id && urlChanged) {
+        setProducts([]);
+        setAlerts([]);
+        loadProducts(editSeller._id);
+        loadAlerts(editSeller._id);
+      }
+      setEditOpen(false);
+      setEditSeller(null);
+    } catch (err) {
+      notifyError(err.response?.data?.error || "Erro ao editar seller");
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
   async function handleDelete(s) {
     if (!confirm("Remover este seller e todos os dados?")) return;
     await api.delete(`/seller-monitor/${s._id}`);
@@ -211,6 +248,14 @@ export default function SellerMonitorPage() {
                       title="Atualizar"
                     >
                       <Play size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEditSeller(s)}
+                      className="p-1 text-brand-600 hover:bg-brand-100 rounded"
+                      title="Editar"
+                    >
+                      <Pencil size={14} />
                     </button>
                     <button
                       type="button"
@@ -344,6 +389,54 @@ export default function SellerMonitorPage() {
           </>
         )}
       </main>
+
+      {editOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setEditOpen(false)}>
+          <div
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-lg">Editar seller</h3>
+            <div>
+              <label className="text-sm text-gray-600">Nome</label>
+              <input
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Nome do seller"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-600">URL da listagem</label>
+              <input
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+                placeholder="https://lista.mercadolivre.com.br/..."
+              />
+              {editUrl.trim() !== (editSeller?.url || "") && (
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ Alterar a URL irá apagar todos os produtos e alertas deste seller e reiniciar o scraping.
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => setEditOpen(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={editSaving}
+                onClick={handleEditSave}
+                className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+              >
+                {editSaving ? "Salvando…" : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {addOpen && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setAddOpen(false)}>

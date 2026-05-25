@@ -48,6 +48,53 @@ export default {
     }
   },
 
+  async update(req, res) {
+    try {
+      const ownerId = oid(getOwnerId(req));
+      const { id } = req.params;
+      const { name, url } = req.body;
+
+      const seller = await SellerPage.findOne({ _id: id, ownerId });
+      if (!seller) return res.status(404).json({ error: "Seller não encontrado" });
+
+      const urlChanged = url && url.trim() !== seller.url;
+
+      if (urlChanged) {
+        const conflict = await SellerPage.findOne({ url: url.trim(), ownerId, _id: { $ne: seller._id } });
+        if (conflict) return res.status(409).json({ error: "URL já cadastrada para outro seller" });
+
+        await SellerProduct.deleteMany({ sellerId: seller._id });
+        await SellerAlert.deleteMany({ sellerId: seller._id });
+      }
+
+      const updates = {};
+      if (name !== undefined) updates.name = name;
+      if (urlChanged) {
+        updates.url = url.trim();
+        updates.scraping = false;
+        updates.lastRunAt = null;
+        updates.scrapingStartedAt = null;
+      }
+
+      const updated = await SellerPage.findByIdAndUpdate(
+        seller._id,
+        { $set: updates },
+        { new: true }
+      );
+
+      if (urlChanged) {
+        runScraperForSeller(updated).catch((err) =>
+          console.error("[SellerMonitor] re-scrape after URL update:", err)
+        );
+      }
+
+      return res.json(updated);
+    } catch (err) {
+      console.error("[SellerMonitor] update:", err);
+      return res.status(500).json({ error: "Erro ao atualizar seller" });
+    }
+  },
+
   async destroy(req, res) {
     try {
       const ownerId = oid(getOwnerId(req));

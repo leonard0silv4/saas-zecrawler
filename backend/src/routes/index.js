@@ -71,6 +71,7 @@ r.post("/price-analyze/generate", requireModule("priceAnalyze"), PriceAnalyzeCon
 // ─── Seller Monitor ────────────────────────────────────────────
 r.get("/seller-monitor", requireModule("sellerMonitor"), SellerMonitorController.index);
 r.post("/seller-monitor", requireModule("sellerMonitor"), checkSellerMonitorLimit, SellerMonitorController.store);
+r.put("/seller-monitor/:id", requireModule("sellerMonitor"), SellerMonitorController.update);
 r.delete("/seller-monitor/:id", requireModule("sellerMonitor"), SellerMonitorController.destroy);
 r.get("/seller-monitor/:id/products", requireModule("sellerMonitor"), SellerMonitorController.getProducts);
 r.post("/seller-monitor/:id/run", requireModule("sellerMonitor"), SellerMonitorController.runScrape);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Plus, RefreshCw, Trash2, ExternalLink, Tag, TrendingUp, TrendingDown, Minus, Search, X } from "lucide-react";
+import { Plus, Pencil, RefreshCw, Trash2, ExternalLink, Tag, TrendingUp, TrendingDown, Minus, Search, X } from "lucide-react";
 import api from "../services/api";
 import { notifyError } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
@@ -17,6 +17,11 @@ export default function LinksPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [newLink, setNewLink] = useState({ link: "", myPrice: "", tag: "" });
   const [adding, setAdding] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLink, setEditLink] = useState(null);
+  const [editMyPrice, setEditMyPrice] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   const perPage = 20;
   const maxLinks = user?.planConfig?.maxLinks || 10;
@@ -48,6 +53,32 @@ export default function LinksPage() {
       notifyError(err.response?.data?.error || "Erro ao adicionar link");
     } finally {
       setAdding(false);
+    }
+  }
+
+  function openEdit(link) {
+    setEditLink(link);
+    setEditMyPrice(link.myPrice != null ? String(link.myPrice) : "");
+    setEditTags(link.tags?.join(", ") || "");
+    setEditOpen(true);
+  }
+
+  async function handleEditSave() {
+    if (!editLink) return;
+    setEditSaving(true);
+    try {
+      const tags = editTags.split(",").map((t) => t.trim()).filter(Boolean);
+      const { data } = await api.put(`/links/${editLink._id}`, {
+        myPrice: Number(editMyPrice) || 0,
+        tags,
+      });
+      setLinks((prev) => prev.map((l) => (l._id === data._id ? data : l)));
+      setEditOpen(false);
+      setEditLink(null);
+    } catch (err) {
+      notifyError(err.response?.data?.error || "Erro ao salvar");
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -148,6 +179,50 @@ export default function LinksPage() {
         document.body
       )}
 
+      {/* Edit modal */}
+      {editOpen && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setEditOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Editar Link</h2>
+              <button onClick={() => setEditOpen(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={20} /></button>
+            </div>
+            <p className="text-sm text-gray-500 mb-3 truncate">{editLink?.name || "Sem título"}</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-600 uppercase">Meu Preço</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editMyPrice}
+                  onChange={(e) => setEditMyPrice(e.target.value)}
+                  className="w-full mt-1 px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-600 uppercase">Tags (separadas por vírgula)</label>
+                <input
+                  type="text"
+                  value={editTags}
+                  onChange={(e) => setEditTags(e.target.value)}
+                  placeholder="minha-loja, promocao"
+                  className="w-full mt-1 px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="button" onClick={() => setEditOpen(false)}
+                className="px-4 py-2 text-sm text-gray-600">Cancelar</button>
+              <button type="button" disabled={editSaving} onClick={handleEditSave}
+                className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50">
+                {editSaving ? "Salvando..." : "Salvar"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Table */}
       {loading ? (
         <div className="text-center py-12 text-gray-400">Carregando...</div>
@@ -212,6 +287,11 @@ export default function LinksPage() {
                             className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600">
                             <ExternalLink size={15} />
                           </a>
+                          <button onClick={() => openEdit(link)}
+                            className="p-1.5 hover:bg-brand-50 rounded-lg text-gray-400 hover:text-brand-600"
+                            title="Editar">
+                            <Pencil size={15} />
+                          </button>
                           <button onClick={() => handleDelete(link._id)}
                             className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500">
                             <Trash2 size={15} />

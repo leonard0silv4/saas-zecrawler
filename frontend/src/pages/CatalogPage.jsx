@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  BookOpen,
   Calculator,
   CheckCircle2,
+  Package,
   PackageCheck,
   PackagePlus,
+  Pencil,
   Plus,
   Ruler,
   Search,
@@ -37,6 +38,7 @@ export default function CatalogPage() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [importing, setImporting] = useState(false);
   const [packageItems, setPackageItems] = useState([]);
   const [packageModal, setPackageModal] = useState(false);
@@ -84,7 +86,7 @@ export default function CatalogPage() {
     }
     setSaving(true);
     try {
-      await api.post("/catalog", {
+      const payload = {
         sku1: form.sku1.trim(),
         sku2: form.sku2.trim(),
         sku3: form.sku3.trim(),
@@ -94,9 +96,16 @@ export default function CatalogPage() {
         comprimento: C,
         altura: A,
         peso: Number(String(form.peso).replace(",", ".")) || 0,
-      });
+        pesoCubico: L > 0 && C > 0 && A > 0 ? Math.round(((L * C * A) / 6000) * 1000) / 1000 : 0,
+      };
+      if (editingId) {
+        await api.put(`/catalog/${editingId}`, payload);
+      } else {
+        await api.post("/catalog", payload);
+      }
       setModal(false);
       setForm(empty);
+      setEditingId(null);
       cursorRef.current = null;
       fetchList(true);
     } catch (err) {
@@ -195,8 +204,8 @@ export default function CatalogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BookOpen className="text-brand-600" />
-            Catálogo
+            <Package className="text-brand-600" />
+            Dimensões e Peso
           </h1>
           <p className="text-gray-500 mt-1">Dimensões e peso cúbico por SKU.</p>
         </div>
@@ -210,6 +219,7 @@ export default function CatalogPage() {
             type="button"
             onClick={() => {
               setForm(empty);
+              setEditingId(null);
               setModal(true);
             }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
@@ -282,6 +292,28 @@ export default function CatalogPage() {
                     >
                       <PackagePlus size={16} />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm({
+                          sku1: p.sku1,
+                          sku2: p.sku2 || "",
+                          sku3: p.sku3 || "",
+                          produto: p.produto,
+                          medidas: p.medidas,
+                          largura: String(p.largura),
+                          comprimento: String(p.comprimento),
+                          altura: String(p.altura),
+                          peso: String(p.peso || ""),
+                        });
+                        setEditingId(p._id);
+                        setModal(true);
+                      }}
+                      title="Editar"
+                      className="text-brand-600 p-1 rounded hover:bg-brand-50"
+                    >
+                      <Pencil size={16} />
+                    </button>
                     <button type="button" onClick={() => remove(p._id)} className="text-red-500 p-1 rounded hover:bg-red-50">
                       <Trash2 size={16} />
                     </button>
@@ -303,9 +335,9 @@ export default function CatalogPage() {
       </div>
 
       {modal && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setModal(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => { setModal(false); setEditingId(null); }}>
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold text-lg">Novo produto</h3>
+            <h3 className="font-semibold text-lg">{editingId ? "Editar produto" : "Novo produto"}</h3>
             {["sku1", "sku2", "sku3", "produto", "medidas"].map((k) => (
               <div key={k}>
                 <label className="text-xs text-gray-600 uppercase">{k}</label>
@@ -337,7 +369,7 @@ export default function CatalogPage() {
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => setModal(false)}>
+              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => { setModal(false); setEditingId(null); }}>
                 Cancelar
               </button>
               <button
