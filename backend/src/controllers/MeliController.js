@@ -252,9 +252,75 @@ export default {
         { upsert: true, new: true }
       );
 
-      res.send(
-        `<p>Conta <strong>${escapeHtml(userInfo.nickname)}</strong> conectada com sucesso!</p><p><a href="javascript:history.back()">Voltar</a></p>`
-      );
+      res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conta conectada — Mercado Livre</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      background:#f9fafb;
+      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;padding:1rem;
+    }
+    .card{
+      background:#fff;border-radius:16px;
+      box-shadow:0 4px 24px rgba(0,0,0,.08);
+      padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center;
+    }
+    .icon{
+      width:72px;height:72px;background:#dcfce7;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 1.25rem;font-size:2rem;
+    }
+    h1{font-size:1.35rem;font-weight:700;color:#111827;margin-bottom:.4rem}
+    .sub{font-size:.9rem;color:#6b7280;margin-bottom:1rem}
+    .nickname{
+      font-size:1.1rem;font-weight:600;color:#16a34a;
+      background:#f0fdf4;border:1px solid #bbf7d0;
+      border-radius:8px;padding:.5rem 1.25rem;
+      display:inline-block;margin-bottom:1.5rem;
+    }
+    .countdown{font-size:.82rem;color:#9ca3af;margin-bottom:.75rem}
+    .progress-bar{height:4px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-bottom:1.75rem}
+    .progress-fill{
+      height:100%;background:#facc15;border-radius:99px;
+      animation:shrink 3s linear forwards;
+    }
+    @keyframes shrink{from{width:100%}to{width:0%}}
+    .btn{
+      display:inline-flex;align-items:center;gap:.4rem;
+      padding:.65rem 1.5rem;background:#fbbf24;color:#1a1a1a;
+      border-radius:9px;font-weight:600;font-size:.95rem;
+      text-decoration:none;transition:background .15s;
+    }
+    .btn:hover{background:#f59e0b}
+    .btn svg{flex-shrink:0}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h1>Conta conectada com sucesso!</h1>
+    <p class="sub">Autorização concedida pelo Mercado Livre</p>
+    <div class="nickname">${escapeHtml(userInfo.nickname)}</div>
+    <p class="countdown">Redirecionando em <strong id="n">3</strong>s…</p>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <a class="btn" href="/meli">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+      Voltar às contas
+    </a>
+  </div>
+  <script>
+    let s=3;
+    const el=document.getElementById('n');
+    const t=setInterval(()=>{s--;el.textContent=s;if(s<=0){clearInterval(t);window.location.href='/meli';}},1000);
+  </script>
+</body>
+</html>`);
     } catch (err) {
       console.error("Erro na autenticação ML:", err.response?.data || err.message);
       res.status(500).send("Erro ao autenticar");
