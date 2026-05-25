@@ -24,6 +24,7 @@ import SellerMonitorPage from "./pages/SellerMonitorPage";
 import MlCookiesPage from "./pages/MlCookiesPage";
 import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
+import HelpPage from "./pages/HelpPage";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -81,6 +82,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute><NotificationProvider><AppLayout /></NotificationProvider></ProtectedRoute>}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/ajuda" element={<HelpPage />} />
             <Route path="/plans" element={<PlansPage />} />
             <Route path="/links" element={<LinksPage />} />
             <Route path="/price-analyze" element={<PriceAnalyzePage />} />

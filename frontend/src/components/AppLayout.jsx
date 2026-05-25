@@ -2,11 +2,12 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import {
-  Link2, BookOpen, ShoppingBag,
+  Link2, ShoppingBag, Package,
   LogOut, LayoutDashboard, Crown, Lock, Menu, X, CreditCard,
-  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle
+  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle, HelpCircle
 } from "lucide-react";
 import { useState } from "react";
+import OnboardingModal from "./OnboardingModal";
 
 const NAV = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", module: null, ownerOnly: false },
@@ -16,7 +17,7 @@ const NAV = [
   { to: "/links", icon: Link2, label: "Links", module: "links", ownerOnly: false },
   { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze", ownerOnly: false },
   { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor", ownerOnly: false },
-  { to: "/catalog", icon: BookOpen, label: "Catálogo", module: "catalog", ownerOnly: false },
+  { to: "/catalog", icon: Package, label: "Dimensões e Peso", module: "catalog", ownerOnly: false },
   { to: "/meli", icon: Unplug, label: "Contas conectadas", module: "meli", ownerOnly: false },
   { to: "/meli/messages", icon: MessageCircle, label: "Mensagens ML", module: "meliMessages", ownerOnly: false },
 ];
@@ -115,6 +116,14 @@ export default function AppLayout() {
                 Assinatura
               </button>
             )}
+            <Link
+              to="/ajuda"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+            >
+              <HelpCircle size={16} />
+              Ajuda
+            </Link>
             <button
               onClick={logout}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
@@ -157,6 +166,9 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Onboarding modal — aparece apenas na primeira visita */}
+      <OnboardingModal />
     </div>
   );
 }

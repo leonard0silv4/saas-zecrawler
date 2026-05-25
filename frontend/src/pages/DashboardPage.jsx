@@ -1,12 +1,12 @@
 import { useAuth } from "../contexts/AuthContext";
-import { Link2, BookOpen, ShoppingBag, Lock, LineChart, Store } from "lucide-react";
+import { Link2, Package, ShoppingBag, Lock, LineChart, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CARDS = [
   { module: "links", icon: Link2, label: "Links", desc: "Acompanhe preços de concorrentes", to: "/links", color: "bg-blue-500" },
   { module: "priceAnalyze", icon: LineChart, label: "Análise de preços", desc: "Grupos por SKU dos seus links", to: "/price-analyze", color: "bg-sky-500" },
   { module: "sellerMonitor", icon: Store, label: "Monitor sellers", desc: "Páginas de vendedores ML", to: "/seller-monitor", color: "bg-teal-500" },
-  { module: "catalog", icon: BookOpen, label: "Catálogo", desc: "Catálogo de produtos e dimensões", to: "/catalog", color: "bg-orange-500" },
+  { module: "catalog", icon: Package, label: "Dimensões e Peso", desc: "Validação de pacotes e cálculo de peso cúbico", to: "/catalog", color: "bg-orange-500" },
   { module: "meli", icon: ShoppingBag, label: "Mercado Livre", desc: "Contas e produtos ML", to: "/meli", color: "bg-yellow-500" },
 ];
 
