@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 
 import { connectDB } from "../config/database.js";
 import routes from "./routes/index.js";
@@ -9,7 +11,11 @@ import { stripeWebhookRoute } from "./controllers/StripeController.js";
 import { startCronJobs } from "./services/cron.js";
 import { resetStaleScrapingFlags } from "./services/scraperQueue.js";
 
-dotenv.config();
+// Carrega .env usando caminho absoluto relativo a este arquivo,
+// independente de onde o processo for iniciado.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = dirname(__filename);
+dotenv.config({ path: resolve(__dirname, "../../.env") });
 
 const app = express();
 
