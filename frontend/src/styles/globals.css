@@ -6,3 +6,16 @@ body {
   @apply bg-gray-50 text-gray-900 antialiased;
   font-family: "DM Sans", system-ui, sans-serif;
 }
+
+/*
+ * Previne zoom automático em iOS Safari.
+ * O browser dispara zoom quando font-size < 16px em inputs com foco.
+ * O !important é necessário para sobrescrever as utilities do Tailwind (text-sm = 14px).
+ */
+@media screen and (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
