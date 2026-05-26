@@ -655,9 +655,19 @@ export default function MeliAnalyticsPage() {
                       const dir = isActive ? inventorySort.dir : null;
                       function handleClick() {
                         setInventorySort((prev) => {
-                          if (prev.field !== s.value) return { field: s.value, dir: "asc" };
-                          if (prev.dir === "asc")     return { field: s.value, dir: "desc" };
-                          return { field: null, dir: null }; // terceiro clique remove
+                          if (prev.field !== s.value) {
+                            // Estoque: 1º clique → desc (maior → menor); demais → asc
+                            const defaultDir = s.value === "stock" ? "desc" : "asc";
+                            return { field: s.value, dir: defaultDir };
+                          }
+                          // Toggle para estoque: desc → asc → null
+                          if (s.value === "stock") {
+                            if (prev.dir === "desc") return { field: s.value, dir: "asc" };
+                            return { field: null, dir: null };
+                          }
+                          // Toggle para outros campos: asc → desc → null
+                          if (prev.dir === "asc") return { field: s.value, dir: "desc" };
+                          return { field: null, dir: null };
                         });
                       }
                       return (
