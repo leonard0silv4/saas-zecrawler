@@ -5,5 +5,6 @@ export const MODULE_LABELS = {
   catalog: "Dimensões e Peso",
   meli: "Contas Mercado Livre",
   meliMessages: "Mensagens Mercado Livre",
+  meliAnalytics: "Analytics ML",
   sellerMonitor: "Monitor de Sellers",
 };

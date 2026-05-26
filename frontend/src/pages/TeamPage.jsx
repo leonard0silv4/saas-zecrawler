@@ -25,6 +25,7 @@ const MODULE_LABELS = {
   catalog: "Catálogo",
   meli: "Contas Mercado Livre",
   meliMessages: "Mensagens ML",
+  meliAnalytics: "Analytics ML",
   sellerMonitor: "Monitor Sellers",
 };
 
