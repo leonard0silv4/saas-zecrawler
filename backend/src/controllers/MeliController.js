@@ -64,6 +64,54 @@ async function fetchSellerItemIds(token, sellerId, { query = "", limit = 50, off
   return Array.isArray(data?.results) ? data.results : [];
 }
 
+/** Busca TODOS os IDs de anúncios do vendedor via paginação. */
+async function fetchAllSellerItemIds(token, sellerId) {
+  const LIMIT = 100; // máximo permitido pela API do ML
+  const DELAY_MS = 250;
+  const allIds = [];
+  let offset = 0;
+
+  while (true) {
+    const { data } = await axios.get(
+      `https://api.mercadolibre.com/users/${sellerId}/items/search`,
+      { headers: { Authorization: `Bearer ${token}` }, params: { limit: LIMIT, offset } }
+    );
+    const results = Array.isArray(data?.results) ? data.results : [];
+    allIds.push(...results);
+    offset += LIMIT;
+    if (results.length < LIMIT) break;
+    // Proteção contra rate limit
+    await new Promise((r) => setTimeout(r, DELAY_MS));
+  }
+  return allIds;
+}
+
+/**
+ * Sincroniza TODOS os produtos de uma conta do ML para o MongoDB.
+ * Usa paginação completa + delays para não estourar o rate limit.
+ */
+export async function syncProductsForConta(conta, ownerId) {
+  const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+  const token = await renewToken(conta);
+  const allIds = await fetchAllSellerItemIds(token, conta.user_id);
+  if (!allIds.length) return 0;
+
+  const BATCH = 20;
+  const DELAY_MS = 300;
+  let total = 0;
+
+  for (let i = 0; i < allIds.length; i += BATCH) {
+    const batch = allIds.slice(i, i + BATCH);
+    const items = await fetchItemsDetails(token, batch);
+    if (items.length) {
+      await upsertProductsFromItems(items, { ownerObjectId, conta });
+      total += items.length;
+    }
+    if (i + BATCH < allIds.length) await new Promise((r) => setTimeout(r, DELAY_MS));
+  }
+  return total;
+}
+
 async function fetchItemsDetails(token, itemIds) {
   if (!itemIds.length) return [];
   const details = await Promise.allSettled(
@@ -240,7 +288,7 @@ export default {
     try {
       const token = req.query.token;
       const decoded = jwt.verify(token, process.env.SECRET);
-      const scope = encodeURIComponent("offline_access read write");
+      const scope = encodeURIComponent("offline_access read write orders:read");
       const url = `https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=${ML_CLIENT_ID}&redirect_uri=${ML_REDIRECT_URI}&state=${decoded.userId}&scope=${scope}`;
       res.redirect(url);
     } catch (err) {
@@ -273,6 +321,7 @@ export default {
           nickname: userInfo.nickname,
           expires_at: new Date(Date.now() + data.expires_in * 1000),
           ownerId: uid,
+          authError: null, // limpa flag de erro de autorização ao reconectar
         },
         { upsert: true, new: true }
       );
@@ -381,7 +430,7 @@ export default {
       ]);
       return res.json({ ok: true, user_id: uid });
     } catch (err) {
-      console.error(err);
+      console.error("Erro ao desconectar conta ML:", err.message);
       return res.status(500).json({ error: "Erro ao desconectar conta" });
     }
   },

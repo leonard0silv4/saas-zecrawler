@@ -3,8 +3,8 @@ import axios from "axios";
 /**
  * Renews ML access token if expired, saves to DB.
  */
-export async function renewToken(conta) {
-  if (new Date() < conta.expires_at) return conta.access_token;
+export async function renewToken(conta, { force = false } = {}) {
+  if (!force && new Date() < conta.expires_at) return conta.access_token;
 
   try {
     console.log(`Renovando token para conta ${conta.user_id}...`);

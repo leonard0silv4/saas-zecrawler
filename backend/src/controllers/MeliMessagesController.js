@@ -116,7 +116,7 @@ export default {
               : undefined,
         });
       }
-      console.log(error);
+      console.error("Erro ao responder pergunta:", error.message);
       return res.status(500).json({ error: "Erro ao responder pergunta" });
     }
   },

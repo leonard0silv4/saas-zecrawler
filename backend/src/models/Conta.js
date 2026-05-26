@@ -8,6 +8,7 @@ const contaSchema = new mongoose.Schema(
     refresh_token: String,
     expires_at: Date,
     disabled: { type: Boolean, default: false },
+    authError: { type: String, default: null },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }

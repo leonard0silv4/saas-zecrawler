@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Package, Truck, Unlink, Unplug } from "lucide-react";
+import { AlertTriangle, ExternalLink, Package, Truck, Unlink, Unplug } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
@@ -140,6 +140,23 @@ export default function MeliPage() {
                     <Unlink size={14} />
                     {disconnectingId === a.user_id ? "Desconectando…" : "Desconectar"}
                   </button>
+                )}
+                {a.authError && (
+                  <div className="w-full mt-1 flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-800">
+                    <AlertTriangle size={14} className="shrink-0 text-yellow-600" />
+                    <span className="flex-1">
+                      Autorização expirada ou sem permissão. Reconecte para restaurar a sincronização de pedidos.
+                    </span>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={connectAccount}
+                        className="shrink-0 px-2.5 py-1 rounded-md bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium"
+                      >
+                        Reconectar
+                      </button>
+                    )}
+                  </div>
                 )}
               </li>
             ))}

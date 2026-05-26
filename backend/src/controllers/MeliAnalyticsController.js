@@ -6,6 +6,7 @@ import MeliOrder from "../models/MeliOrder.js";
 import MeliProduct from "../models/MeliProduct.js";
 import { renewToken } from "../utils/meliToken.js";
 import { getOwnerId } from "../middleware/auth.js";
+import { syncProductsForConta } from "./MeliController.js";
 
 async function getActiveContas(ownerId) {
   return Conta.find({
@@ -22,20 +23,82 @@ function periodToDates(period = "30d") {
   return { from, to };
 }
 
-async function syncOrdersForConta(conta, ownerId) {
+/**
+ * Busca a taxa ML real de cada pedido via /collections/{payment_id}.
+ * O endpoint /orders/search e /orders/{id} NÃO retornam marketplace_fee para MLB.
+ * A taxa é calculada como: total_amount - net_received_amount (inclui comissão + frete ML).
+ * Executa em batches de 5 requisições paralelas.
+ *
+ * @param {Array} orders  - array dos objetos de pedido do /orders/search (com .id, .total_amount, .payments)
+ * @param {Object} headers - { Authorization: 'Bearer ...' }
+ * @param {number} userId  - user_id da conta (usado apenas para logging)
+ * @returns {Object} feeMap - { [order_id]: ml_fee }
+ */
+async function fetchOrderFees(orders, headers, userId) {
+  const BATCH = 5;
+  const feeMap = {};
+
+  for (let i = 0; i < orders.length; i += BATCH) {
+    const batch = orders.slice(i, i + BATCH);
+
+    const settled = await Promise.allSettled(
+      batch.map((order) => {
+        // Pega o primeiro pagamento aprovado do pedido
+        const approvedPayment = Array.isArray(order.payments)
+          ? order.payments.find((p) => p.status === "approved")
+          : null;
+        if (!approvedPayment) return Promise.resolve(null);
+        return axios.get(
+          `https://api.mercadolibre.com/collections/${approvedPayment.id}`,
+          { headers }
+        );
+      })
+    );
+
+    for (let j = 0; j < batch.length; j++) {
+      const order = batch[j];
+      const result = settled[j];
+
+      if (result.status === "fulfilled" && result.value !== null) {
+        const col = result.value.data;
+        const netReceived = col.net_received_amount ?? 0;
+        const totalAmount = order.total_amount ?? 0;
+        // Deduções ML = tudo que o ML retém (comissão + frete quando logística ML)
+        feeMap[order.id] = Math.max(0, totalAmount - netReceived);
+      } else {
+        if (result.status === "rejected") {
+          const status = result.reason?.response?.status;
+          console.warn(
+            `[Analytics] Falha ao buscar collection order=${order.id} conta=${userId}${status ? ` HTTP ${status}` : ""}: ${result.reason?.message}`
+          );
+        }
+        feeMap[order.id] = 0;
+      }
+    }
+  }
+
+  return feeMap;
+}
+
+async function _doSync(conta, ownerId, { forceFrom = false } = {}) {
   const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
   const token = await renewToken(conta);
   const headers = { Authorization: `Bearer ${token}` };
 
-  const lastOrder = await MeliOrder.findOne(
-    { ownerId: ownerObjectId, user_id: conta.user_id },
-    { date_created: 1 },
-    { sort: { date_created: -1 } }
-  );
-
-  const fromDate = lastOrder
-    ? new Date(lastOrder.date_created.getTime() - 86400000)
-    : subDays(new Date(), 90);
+  let fromDate;
+  if (forceFrom) {
+    // Sync completo: re-processa 90 dias para corrigir fees e dados desatualizados
+    fromDate = subDays(new Date(), 90);
+  } else {
+    const lastOrder = await MeliOrder.findOne(
+      { ownerId: ownerObjectId, user_id: conta.user_id },
+      { date_created: 1 },
+      { sort: { date_created: -1 } }
+    );
+    fromDate = lastOrder
+      ? new Date(lastOrder.date_created.getTime() - 86400000)
+      : subDays(new Date(), 90);
+  }
 
   let offset = 0;
   const limit = 50;
@@ -57,10 +120,11 @@ async function syncOrdersForConta(conta, ownerId) {
     const results = data?.results || [];
     if (!results.length) break;
 
+    // Busca taxa ML via /collections/{payment_id} (único endpoint que retorna net_received_amount)
+    const feeMap = await fetchOrderFees(results, headers, conta.user_id);
+
     for (const order of results) {
-      const mlFee = Array.isArray(order.fee_details)
-        ? order.fee_details.reduce((sum, f) => sum + (f.amount || 0), 0)
-        : 0;
+      const mlFee = feeMap[order.id] ?? 0;
 
       const orderItems = Array.isArray(order.order_items)
         ? order.order_items.map((oi) => ({
@@ -106,11 +170,59 @@ async function syncOrdersForConta(conta, ownerId) {
   return ops.length;
 }
 
+async function syncOrdersForConta(conta, ownerId, { forceFrom = false } = {}) {
+  try {
+    const count = await _doSync(conta, ownerId, { forceFrom });
+    // Sucesso: limpar authError caso estivesse setado
+    if (conta.authError) {
+      await Conta.findByIdAndUpdate(conta._id, { authError: null });
+    }
+    return count;
+  } catch (err) {
+    if (err.response?.status !== 403) throw err; // outros erros sobem normalmente
+
+    // 403: logar o body exato que o ML retornou para diagnóstico
+    console.error(
+      `[Analytics] 403 ML body conta=${conta.user_id}:`,
+      JSON.stringify(err.response?.data ?? "(sem body)")
+    );
+
+    // forçar refresh do token e tentar uma vez mais
+    console.warn(`[Analytics] 403 conta=${conta.user_id} — forçando refresh de token e retentando`);
+    try {
+      await renewToken(conta, { force: true });
+    } catch (refreshErr) {
+      await Conta.findByIdAndUpdate(conta._id, { authError: "forbidden" });
+      console.error(`[Analytics] Falha ao renovar token conta=${conta.user_id}: ${refreshErr.message}`);
+      return 0;
+    }
+
+    try {
+      const count = await _doSync(conta, ownerId, { forceFrom });
+      if (conta.authError) {
+        await Conta.findByIdAndUpdate(conta._id, { authError: null });
+      }
+      return count;
+    } catch (retryErr) {
+      if (retryErr.response?.status === 403) {
+        await Conta.findByIdAndUpdate(conta._id, { authError: "forbidden" });
+        console.error(
+          `[Analytics] Conta ${conta.user_id} retorna 403 mesmo após refresh — precisa reconectar. ML body:`,
+          JSON.stringify(retryErr.response?.data ?? "(sem body)")
+        );
+        return 0;
+      }
+      throw retryErr;
+    }
+  }
+}
+
 const MeliAnalyticsController = {
   async sync(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id } = req.query;
+      const { user_id, force } = req.query;
+      const forceFrom = force === "true"; // re-sync completo de 90 dias quando true
 
       let contas;
       if (user_id) {
@@ -128,14 +240,16 @@ const MeliAnalyticsController = {
       let total = 0;
       for (const conta of contas) {
         try {
-          const count = await syncOrdersForConta(conta, ownerId);
+          const count = await syncOrdersForConta(conta, ownerId, { forceFrom });
           total += count;
+          // Sincronizar todos os produtos (anúncios) do vendedor
+          await syncProductsForConta(conta, ownerId);
         } catch (err) {
-          console.error(`Erro ao sincronizar pedidos da conta ${conta.user_id}:`, err.message);
+          console.error(`Erro ao sincronizar conta ${conta.user_id}:`, err.message);
         }
       }
 
-      res.json({ synced: total });
+      res.json({ synced: total, forceFrom });
     } catch (err) {
       console.error("analytics sync error:", err);
       res.status(500).json({ error: "Erro ao sincronizar pedidos" });
@@ -222,7 +336,7 @@ const MeliAnalyticsController = {
   async topProducts(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d", limit = 20 } = req.query;
+      const { user_id, period = "30d", limit = 20, sortBy = "receita", onlyActive } = req.query;
       const { from, to } = periodToDates(period);
 
       const filter = {
@@ -232,7 +346,10 @@ const MeliAnalyticsController = {
       };
       if (user_id) filter.user_id = Number(user_id);
 
-      const rows = await MeliOrder.aggregate([
+      const sortStage = sortBy === "unidades" ? { unidades: -1 } : { receita: -1 };
+
+      // Pipeline base: agrupa, ordena, busca dados do produto
+      const pipeline = [
         { $match: filter },
         { $unwind: "$order_items" },
         {
@@ -243,11 +360,51 @@ const MeliAnalyticsController = {
             unidades: { $sum: "$order_items.quantity" },
             receita: { $sum: { $multiply: ["$order_items.quantity", "$order_items.unit_price"] } },
             logistic_type: { $first: "$order_items.logistic_type" },
+            ownerId: { $first: "$ownerId" },
           },
         },
-        { $sort: { receita: -1 } },
-        { $limit: Number(limit) },
-      ]);
+        { $sort: sortStage },
+        // Lookup de status do produto (thumbnail, permalink, status)
+        {
+          $lookup: {
+            from: "meliproducts",
+            let: { item_id: "$_id", owner_id: "$ownerId" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$id", "$$item_id"] },
+                      { $eq: ["$ownerId", "$$owner_id"] },
+                    ],
+                  },
+                },
+              },
+              { $project: { thumbnail: 1, permalink: 1, status: 1, _id: 0 } },
+              { $limit: 1 },
+            ],
+            as: "productInfo",
+          },
+        },
+        {
+          $addFields: {
+            thumbnail: { $arrayElemAt: ["$productInfo.thumbnail", 0] },
+            permalink: { $arrayElemAt: ["$productInfo.permalink", 0] },
+            productStatus: { $arrayElemAt: ["$productInfo.status", 0] },
+          },
+        },
+      ];
+
+      // Filtro opcional: somente produtos com status "active" no cache
+      if (onlyActive === "true") {
+        pipeline.push({ $match: { productStatus: "active" } });
+      }
+
+      // Limit sempre depois do filtro para garantir top N do conjunto filtrado
+      pipeline.push({ $limit: Number(limit) });
+      pipeline.push({ $project: { productInfo: 0, ownerId: 0 } });
+
+      const rows = await MeliOrder.aggregate(pipeline);
 
       res.json(rows);
     } catch (err) {
@@ -284,7 +441,7 @@ const MeliAnalyticsController = {
   async inventory(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, filter: filterType } = req.query;
+      const { user_id, filter: filterType, sortBy, sortDir = "desc" } = req.query;
 
       const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
       if (user_id) query.user_id = Number(user_id);
@@ -292,9 +449,20 @@ const MeliAnalyticsController = {
       if (filterType === "normal") query.isFull = { $ne: true };
       if (filterType === "ruptura") query.alertRuptura = "RUPTURA";
 
-      const products = await MeliProduct.find(query)
-        .sort({ alertRuptura: 1, available_quantity: 1 })
-        .lean();
+      // Sem sortBy → ordem natural (sem sort explícito)
+      let sort = {};
+      if (sortBy) {
+        const d = sortDir === "asc" ? 1 : -1;
+        const sortMap = {
+          sold:     { sold_quantity: d },
+          velocity: { averageSellDay: d },
+          stock:    { alertRuptura: d, available_quantity: d },
+          price:    { price: d },
+        };
+        sort = sortMap[sortBy] ?? {};
+      }
+
+      const products = await MeliProduct.find(query).sort(sort).lean();
 
       res.json(products);
     } catch (err) {

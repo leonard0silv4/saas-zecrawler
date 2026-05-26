@@ -17,7 +17,6 @@ const FEATURE_ROWS = [
       { label: "Catálogo de Produtos", free: false, starter: false, pro: true, business: true },
       { label: "Mensagens Mercado Livre", free: false, starter: false, pro: false, business: true },
       { label: "Analytics & Vendas ML", free: false, starter: false, pro: false, business: true },
-      { label: "Gestão de Estoque Full + Ruptura", free: false, starter: false, pro: false, business: true },
     ],
   },
   {

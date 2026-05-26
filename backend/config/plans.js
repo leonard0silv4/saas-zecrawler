@@ -61,7 +61,6 @@ export const PLANS = {
       "Mensagens Mercado Livre",
       "Analytics & Gestão de Vendas ML",
       "Gestão de Estoque Full + Ruptura",
-      "Etiquetagem Full e Normal",
       "Monitor de sellers (até 20)",
     ],
   },

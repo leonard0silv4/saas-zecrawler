@@ -63,7 +63,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="top-right" richColors closeButton duration={5000} />
+        <Toaster position="bottom-right" richColors closeButton duration={5000} />
         <Routes>
           {/* Home → login (URL canônica limpa para o Google) */}
           <Route path="/" element={<Navigate to="/login" replace />} />

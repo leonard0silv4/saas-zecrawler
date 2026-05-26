@@ -104,7 +104,7 @@ const MODULES = [
     label: "Analytics ML",
     tagline: "Vendas, estoque Full e KPIs financeiros em tempo real",
     to: "/meli/analytics",
-    what: "Painel completo de inteligência comercial para vendedores do Mercado Livre. Visualize faturamento, liquidez do marketplace (receita líquida após taxas), top produtos por receita, gestão de estoque Full com alertas automáticos de ruptura, etiquetagem Full e Normal, e análise individual por produto com histórico de vendas.",
+    what: "Painel completo de inteligência comercial para vendedores do Mercado Livre. Visualize faturamento, liquidez do marketplace (receita líquida após taxas), top produtos por receita, gestão de estoque Full com alertas automáticos de ruptura, e análise individual por produto com histórico de vendas.",
     steps: [
       "Conecte suas contas ML em Contas Conectadas antes de acessar este módulo",
       "Clique em Sincronizar para buscar os pedidos recentes do Mercado Livre",

@@ -68,7 +68,7 @@ const SLIDES = [
     emoji: null,
     title: "Analytics ML — Exclusivo Business",
     subtitle: "Vendas, estoque Full e KPIs do seu negócio",
-    body: "Monitore faturamento, liquidez do marketplace, ruptura de estoque Full, etiquetagem e ranking de produtos — tudo em um único painel. Disponível apenas no plano Business.",
+    body: "Monitore faturamento, liquidez do marketplace, ruptura de estoque Full e ranking de produtos — tudo em um único painel. Disponível apenas no plano Business.",
     icon: BarChart2,
     color: "bg-green-600",
     tip: "Clique em Sincronizar ao entrar no módulo para trazer os pedidos mais recentes. Acesse a aba Estoque para ver alertas de Ruptura no Full.",

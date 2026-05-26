@@ -7,6 +7,7 @@ import { resetStaleByTimeout } from "./scraperQueue.js";
 import { runAllActiveSellers } from "./sellerScraper.js";
 import { syncQuestionsForOwner } from "./meliMessagesService.js";
 import { syncOrdersForConta } from "../controllers/MeliAnalyticsController.js";
+import { syncProductsForConta } from "../controllers/MeliController.js";
 
 /**
  * Cron: atualiza links de todos os usuários com sendEmail habilitado.
@@ -102,17 +103,50 @@ export function startCronJobs() {
         ownerId: { $in: ownerIds },
         access_token: { $exists: true },
         disabled: { $ne: true },
+        $or: [{ authError: { $exists: false } }, { authError: null }],
       });
 
       for (const conta of contas) {
         try {
           await syncOrdersForConta(conta, conta.ownerId);
         } catch (err) {
-          console.error(`[Cron] Analytics orders conta=${conta.user_id}:`, err.message);
+          const status = err.response?.status;
+          const detail = status ? `HTTP ${status}` : err.message;
+          console.error(`[Cron] Analytics orders conta=${conta.user_id}: ${detail}`);
         }
       }
     } catch (err) {
       console.error("[Cron] Analytics orders sync:", err.message);
+    }
+  });
+
+  // Sync completo de produtos ML: todo dia à 1h para usuários Business
+  cron.schedule("0 1 * * *", async () => {
+    try {
+      const businessOwners = await User.find({
+        role: "owner",
+        plan: "business",
+        stripeSubscriptionStatus: { $in: ["active", "trialing"] },
+      }).select("_id");
+
+      if (!businessOwners.length) return;
+
+      const contas = await Conta.find({
+        ownerId: { $in: businessOwners.map((u) => u._id) },
+        access_token: { $exists: true },
+        disabled: { $ne: true },
+        $or: [{ authError: { $exists: false } }, { authError: null }],
+      });
+
+      for (const conta of contas) {
+        try {
+          await syncProductsForConta(conta, conta.ownerId);
+        } catch (err) {
+          console.error(`[Cron] Products sync conta=${conta.user_id}:`, err.message);
+        }
+      }
+    } catch (err) {
+      console.error("[Cron] Products sync schedule:", err.message);
     }
   });
 
