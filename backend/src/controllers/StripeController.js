@@ -101,6 +101,7 @@ const StripeController = {
           planSlug,
         },
         subscription_data: {
+          trial_period_days: 10,
           metadata: {
             userId: String(user._id),
             planSlug,
