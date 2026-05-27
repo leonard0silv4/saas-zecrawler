@@ -17,13 +17,19 @@ export default {
   async index(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { page = 0, perPage = 20, storeName, tag } = req.query;
+      const { page = 0, perPage = 20, storeName, tag, search, status } = req.query;
 
       const match = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
       };
       if (storeName) match.storeName = storeName;
       if (tag) match.tags = tag;
+      if (search) match.name = { $regex: search, $options: "i" };
+      if (status === "winning") {
+        match.$expr = { $and: [{ $gt: ["$nowPrice", "$myPrice"] }, { $gt: ["$myPrice", 0] }] };
+      } else if (status === "losing") {
+        match.$expr = { $and: [{ $lt: ["$nowPrice", "$myPrice"] }, { $gt: ["$myPrice", 0] }] };
+      }
 
       const [result] = await Link.aggregate([
         { $match: match },

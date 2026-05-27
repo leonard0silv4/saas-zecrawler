@@ -10,17 +10,17 @@ import { useState } from "react";
 import OnboardingModal from "./OnboardingModal";
 
 const NAV = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", module: null, ownerOnly: false },
-  { to: "/plans", icon: Crown, label: "Planos", module: null, ownerOnly: true },
-  { to: "/settings", icon: Settings, label: "Configurações", module: null, ownerOnly: false },
-  { to: "/team", icon: Users, label: "Time", module: null, ownerOnly: true },
-  { to: "/links", icon: Link2, label: "Links", module: "links", ownerOnly: false },
-  { to: "/price-analyze", icon: LineChart, label: "Análise de preços", module: "priceAnalyze", ownerOnly: false },
-  { to: "/seller-monitor", icon: Store, label: "Monitor sellers", module: "sellerMonitor", ownerOnly: false },
-  { to: "/catalog", icon: Package, label: "Dimensões e Peso", module: "catalog", ownerOnly: false },
-  { to: "/meli", icon: Unplug, label: "Contas conectadas", module: "meli", ownerOnly: false },
-  { to: "/meli/messages", icon: MessageCircle, label: "Mensagens ML", module: "meliMessages", ownerOnly: false },
-  { to: "/meli/analytics", icon: BarChart2, label: "Analytics ML", module: "meliAnalytics", ownerOnly: false },
+  { to: "/dashboard",      icon: LayoutDashboard, label: "Dashboard",               module: null,            ownerOnly: false },
+  { to: "/links",          icon: Link2,           label: "Links",                   module: "links",         ownerOnly: false },
+  { to: "/meli/analytics", icon: BarChart2,       label: "Analytics ML",            module: "meliAnalytics", ownerOnly: false },
+  { to: "/price-analyze",  icon: LineChart,       label: "Análise de concorrência", module: "priceAnalyze",  ownerOnly: false },
+  { to: "/seller-monitor", icon: Store,           label: "Monitor sellers",         module: "sellerMonitor", ownerOnly: false },
+  { to: "/meli/messages",  icon: MessageCircle,   label: "Mensagens ML",            module: "meliMessages",  ownerOnly: false },
+  { to: "/team",           icon: Users,           label: "Time",                    module: null,            ownerOnly: true  },
+  { to: "/catalog",        icon: Package,         label: "Dimensões e Peso",        module: "catalog",       ownerOnly: false },
+  { to: "/plans",          icon: Crown,           label: "Planos",                  module: null,            ownerOnly: true  },
+  { to: "/settings",       icon: Settings,        label: "Configurações",           module: null,            ownerOnly: false },
+  { to: "/meli",           icon: Unplug,          label: "Contas conectadas",       module: "meli",          ownerOnly: false },
 ];
 
 export default function AppLayout() {

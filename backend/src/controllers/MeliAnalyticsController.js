@@ -416,7 +416,7 @@ const MeliAnalyticsController = {
   async orders(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d", page = 1, limit = 50 } = req.query;
+      const { user_id, period = "30d", page = 1, limit = 50, all } = req.query;
       const { from, to } = periodToDates(period);
 
       const filter = {
@@ -424,6 +424,14 @@ const MeliAnalyticsController = {
         date_closed: { $gte: from, $lte: to },
       };
       if (user_id) filter.user_id = Number(user_id);
+
+      if (all === "true") {
+        const [orders, total] = await Promise.all([
+          MeliOrder.find(filter).sort({ date_closed: -1 }).lean(),
+          MeliOrder.countDocuments(filter),
+        ]);
+        return res.json({ orders, total, page: 1, pages: 1 });
+      }
 
       const skip = (Number(page) - 1) * Number(limit);
       const [orders, total] = await Promise.all([

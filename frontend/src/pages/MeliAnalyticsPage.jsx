@@ -356,7 +356,10 @@ export default function MeliAnalyticsPage() {
   }
   async function loadOrders() {
     setLoadingOrders(true);
-    try { const { data } = await api.get("/meli/analytics/orders", { params: params() }); setOrders(data.orders || []); }
+    try {
+      const { data } = await api.get("/meli/analytics/orders", { params: { ...params(), all: "true" } });
+      setOrders(data.orders || []);
+    }
     catch { setOrders([]); } finally { setLoadingOrders(false); }
   }
   async function loadInventory() {
