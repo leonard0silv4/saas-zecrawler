@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { createPortal } from "react-dom";
 import {
   ComposedChart, AreaChart, Area, Bar, XAxis, YAxis,
@@ -282,6 +283,13 @@ export default function MeliAnalyticsPage() {
   const [period,          setPeriod]          = useState("30d");
   const [activeTab,       setActiveTab]       = useState("estoque");
 
+  /* Controle de cache por aba — evita re-fetch ao voltar para uma aba já carregada */
+  const tabLoadedRef   = useRef(new Set());
+  const prevContextRef = useRef({ account: null, period: null });
+
+  /* Ref para scroll: ao trocar aba, leva a seção para o topo do viewport */
+  const tabSectionRef = useRef(null);
+
   const [summary,         setSummary]         = useState(null);
   const [chartData,       setChartData]       = useState([]);
   const [topProducts,     setTopProducts]     = useState([]);
@@ -322,9 +330,24 @@ export default function MeliAnalyticsPage() {
 
   useEffect(() => {
     if (!selectedAccount) return;
+
+    // Se conta ou período mudou → invalida o cache de todas as abas
+    if (
+      prevContextRef.current.account !== selectedAccount ||
+      prevContextRef.current.period  !== period
+    ) {
+      tabLoadedRef.current = new Set();
+      prevContextRef.current = { account: selectedAccount, period };
+    }
+
+    // Só busca se esta aba ainda não foi carregada para o contexto atual
+    if (tabLoadedRef.current.has(activeTab)) return;
+
     if (activeTab === "top")     loadTop();
     if (activeTab === "pedidos") loadOrders();
     if (activeTab === "estoque") loadInventory();
+
+    tabLoadedRef.current.add(activeTab);
   }, [activeTab, selectedAccount, period]);
 
   useEffect(() => {
@@ -357,7 +380,7 @@ export default function MeliAnalyticsPage() {
   async function loadOrders() {
     setLoadingOrders(true);
     try {
-      const { data } = await api.get("/meli/analytics/orders", { params: { ...params(), all: "true" } });
+      const { data } = await api.get("/meli/analytics/orders", { params: { ...params(), limit: 1000 } });
       setOrders(data.orders || []);
     }
     catch { setOrders([]); } finally { setLoadingOrders(false); }
@@ -394,7 +417,38 @@ export default function MeliAnalyticsPage() {
     } finally { setSyncing(false); }
   }
 
-  const rupturaCount = inventory.filter((p) => p.alertRuptura === "RUPTURA").length;
+  /* ── Valores derivados memoizados ───────────────────────────── */
+  const rupturaCount = useMemo(
+    () => inventory.filter((p) => p.alertRuptura === "RUPTURA").length,
+    [inventory]
+  );
+  const avgReceita = useMemo(
+    () => chartData.length > 0
+      ? chartData.reduce((s, d) => s + d.receita, 0) / chartData.length
+      : 0,
+    [chartData]
+  );
+  const daysWithSales = useMemo(
+    () => chartData.filter((d) => d.receita > 0).length,
+    [chartData]
+  );
+
+  /* ── Refs para virtualização das tabelas ────────────────────── */
+  const inventoryParentRef = useRef(null);
+  const ordersParentRef    = useRef(null);
+
+  const inventoryVirtualizer = useVirtualizer({
+    count: inventory.length,
+    getScrollElement: () => inventoryParentRef.current,
+    estimateSize: () => 50,
+    overscan: 10,
+  });
+  const ordersVirtualizer = useVirtualizer({
+    count: orders.length,
+    getScrollElement: () => ordersParentRef.current,
+    estimateSize: () => 42,
+    overscan: 10,
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -489,12 +543,7 @@ export default function MeliAnalyticsPage() {
       </div>
 
       {/* ── Gráfico ───────────────────────────────────────────── */}
-      {(() => {
-        const avgReceita = chartData.length > 0
-          ? chartData.reduce((sum, d) => sum + d.receita, 0) / chartData.length
-          : 0;
-        return (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-sm font-bold text-gray-800">Receita & Pedidos diários</h2>
@@ -502,7 +551,7 @@ export default function MeliAnalyticsPage() {
               </div>
               {!loadingChart && chartData.length > 0 && (
                 <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full">
-                  {chartData.filter((d) => d.receita > 0).length} dias com vendas
+                  {daysWithSales} dias com vendas
                 </span>
               )}
             </div>
@@ -613,12 +662,10 @@ export default function MeliAnalyticsPage() {
                 </ComposedChart>
               </ResponsiveContainer>
             )}
-          </div>
-        );
-      })()}
+      </div>
 
       {/* ── Tabs ──────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+      <div ref={tabSectionRef} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
         <div className="flex border-b border-gray-100 px-2 pt-2 gap-1">
           {[
             { id: "estoque", label: "Estoque" },
@@ -627,7 +674,12 @@ export default function MeliAnalyticsPage() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                requestAnimationFrame(() =>
+                  tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                );
+              }}
               className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
                 activeTab === tab.id
                   ? "bg-green-50 text-green-700"
@@ -714,9 +766,13 @@ export default function MeliAnalyticsPage() {
               ) : inventory.length === 0 ? (
                 <p className="text-sm text-gray-400">Nenhum produto encontrado. Clique em Sincronizar para importar seus anúncios.</p>
               ) : (
-                <div className={`overflow-x-auto transition-opacity duration-200 ${loadingInventory ? "opacity-50 pointer-events-none" : ""}`}>
+                <div
+                  ref={inventoryParentRef}
+                  className={`overflow-auto rounded-lg transition-opacity duration-200 ${loadingInventory ? "opacity-50 pointer-events-none" : ""}`}
+                  style={{ height: "520px" }}
+                >
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky top-0 z-10 bg-white">
                       <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
                         <th className="text-left py-2 pr-4 font-semibold">Produto</th>
                         <th className="text-left py-2 pr-4 font-semibold">SKU</th>
@@ -729,63 +785,80 @@ export default function MeliAnalyticsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {inventory.map((p) => (
-                        <tr
-                          key={p._id || p.id}
-                          onClick={() => setSelectedProduct(p)}
-                          className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        >
-                          <td className="py-2.5 pr-4">
-                            <div className="flex items-center gap-2.5">
-                              {p.thumbnail ? (
-                                <img src={p.thumbnail} alt="" className="w-8 h-8 rounded-lg object-contain shrink-0 border border-gray-100" />
+                      {/* padding top */}
+                      {inventoryVirtualizer.getVirtualItems()[0]?.start > 0 && (
+                        <tr><td colSpan={8} style={{ height: inventoryVirtualizer.getVirtualItems()[0].start }} /></tr>
+                      )}
+                      {inventoryVirtualizer.getVirtualItems().map((vRow) => {
+                        const p = inventory[vRow.index];
+                        return (
+                          <tr
+                            key={p._id || p.id}
+                            onClick={() => setSelectedProduct(p)}
+                            className="hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <td className="py-2.5 pr-4">
+                              <div className="flex items-center gap-2.5">
+                                {p.thumbnail ? (
+                                  <img src={p.thumbnail} alt="" className="w-8 h-8 rounded-lg object-contain shrink-0 border border-gray-100" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center">
+                                    <Package size={12} className="text-gray-400" />
+                                  </div>
+                                )}
+                                <span className="truncate max-w-[200px] font-medium">{p.title}</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 pr-4 text-gray-400 font-mono text-xs">{p.SKU || "—"}</td>
+                            <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(p.price)}</td>
+                            <td className="py-2.5 pr-4 text-right font-semibold text-gray-700">
+                              {p.sold_quantity ?? "—"}
+                            </td>
+                            <td className="py-2.5 pr-4 text-right text-xs text-gray-500">
+                              {p.averageSellDay > 0 ? p.averageSellDay.toFixed(1) : "—"}
+                            </td>
+                            <td className="py-2.5 pr-4 text-right">
+                              {p.isFull ? (
+                                <span className={p.estoque_full === 0 ? "text-red-600 font-bold" : "font-medium"}>
+                                  {p.estoque_full ?? "—"}
+                                </span>
                               ) : (
-                                <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center">
-                                  <Package size={12} className="text-gray-400" />
-                                </div>
+                                <span className="font-medium">{p.available_quantity ?? "—"}</span>
                               )}
-                              <span className="truncate max-w-[200px] font-medium">{p.title}</span>
-                            </div>
-                          </td>
-                          <td className="py-2.5 pr-4 text-gray-400 font-mono text-xs">{p.SKU || "—"}</td>
-                          <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(p.price)}</td>
-                          <td className="py-2.5 pr-4 text-right font-semibold text-gray-700">
-                            {p.sold_quantity ?? "—"}
-                          </td>
-                          <td className="py-2.5 pr-4 text-right text-xs text-gray-500">
-                            {p.averageSellDay > 0 ? p.averageSellDay.toFixed(1) : "—"}
-                          </td>
-                          <td className="py-2.5 pr-4 text-right">
-                            {p.isFull ? (
-                              <span className={p.estoque_full === 0 ? "text-red-600 font-bold" : "font-medium"}>
-                                {p.estoque_full ?? "—"}
-                              </span>
-                            ) : (
-                              <span className="font-medium">{p.available_quantity ?? "—"}</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 pr-4 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              p.isFull ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                            }`}>
-                              {p.isFull ? "Full" : "Normal"}
-                            </span>
-                          </td>
-                          <td className="py-2.5 text-center">
-                            {p.alertRuptura ? (
+                            </td>
+                            <td className="py-2.5 pr-4 text-center">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                p.alertRuptura === "RUPTURA"  ? "bg-red-100 text-red-700" :
-                                p.alertRuptura === "CRÍTICO"  ? "bg-orange-100 text-orange-700" :
-                                                                "bg-yellow-100 text-yellow-700"
+                                p.isFull ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
                               }`}>
-                                {p.alertRuptura}
+                                {p.isFull ? "Full" : "Normal"}
                               </span>
-                            ) : (
-                              <span className="text-gray-200">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-2.5 text-center">
+                              {p.alertRuptura ? (
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                  p.alertRuptura === "RUPTURA"  ? "bg-red-100 text-red-700" :
+                                  p.alertRuptura === "CRÍTICO"  ? "bg-orange-100 text-orange-700" :
+                                                                  "bg-yellow-100 text-yellow-700"
+                                }`}>
+                                  {p.alertRuptura}
+                                </span>
+                              ) : (
+                                <span className="text-gray-200">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {/* padding bottom */}
+                      {(() => {
+                        const items = inventoryVirtualizer.getVirtualItems();
+                        const last = items[items.length - 1];
+                        if (!last) return null;
+                        const padBottom = inventoryVirtualizer.getTotalSize() - last.end;
+                        return padBottom > 0
+                          ? <tr><td colSpan={8} style={{ height: padBottom }} /></tr>
+                          : null;
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -937,9 +1010,13 @@ export default function MeliAnalyticsPage() {
               ) : orders.length === 0 ? (
                 <p className="text-sm text-gray-400">Sincronize os pedidos para listá-los aqui.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div
+                  ref={ordersParentRef}
+                  className="overflow-auto rounded-lg"
+                  style={{ height: "520px" }}
+                >
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky top-0 z-10 bg-white">
                       <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
                         <th className="text-left py-2 pr-4 font-semibold">Data</th>
                         <th className="text-left py-2 pr-4 font-semibold">Nº Pedido</th>
@@ -951,36 +1028,53 @@ export default function MeliAnalyticsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {orders.map((o) => (
-                        <tr key={o.order_id} className="hover:bg-gray-50 transition-colors">
-                          <td className="py-2.5 pr-4 text-gray-500 whitespace-nowrap text-xs">
-                            {o.date_closed
-                              ? format(new Date(o.date_closed), "dd/MM/yy HH:mm")
-                              : "—"}
-                          </td>
-                          <td className="py-2.5 pr-4 font-mono text-xs text-gray-400">{o.order_id}</td>
-                          <td className="py-2.5 pr-4 max-w-[200px]">
-                            <span className="truncate block font-medium">{o.order_items?.[0]?.title || "—"}</span>
-                            {o.order_items?.length > 1 && (
-                              <span className="text-xs text-gray-400">+{o.order_items.length - 1} item(s)</span>
-                            )}
-                          </td>
-                          <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(o.total_amount)}</td>
-                          <td className="py-2.5 pr-4 text-right text-red-500 font-medium">{formatBRL(o.ml_fee)}</td>
-                          <td className="py-2.5 pr-4 text-right text-green-700 font-semibold">
-                            {formatBRL(o.total_amount - o.ml_fee)}
-                          </td>
-                          <td className="py-2.5 text-center">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              o.status === "paid"      ? "bg-green-100 text-green-700" :
-                              o.status === "cancelled" ? "bg-red-100 text-red-700" :
-                                                         "bg-gray-100 text-gray-600"
-                            }`}>
-                              {o.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {/* padding top */}
+                      {ordersVirtualizer.getVirtualItems()[0]?.start > 0 && (
+                        <tr><td colSpan={7} style={{ height: ordersVirtualizer.getVirtualItems()[0].start }} /></tr>
+                      )}
+                      {ordersVirtualizer.getVirtualItems().map((vRow) => {
+                        const o = orders[vRow.index];
+                        return (
+                          <tr key={o.order_id} className="hover:bg-gray-50 transition-colors">
+                            <td className="py-2.5 pr-4 text-gray-500 whitespace-nowrap text-xs">
+                              {o.date_closed
+                                ? format(new Date(o.date_closed), "dd/MM/yy HH:mm")
+                                : "—"}
+                            </td>
+                            <td className="py-2.5 pr-4 font-mono text-xs text-gray-400">{o.order_id}</td>
+                            <td className="py-2.5 pr-4 max-w-[200px]">
+                              <span className="truncate block font-medium">{o.order_items?.[0]?.title || "—"}</span>
+                              {o.order_items?.length > 1 && (
+                                <span className="text-xs text-gray-400">+{o.order_items.length - 1} item(s)</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(o.total_amount)}</td>
+                            <td className="py-2.5 pr-4 text-right text-red-500 font-medium">{formatBRL(o.ml_fee)}</td>
+                            <td className="py-2.5 pr-4 text-right text-green-700 font-semibold">
+                              {formatBRL(o.total_amount - o.ml_fee)}
+                            </td>
+                            <td className="py-2.5 text-center">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                o.status === "paid"      ? "bg-green-100 text-green-700" :
+                                o.status === "cancelled" ? "bg-red-100 text-red-700" :
+                                                           "bg-gray-100 text-gray-600"
+                              }`}>
+                                {o.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {/* padding bottom */}
+                      {(() => {
+                        const items = ordersVirtualizer.getVirtualItems();
+                        const last = items[items.length - 1];
+                        if (!last) return null;
+                        const padBottom = ordersVirtualizer.getTotalSize() - last.end;
+                        return padBottom > 0
+                          ? <tr><td colSpan={7} style={{ height: padBottom }} /></tr>
+                          : null;
+                      })()}
                     </tbody>
                   </table>
                 </div>

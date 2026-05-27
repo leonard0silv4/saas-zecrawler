@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Loader2,
   MessageCircle,
   Pencil,
   Plus,
@@ -76,6 +77,8 @@ export default function MeliMessagesPage() {
   const [editingTemplateContent, setEditingTemplateContent] = useState("");
   const [deleteQuestionModal, setDeleteQuestionModal] = useState(null); // { question_id, text, status }
   const [deletingQuestion, setDeletingQuestion] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [deletingTemplateId, setDeletingTemplateId] = useState(null);
   const [buyerThread, setBuyerThread] = useState([]);
   const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
   const replyTextareaRef = useRef(null);
@@ -414,6 +417,7 @@ export default function MeliMessagesPage() {
       notifyWarning("Informe nome e conteúdo do template");
       return;
     }
+    setSavingTemplate(true);
     try {
       await api.post("/meli/messages/templates", { name, content, isActive: true });
       setNewTemplateName("");
@@ -421,6 +425,8 @@ export default function MeliMessagesPage() {
       await loadTemplates();
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao criar template");
+    } finally {
+      setSavingTemplate(false);
     }
   }
 
@@ -440,11 +446,14 @@ export default function MeliMessagesPage() {
   }
 
   async function deleteTemplate(id) {
+    setDeletingTemplateId(id);
     try {
       await api.delete(`/meli/messages/templates/${id}`);
       await loadTemplates();
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao excluir template");
+    } finally {
+      setDeletingTemplateId(null);
     }
   }
 
@@ -462,6 +471,7 @@ export default function MeliMessagesPage() {
       notifyWarning("Nome e conteúdo do template são obrigatórios");
       return;
     }
+    setSavingTemplate(true);
     try {
       await api.put(`/meli/messages/templates/${editingTemplateId}`, { name, content });
       setEditingTemplateId(null);
@@ -470,6 +480,8 @@ export default function MeliMessagesPage() {
       await loadTemplates();
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao atualizar template");
+    } finally {
+      setSavingTemplate(false);
     }
   }
 
@@ -574,6 +586,10 @@ export default function MeliMessagesPage() {
           </p>
           {!selectedUserId ? (
             <p className="text-sm text-gray-500">Conecte e selecione uma conta para listar perguntas.</p>
+          ) : loadingQuestions && questions.length === 0 ? (
+            <div className="flex justify-center py-10">
+              <Loader2 size={22} className="animate-spin text-gray-300" />
+            </div>
           ) : questions.length === 0 ? (
             <p className="text-sm text-gray-500">Nenhuma pergunta para os filtros atuais.</p>
           ) : (
@@ -872,8 +888,14 @@ export default function MeliMessagesPage() {
             onChange={(e) => setNewTemplateContent(e.target.value)}
           />
         </div>
-        <button type="button" onClick={createTemplate} className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium flex items-center gap-2">
-          <Plus size={14} /> Criar template
+        <button
+          type="button"
+          onClick={createTemplate}
+          disabled={savingTemplate}
+          className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-60"
+        >
+          {savingTemplate ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+          {savingTemplate ? "Salvando…" : "Criar template"}
         </button>
         {templates.length > 0 && (
           <div className="border border-gray-100 rounded-lg divide-y divide-gray-100">
@@ -892,8 +914,16 @@ export default function MeliMessagesPage() {
                       onChange={(e) => setEditingTemplateContent(e.target.value)}
                     />
                     <div className="flex gap-2">
-                      <button type="button" onClick={saveTemplateEdit} className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs flex items-center gap-1">
-                        <Check size={12} /> Salvar
+                      <button
+                        type="button"
+                        onClick={saveTemplateEdit}
+                        disabled={savingTemplate}
+                        className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs flex items-center gap-1 disabled:opacity-60"
+                      >
+                        {savingTemplate
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Check size={12} />}
+                        {savingTemplate ? "Salvando…" : "Salvar"}
                       </button>
                       <button
                         type="button"
@@ -930,9 +960,13 @@ export default function MeliMessagesPage() {
                       <button
                         type="button"
                         onClick={() => deleteTemplate(t._id)}
-                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs flex items-center gap-1"
+                        disabled={deletingTemplateId === t._id}
+                        className="px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs flex items-center gap-1 disabled:opacity-60"
                       >
-                        <Trash2 size={12} /> Excluir
+                        {deletingTemplateId === t._id
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Trash2 size={12} />}
+                        {deletingTemplateId === t._id ? "Excluindo…" : "Excluir"}
                       </button>
                     </div>
                   </>

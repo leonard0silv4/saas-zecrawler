@@ -425,14 +425,6 @@ const MeliAnalyticsController = {
       };
       if (user_id) filter.user_id = Number(user_id);
 
-      if (all === "true") {
-        const [orders, total] = await Promise.all([
-          MeliOrder.find(filter).sort({ date_closed: -1 }).lean(),
-          MeliOrder.countDocuments(filter),
-        ]);
-        return res.json({ orders, total, page: 1, pages: 1 });
-      }
-
       const skip = (Number(page) - 1) * Number(limit);
       const [orders, total] = await Promise.all([
         MeliOrder.find(filter).sort({ date_closed: -1 }).skip(skip).limit(Number(limit)).lean(),
@@ -449,7 +441,7 @@ const MeliAnalyticsController = {
   async inventory(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, filter: filterType, sortBy, sortDir = "desc" } = req.query;
+      const { user_id, filter: filterType, sortBy, sortDir = "desc", limit = 1000 } = req.query;
 
       const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
       if (user_id) query.user_id = Number(user_id);
@@ -470,7 +462,7 @@ const MeliAnalyticsController = {
         sort = sortMap[sortBy] ?? {};
       }
 
-      const products = await MeliProduct.find(query).sort(sort).lean();
+      const products = await MeliProduct.find(query).sort(sort).limit(Number(limit)).lean();
 
       res.json(products);
     } catch (err) {
