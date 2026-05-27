@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Cookie, Trash2, Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import api from "../services/api";
 import { useNotifications } from "../contexts/NotificationContext";
+import ConfirmDialog from "./ConfirmDialog.jsx";
 
 function normalizePayload(parsed) {
   if (Array.isArray(parsed)) return parsed;
@@ -16,6 +17,7 @@ export default function SettingsCookiesSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
@@ -73,20 +75,27 @@ export default function SettingsCookiesSection() {
     }
   }
 
-  async function handleClear() {
-    if (!window.confirm("Remover todos os cookies ML salvos para sua conta?")) return;
-    setClearing(true);
-    setError(null);
-    setMessage(null);
-    try {
-      await api.delete("/cookies");
-      setMessage("Cookies removidos.");
-      await loadCount();
-    } catch (e) {
-      setError(e.response?.data?.error || e.message || "Erro ao limpar");
-    } finally {
-      setClearing(false);
-    }
+  function handleClear() {
+    setConfirmDialog({
+      title: "Limpar cookies ML",
+      message: "Remover todos os cookies do Mercado Livre salvos para sua conta? Você precisará importá-los novamente.",
+      confirmLabel: "Remover",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setClearing(true);
+        setError(null);
+        setMessage(null);
+        try {
+          await api.delete("/cookies");
+          setMessage("Cookies removidos.");
+          await loadCount();
+        } catch (e) {
+          setError(e.response?.data?.error || e.message || "Erro ao limpar");
+        } finally {
+          setClearing(false);
+        }
+      },
+    });
   }
 
   return (
@@ -155,6 +164,15 @@ export default function SettingsCookiesSection() {
       <p className="text-xs text-gray-500 leading-relaxed">
         Ao salvar, os cookies anteriores desta conta são substituídos. Não compartilhe este JSON.
       </p>
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={confirmDialog?.onConfirm}
+        onClose={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

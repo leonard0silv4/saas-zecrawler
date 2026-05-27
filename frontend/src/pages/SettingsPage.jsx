@@ -53,14 +53,12 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-brand-50 text-brand-700">
-          <Settings size={26} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Configurações</h1>
-          <p className="text-gray-600 text-sm mt-0.5">Plano, lojas próprias e cookies do Mercado Livre.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+          <Settings size={22} className="text-brand-600" />
+          Configurações
+        </h1>
+        <p className="text-gray-600 text-sm mt-0.5">Plano, lojas próprias e cookies do Mercado Livre.</p>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">

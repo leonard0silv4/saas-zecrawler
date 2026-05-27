@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Pencil, RefreshCw, Trash2, Tag, TrendingUp, TrendingDown, Minus, Search, X } from "lucide-react";
+import { Plus, Pencil, RefreshCw, Trash2, Tag, TrendingUp, TrendingDown, Minus, Search, X, Link2 } from "lucide-react";
 import api from "../services/api";
 import { notifyError } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function LinksPage() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export default function LinksPage() {
   const [editMyPrice, setEditMyPrice] = useState("");
   const [editTags, setEditTags] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Filtros
   const [filterStatus, setFilterStatus] = useState("all"); // "all" | "winning" | "losing"
@@ -109,10 +111,17 @@ export default function LinksPage() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm("Remover este link?")) return;
-    await api.delete(`/links/${id}`);
-    fetchLinks();
+  function handleDelete(id) {
+    setConfirmDialog({
+      title: "Remover link",
+      message: "O link será removido permanentemente.",
+      confirmLabel: "Remover",
+      onConfirm: async () => {
+        await api.delete(`/links/${id}`);
+        setConfirmDialog(null);
+        fetchLinks();
+      },
+    });
   }
 
   async function handleRefresh() {
@@ -156,7 +165,10 @@ export default function LinksPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Links</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Link2 size={22} className="text-brand-600" />
+            Links
+          </h1>
           <p className="text-sm text-gray-500">{total} de {maxLinks} links utilizados</p>
         </div>
         <div className="flex gap-2">
@@ -497,6 +509,15 @@ export default function LinksPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={confirmDialog?.onConfirm}
+        onClose={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

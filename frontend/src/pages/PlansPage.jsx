@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams } from "react-router-dom";
-import { Check, Zap, CreditCard, AlertCircle, CheckCircle2, XCircle, Info } from "lucide-react";
+import { Check, Zap, CreditCard, AlertCircle, Info, Crown } from "lucide-react";
 import api from "../services/api";
+import { notifySuccess, notifyError } from "../utils/notify.js";
+import { toast } from "sonner";
 
 export default function PlansPage() {
   const { user, isOwner } = useAuth();
@@ -10,7 +12,6 @@ export default function PlansPage() {
   const [plans, setPlans] = useState({});
   const [subStatus, setSubStatus] = useState(null);
   const [upgrading, setUpgrading] = useState(null);
-  const [toast, setToast] = useState(null);
 
   // Load plans + subscription status
   useEffect(() => {
@@ -22,11 +23,11 @@ export default function PlansPage() {
   useEffect(() => {
     const status = searchParams.get("status");
     if (status === "success") {
-      setToast({ type: "success", message: "Pagamento realizado! Seu plano foi atualizado." });
+      notifySuccess("Pagamento realizado! Seu plano foi atualizado.");
       // Refresh user data after Stripe webhook processes
       setTimeout(() => window.location.reload(), 2000);
     } else if (status === "canceled") {
-      setToast({ type: "info", message: "Pagamento cancelado. Seu plano não foi alterado." });
+      toast("Pagamento cancelado. Seu plano não foi alterado.");
     }
     if (status) {
       searchParams.delete("status");
@@ -42,13 +43,13 @@ export default function PlansPage() {
       try {
         if (user?.hasSubscription) {
           await api.post("/stripe/downgrade");
-          setToast({ type: "info", message: "Assinatura será cancelada ao fim do período atual." });
+          toast("Assinatura será cancelada ao fim do período atual.");
         } else {
           await api.put("/auth/plan", { plan: "free" });
           window.location.reload();
         }
       } catch (err) {
-        setToast({ type: "error", message: err.response?.data?.error || "Erro ao alterar plano" });
+        notifyError(err.response?.data?.error || "Erro ao alterar plano");
       } finally {
         setUpgrading(null);
       }
@@ -64,11 +65,11 @@ export default function PlansPage() {
         return; // Don't reset upgrading — page is navigating away
       }
       if (data.updated) {
-        setToast({ type: "success", message: "Plano atualizado!" });
+        notifySuccess("Plano atualizado!");
         setTimeout(() => window.location.reload(), 1500);
       }
     } catch (err) {
-      setToast({ type: "error", message: err.response?.data?.error || "Erro ao iniciar pagamento" });
+      notifyError(err.response?.data?.error || "Erro ao iniciar pagamento");
     } finally {
       setUpgrading(null);
     }
@@ -79,7 +80,7 @@ export default function PlansPage() {
       const { data } = await api.post("/stripe/portal");
       window.location.href = data.url;
     } catch (err) {
-      setToast({ type: "error", message: "Erro ao abrir portal de cobrança" });
+      notifyError("Erro ao abrir portal de cobrança");
     }
   }
 
@@ -91,24 +92,12 @@ export default function PlansPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Toast */}
-      {toast && (
-        <div className={`mb-6 flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${
-          toast.type === "success" ? "bg-emerald-50 text-emerald-700" :
-          toast.type === "error" ? "bg-red-50 text-red-700" :
-          "bg-blue-50 text-blue-700"
-        }`}>
-          {toast.type === "success" ? <CheckCircle2 size={18} /> :
-           toast.type === "error" ? <XCircle size={18} /> :
-           <AlertCircle size={18} />}
-          {toast.message}
-          <button onClick={() => setToast(null)} className="ml-auto opacity-50 hover:opacity-100">✕</button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Planos e Preços</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">
+          <Crown size={22} className="text-brand-600" />
+          Planos e Preços
+        </h1>
         <p className="text-gray-500 mt-1">Escolha o plano ideal para o seu negócio</p>
       </div>
 

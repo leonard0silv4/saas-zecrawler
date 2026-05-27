@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { ExternalLink, Filter, RefreshCw, X, AlertTriangle, TrendingUp, Play } from "lucide-react";
+import { ExternalLink, Filter, LineChart, RefreshCw, X, AlertTriangle, TrendingUp, Play } from "lucide-react";
 import api from "../services/api";
 import { parseXML, getDefaultMyStoresUppercase } from "../lib/priceAnalyzeXml";
 
@@ -166,7 +166,10 @@ export default function PriceAnalyzePage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Análise de preços</h1>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <LineChart size={22} className="text-brand-600" />
+            Análise de concorrência
+          </h1>
     
   
           {extractionDate && (

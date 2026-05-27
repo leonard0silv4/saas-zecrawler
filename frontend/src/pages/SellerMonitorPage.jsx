@@ -5,6 +5,7 @@ import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
 import { format } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 
 function fmtAgo(iso) {
@@ -36,6 +37,7 @@ export default function SellerMonitorPage() {
   const [editUrl, setEditUrl] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const prevRef = useRef(new Map());
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const fetchSellers = useCallback(async () => {
     setLoading(true);
@@ -169,15 +171,22 @@ export default function SellerMonitorPage() {
     }
   }
 
-  async function handleDelete(s) {
-    if (!confirm("Remover este seller e todos os dados?")) return;
-    await api.delete(`/seller-monitor/${s._id}`);
-    setSellers((prev) => prev.filter((x) => x._id !== s._id));
-    if (selectedId === s._id) {
-      setSelectedId(null);
-      setProducts([]);
-      setAlerts([]);
-    }
+  function handleDelete(s) {
+    setConfirmDialog({
+      title: "Remover seller",
+      message: `Remover "${s.name || s.url}" e todos os dados associados? Esta ação não pode ser desfeita.`,
+      confirmLabel: "Remover",
+      onConfirm: async () => {
+        await api.delete(`/seller-monitor/${s._id}`);
+        setConfirmDialog(null);
+        setSellers((prev) => prev.filter((x) => x._id !== s._id));
+        if (selectedId === s._id) {
+          setSelectedId(null);
+          setProducts([]);
+          setAlerts([]);
+        }
+      },
+    });
   }
 
   async function markRead(aid) {
@@ -197,7 +206,17 @@ export default function SellerMonitorPage() {
   const canAddSeller = sellers.length < maxSellerMonitors;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-8rem)] max-w-7xl mx-auto">
+    <div className="space-y-4 max-w-7xl mx-auto">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Store size={22} className="text-brand-600" />
+          Monitor de Sellers
+        </h1>
+        <p className="text-gray-500 mt-1 text-sm">Monitore preços e produtos de concorrentes no Mercado Livre.</p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-12rem)]">
       <aside className="lg:w-72 shrink-0 bg-white rounded-xl border border-gray-100 flex flex-col max-h-[40vh] lg:sticky lg:top-0 lg:self-start lg:h-[calc(100vh-4rem)] lg:max-h-none">
         <div className="p-3 border-b border-gray-100 flex items-center justify-between">
           <div>
@@ -479,6 +498,16 @@ export default function SellerMonitorPage() {
         </div>,
         document.body
       )}
+      </div>
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={confirmDialog?.onConfirm}
+        onClose={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

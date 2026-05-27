@@ -403,7 +403,7 @@ export default function MeliAnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart2 className="text-green-600" />
+            <BarChart2 size={22} className="text-green-600" />
             Analytics ML
           </h1>
           <p className="text-gray-500 mt-1 text-sm">Vendas, estoque Full e KPIs financeiros — exclusivo Business</p>

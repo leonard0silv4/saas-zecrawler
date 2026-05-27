@@ -16,9 +16,9 @@ const NAV = [
   { to: "/price-analyze",  icon: LineChart,       label: "Análise de concorrência", module: "priceAnalyze",  ownerOnly: false },
   { to: "/seller-monitor", icon: Store,           label: "Monitor sellers",         module: "sellerMonitor", ownerOnly: false },
   { to: "/meli/messages",  icon: MessageCircle,   label: "Mensagens ML",            module: "meliMessages",  ownerOnly: false },
-  { to: "/team",           icon: Users,           label: "Time",                    module: null,            ownerOnly: true  },
+  { to: "/team",           icon: Users,           label: "Time & Permissões",       module: null,            ownerOnly: true  },
   { to: "/catalog",        icon: Package,         label: "Dimensões e Peso",        module: "catalog",       ownerOnly: false },
-  { to: "/plans",          icon: Crown,           label: "Planos",                  module: null,            ownerOnly: true  },
+  { to: "/plans",          icon: Crown,           label: "Planos e Preços",         module: null,            ownerOnly: true  },
   { to: "/settings",       icon: Settings,        label: "Configurações",           module: null,            ownerOnly: false },
   { to: "/meli",           icon: Unplug,          label: "Contas conectadas",       module: "meli",          ownerOnly: false },
 ];

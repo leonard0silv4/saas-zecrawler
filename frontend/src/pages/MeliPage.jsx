@@ -3,6 +3,7 @@ import { AlertTriangle, ExternalLink, Package, Truck, Unlink, Unplug } from "luc
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function MeliPage() {
   const { isOwner } = useAuth();
@@ -15,6 +16,7 @@ export default function MeliPage() {
   const [shipment, setShipment] = useState(null);
   const [loadingShip, setLoadingShip] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   async function loadAccounts() {
     setLoading(true);
@@ -38,29 +40,30 @@ export default function MeliPage() {
     window.location.href = `/api/meli/auth?token=${encodeURIComponent(token)}`;
   }
 
-  async function disconnectAccount(mlUserId) {
+  function disconnectAccount(mlUserId) {
     const acc = accounts.find((a) => String(a.user_id) === String(mlUserId));
     const label = acc?.nickname || `ID ${mlUserId}`;
-    if (
-      !confirm(
-        `Desconectar "${label}"?\n\nOs tokens serão removidos deste app. Perguntas e produtos em cache dessa loja serão apagados. Para usar de novo, conecte e autorize no Mercado Livre.`
-      )
-    ) {
-      return;
-    }
-    setDisconnectingId(mlUserId);
-    try {
-      await api.delete(`/meli/accounts/${mlUserId}`);
-      if (String(userId) === String(mlUserId)) {
-        setUserId("");
-        setProducts([]);
-      }
-      await loadAccounts();
-    } catch (err) {
-      notifyError(err.response?.data?.error || "Erro ao desconectar");
-    } finally {
-      setDisconnectingId(null);
-    }
+    setConfirmDialog({
+      title: "Desconectar conta",
+      message: `Desconectar "${label}"? Os tokens serão removidos deste app. Perguntas e produtos em cache dessa loja serão apagados. Para usar de novo, conecte e autorize no Mercado Livre.`,
+      confirmLabel: "Desconectar",
+      onConfirm: async () => {
+        setDisconnectingId(mlUserId);
+        setConfirmDialog(null);
+        try {
+          await api.delete(`/meli/accounts/${mlUserId}`);
+          if (String(userId) === String(mlUserId)) {
+            setUserId("");
+            setProducts([]);
+          }
+          await loadAccounts();
+        } catch (err) {
+          notifyError(err.response?.data?.error || "Erro ao desconectar");
+        } finally {
+          setDisconnectingId(null);
+        }
+      },
+    });
   }
 
   async function loadProducts() {
@@ -99,8 +102,8 @@ export default function MeliPage() {
     <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Unplug className="text-yellow-500" />
-          Mercado Livre
+          <Unplug size={22} className="text-yellow-500" />
+          Contas conectadas
         </h1>
         <p className="text-gray-500 mt-1">Conecte contas OAuth e consulte produtos indexados.</p>
       </div>
@@ -257,6 +260,15 @@ export default function MeliPage() {
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={confirmDialog?.onConfirm}
+        onClose={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

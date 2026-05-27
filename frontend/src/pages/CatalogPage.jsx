@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifySuccess, notifyWarning } from "../utils/notify.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 const empty = {
   sku1: "",
@@ -47,6 +48,7 @@ export default function CatalogPage() {
   const [pkgAltura, setPkgAltura] = useState("");
   const [pkgPeso, setPkgPeso] = useState("");
   const [pkgResult, setPkgResult] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
   const cursorRef = useRef(null);
   const MARGEM_PESO = 0.05;
 
@@ -115,11 +117,18 @@ export default function CatalogPage() {
     }
   }
 
-  async function remove(id) {
-    if (!confirm("Excluir este item?")) return;
-    await api.delete(`/catalog/${id}`);
-    cursorRef.current = null;
-    fetchList(true);
+  function remove(id) {
+    setConfirmDialog({
+      title: "Excluir item do catálogo",
+      message: "Tem certeza? Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await api.delete(`/catalog/${id}`);
+        setConfirmDialog(null);
+        cursorRef.current = null;
+        fetchList(true);
+      },
+    });
   }
 
   async function onImport(e) {
@@ -204,7 +213,7 @@ export default function CatalogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package className="text-brand-600" />
+            <Package size={22} className="text-brand-600" />
             Dimensões e Peso
           </h1>
           <p className="text-gray-500 mt-1">Dimensões e peso cúbico por SKU.</p>
@@ -489,6 +498,15 @@ export default function CatalogPage() {
         </div>,
         document.body
       )}
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={confirmDialog?.onConfirm}
+        onClose={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

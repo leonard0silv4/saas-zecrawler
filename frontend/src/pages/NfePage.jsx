@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { FileText, Plus, Search, Trash2, Upload } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 function mapXmlToNota(parsed) {
   const nota = parsed?.nfeProc?.NFe?.infNFe;
@@ -56,6 +57,7 @@ export default function NfePage() {
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const cursorRef = useRef(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const emptyManual = {
     fornecedor: { nome: "", cnpj: "", telefone: "", endereco: "" },
@@ -149,10 +151,17 @@ export default function NfePage() {
     }
   }
 
-  async function remove(id) {
-    if (!confirm("Excluir esta nota?")) return;
-    await api.delete(`/nfe/${id}`);
-    fetchList(true);
+  function remove(id) {
+    setConfirmDialog({
+      title: "Excluir nota fiscal",
+      message: "Tem certeza? Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await api.delete(`/nfe/${id}`);
+        setConfirmDialog(null);
+        fetchList(true);
+      },
+    });
   }
 
   return (
@@ -160,7 +169,7 @@ export default function NfePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <FileText className="text-brand-600" />
+            <FileText size={22} className="text-brand-600" />
             Notas fiscais
           </h1>
           <p className="text-gray-500 mt-1">Importe XML de NFe ou cadastre manualmente.</p>
@@ -324,6 +333,15 @@ export default function NfePage() {
         </div>,
         document.body
       )}
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        message={confirmDialog?.message}
+        confirmLabel={confirmDialog?.confirmLabel}
+        onConfirm={confirmDialog?.onConfirm}
+        onClose={() => setConfirmDialog(null)}
+      />
     </div>
   );
 }

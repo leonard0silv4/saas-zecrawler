@@ -480,8 +480,8 @@ export default function MeliMessagesPage() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageCircle className="text-brand-600" />
-            Mensagens Mercado Livre
+            <MessageCircle size={22} className="text-brand-600" />
+            Mensagens ML
           </h1>
           <p className="text-gray-500 mt-1">Gerencie perguntas, respostas e templates.</p>
         </div>
