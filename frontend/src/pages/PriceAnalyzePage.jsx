@@ -231,14 +231,57 @@ export default function PriceAnalyzePage() {
       )}
 
       {noXmlYet && !generating && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-          <p className="text-amber-900 font-medium">Nenhum XML gerado ainda.</p>
-          <p className="text-sm text-amber-800 mt-1">
-            Use links de <strong>listagem</strong> (<code className="text-xs">lista.mercadolivre.com.br</code>, busca{" "}
-            <code className="text-xs">?q=</code>, loja com <code className="text-xs">_NoIndex_True</code>) para extrair{" "}
-            <strong>vários</strong> anúncios como no Python. Anúncio único só gera uma linha. Catálogo:{" "}
-            <code className="text-xs">/p/MLB…/s</code>.
-          </p>
+        <div className="bg-white border border-sky-200 rounded-xl p-6 space-y-4">
+          {/* Header */}
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center shrink-0">
+              <TrendingUp size={20} className="text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">Análise de Preços ainda não tem dados</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Este módulo depende dos seus <strong>Links</strong> para funcionar. Veja como começar:
+              </p>
+            </div>
+          </div>
+
+          {/* Passos */}
+          <ol className="space-y-3">
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="shrink-0 w-6 h-6 rounded-full bg-sky-500 text-white text-xs flex items-center justify-center font-bold">1</span>
+              <div className="leading-relaxed">
+                <strong>Cadastre links na página Links.</strong>{" "}
+                Vá para <Link to="/links" className="text-sky-600 font-medium hover:underline">Links</Link> e adicione
+                as URLs dos produtos do Mercado Livre — tanto os seus anúncios quanto os dos concorrentes para o mesmo produto.
+                Quanto mais sellers do mesmo produto você adicionar, mais rica fica a comparação.
+              </div>
+            </li>
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="shrink-0 w-6 h-6 rounded-full bg-sky-500 text-white text-xs flex items-center justify-center font-bold">2</span>
+              <div className="leading-relaxed">
+                <strong>Configure seus sellers em Configurações.</strong>{" "}
+                Acesse <Link to="/settings" className="text-sky-600 font-medium hover:underline">Configurações → Meus Sellers</Link> e
+                informe os nomes das suas lojas no Mercado Livre. O sistema usa isso para separar <em>seus preços</em> dos preços da concorrência.
+              </div>
+            </li>
+            <li className="flex gap-3 text-sm text-gray-700">
+              <span className="shrink-0 w-6 h-6 rounded-full bg-sky-500 text-white text-xs flex items-center justify-center font-bold">3</span>
+              <div className="leading-relaxed">
+                <strong>Clique em "Buscar dados" nesta página.</strong>{" "}
+                O sistema varre todos os seus links, agrupa os produtos pelo SKU e monta a tabela comparativa com recomendações automáticas de preço.
+              </div>
+            </li>
+          </ol>
+
+          {/* Box explicativo da diferença */}
+          <div className="bg-sky-50 border border-sky-100 rounded-lg p-4 text-sm text-gray-700">
+            <p className="font-semibold text-sky-800 mb-1">Qual a diferença entre Links e Análise de Preços?</p>
+            <p className="leading-relaxed">
+              <strong>Links</strong> acompanha cada URL individualmente — histórico de preço, seller e status (ganhando/perdendo).{" "}
+              <strong>Análise de Preços</strong> vai além: ela junta todos os links do mesmo produto (pelo SKU), coloca todos os
+              sellers lado a lado e gera recomendações automáticas quando a diferença superar 10% do melhor concorrente.
+            </p>
+          </div>
         </div>
       )}
 

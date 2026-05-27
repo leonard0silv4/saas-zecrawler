@@ -26,7 +26,7 @@ const MODULES = [
       "Adicione tags para organizar seus links por categoria, marca ou coleção",
       "O sistema atualiza os preços automaticamente; acompanhe as variações e o histórico em tempo real",
     ],
-    tip: "Configure seus sellers em Configurações → Meus Sellers para que o sistema reconheça seus produtos na Análise de Preços.",
+    tip: "Configure seus sellers em Configurações → Meus Sellers para que a Análise de Preços (Passo 2) saiba quais preços são seus e quais são da concorrência. Sem isso, o sistema não consegue separar suas lojas dos concorrentes nem gerar as recomendações de ajuste.",
   },
   {
     id: "price-analyze",
@@ -38,16 +38,24 @@ const MODULES = [
     borderColor: "border-sky-200",
     bgLight: "bg-sky-50",
     label: "Análise de Preços",
-    tagline: "Inteligência competitiva agrupada por SKU",
+    tagline: "Compare seus preços com a concorrência, agrupados por produto",
     to: "/price-analyze",
-    what: "Agrupa todos os seus links por SKU e compara seus preços com os da concorrência. Gera recomendações automáticas quando a diferença for maior que 10% e pode exportar um XML no padrão do sistema.",
+    what: "Pega todos os links cadastrados no módulo Links e os agrupa por SKU (produto). Para cada grupo, mostra todos os sellers que vendem aquele produto com seus respectivos preços — separando suas lojas dos concorrentes. Quando seu preço estiver mais de 10% acima do melhor concorrente, o sistema gera uma recomendação automática de ajuste. Não funciona sem links cadastrados: ele é literalmente alimentado por eles.",
     steps: [
-      "Certifique-se de ter links cadastrados antes de usar este módulo",
-      'Clique em "Análise Rápida" para ver os grupos por SKU usando dados já salvos',
-      'Ou clique em "Gerar XML" para fazer uma nova varredura completa e baixar o arquivo',
-      "Revise as recomendações — o sistema sugere ajustes quando seu preço diverge >10% da média dos concorrentes",
+      "Cadastre links em Links (Passo 1) — inclua URLs dos seus produtos e dos concorrentes para o mesmo item",
+      "Configure seus sellers em Configurações → Meus Sellers para o sistema identificar quais preços são seus",
+      'Clique em "Buscar dados": o sistema varre os links, agrupa por SKU e monta a tabela comparativa',
+      "Analise os grupos com badge Alerta — são os que têm diferença >10% em relação ao melhor concorrente",
+      'Clique em "Detalhes" em qualquer grupo para ver todos os sellers e preços lado a lado',
     ],
-    tip: "A análise rápida usa dados já salvos nos links. Use Gerar XML quando precisar de dados 100% atualizados para exportação.",
+    tip: "Links monitora cada URL separado, um a um. Análise de Preços cruza todos os links do mesmo produto e compara seus preços contra a concorrência — gerando inteligência competitiva automática.",
+    diff: [
+      { feature: "O que monitora",           links: "Cada URL individualmente",           analyze: "Grupos de produtos pelo SKU" },
+      { feature: "Comparação de sellers",     links: "Não — só o seller daquele link",     analyze: "Sim — todos os sellers lado a lado" },
+      { feature: "Recomendações automáticas", links: "Não",                                analyze: "Sim — quando diferença >10%" },
+      { feature: "Histórico de preço",        links: "Sim — últimas 7 atualizações",       analyze: "Não — foto instantânea do momento" },
+      { feature: "Precisa de setup prévio",   links: "Não — funciona direto na URL",       analyze: "Sim — depende dos Links cadastrados" },
+    ],
   },
   {
     id: "seller-monitor",
@@ -189,6 +197,35 @@ function ModuleCard({ mod }) {
               ))}
             </ol>
           </div>
+
+          {/* Tabela comparativa — só para módulos que definem "diff" */}
+          {mod.diff && (
+            <div className="mt-4">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Diferença em relação a Links
+              </h4>
+              <div className="overflow-x-auto rounded-lg border border-gray-100">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-left text-gray-500">
+                      <th className="px-3 py-2 font-medium"></th>
+                      <th className="px-3 py-2 font-medium text-blue-600">Links</th>
+                      <th className={`px-3 py-2 font-medium ${mod.textColor}`}>Análise de Preços</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {mod.diff.map((row, i) => (
+                      <tr key={i} className="hover:bg-gray-50/60">
+                        <td className="px-3 py-2 font-medium text-gray-700">{row.feature}</td>
+                        <td className="px-3 py-2 text-gray-500">{row.links}</td>
+                        <td className="px-3 py-2 text-gray-700">{row.analyze}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Dica */}
           <div className={`mt-4 flex gap-3 ${mod.bgLight} rounded-lg p-3`}>
