@@ -17,7 +17,7 @@ export default {
   async index(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { page = 0, perPage = 20, storeName, tag, search, status } = req.query;
+      const { page = 0, perPage = 20, storeName, tag, search, sku, seller, status, sortBy, sortDir } = req.query;
 
       const match = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -25,11 +25,17 @@ export default {
       if (storeName) match.storeName = storeName;
       if (tag) match.tags = tag;
       if (search) match.name = { $regex: search, $options: "i" };
+      if (sku) match.sku = { $regex: sku, $options: "i" };
+      if (seller) match.seller = seller;
       if (status === "winning") {
         match.$expr = { $and: [{ $gt: ["$nowPrice", "$myPrice"] }, { $gt: ["$myPrice", 0] }] };
       } else if (status === "losing") {
         match.$expr = { $and: [{ $lt: ["$nowPrice", "$myPrice"] }, { $gt: ["$myPrice", 0] }] };
       }
+
+      const allowedSortFields = ["createdAt", "nowPrice", "myPrice", "name"];
+      const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+      const sortOrder = sortDir === "asc" ? 1 : -1;
 
       const [result] = await Link.aggregate([
         { $match: match },
@@ -37,7 +43,7 @@ export default {
           $facet: {
             metadata: [{ $count: "total" }],
             data: [
-              { $sort: { createdAt: -1 } },
+              { $sort: { [sortField]: sortOrder } },
               { $skip: (Number(page) - 1) * Number(perPage) },
               { $limit: Number(perPage) },
             ],
@@ -235,6 +241,66 @@ export default {
       return res.json(tags);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar tags" });
+    }
+  },
+
+  async getSellers(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const sellers = await Link.distinct("seller", { ownerId });
+      return res.json(sellers.filter(Boolean).sort());
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar vendedores" });
+    }
+  },
+
+  async getStats(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const { storeName } = req.query;
+
+      const match = { ownerId: new mongoose.Types.ObjectId(ownerId) };
+      if (storeName) match.storeName = storeName;
+
+      const [result] = await Link.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: null,
+            totalCount: { $sum: 1 },
+            losingCount: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $lt: ["$nowPrice", "$myPrice"] }, { $gt: ["$myPrice", 0] }] },
+                  1, 0,
+                ],
+              },
+            },
+            losingPrices: {
+              $push: {
+                $cond: [
+                  { $and: [{ $lt: ["$nowPrice", "$myPrice"] }, { $gt: ["$myPrice", 0] }] },
+                  "$myPrice",
+                  "$$REMOVE",
+                ],
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            totalCount: 1,
+            losingCount: 1,
+            losingMedianPrice: { $avg: "$losingPrices" },
+          },
+        },
+      ]);
+
+      return res.json(result || { totalCount: 0, losingCount: 0, losingMedianPrice: 0 });
+    } catch (err) {
+      console.error("[Links] getStats error:", err);
+      return res.status(500).json({ error: "Erro ao buscar estatísticas" });
     }
   },
 

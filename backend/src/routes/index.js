@@ -56,6 +56,8 @@ r.post("/stripe/downgrade", StripeController.downgrade);
 // ─── Links ─────────────────────────────────────────────────────
 r.get("/links", requireModule("links"), LinkController.index);
 r.get("/links/tags", requireModule("links"), LinkController.getTags);
+r.get("/links/sellers", requireModule("links"), LinkController.getSellers);
+r.get("/links/stats", requireModule("links"), LinkController.getStats);
 r.get("/links/refresh/:storeName", requireModule("links"), LinkController.refresh);
 r.post("/links", requireModule("links"), checkLinkLimit, LinkController.store);
 r.post("/links/batch", requireModule("links"), checkLinkLimit, LinkController.storeBatch);
