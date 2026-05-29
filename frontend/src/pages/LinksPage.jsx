@@ -19,10 +19,26 @@ function AISection({ aiData, scenario, setScenario, winableSkus, setWinableSkus 
   const losingCount = aiData?.losingCount || 0;
   const totalCount = aiData?.totalCount || 0;
   const medianPrice = aiData?.losingMedianPrice || 0;
-  const salesRate = scenario === "conservative" ? 0.20 : 0.40;
-  const saturationFactor = losingCount > 0 ? 1 / (Math.log2(losingCount + 1) * 1.25) : 0;
-  const dailyRevenue = medianPrice * salesRate * saturationFactor;
-  const project = (days) => dailyRevenue * (winableSkus / Math.max(losingCount, 1)) * days;
+
+  /**
+   * Projeção baseada em vendas recuperáveis estimadas.
+   *
+   *
+   * Agora a conta fica mais simples de explicar:
+   * - Conservador: considera 0,25 venda recuperada por SKU a cada 7 dias.
+   *   Na prática: a cada 4 SKUs ajustados, estimamos 1 venda recuperada.
+   * - Moderado: considera 0,5 venda recuperada por SKU a cada 7 dias.
+   *   Na prática: a cada 2 SKUs ajustados, estimamos 1 venda recuperada.
+   */
+  const salesPerSku10Days = scenario === "conservative" ? 0.25 : 0.5;
+
+  const project = (days) => {
+    const periodFactor = days / 7;
+    const estimatedSales = winableSkus * salesPerSku10Days * periodFactor;
+
+    return medianPrice * estimatedSales;
+  };
+
   const maxProjection = project(20);
 
   if (!aiData || totalCount === 0) return null;
@@ -92,24 +108,24 @@ function AISection({ aiData, scenario, setScenario, winableSkus, setWinableSkus 
                 Como a projeção de receita funciona
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                A projeção mostra <strong>quanto você pode recuperar de receita</strong> ao ajustar o preço dos anúncios que estão perdendo para o concorrente.
+                A projeção estima <strong>quantas vendas podem ser recuperadas</strong> ao ajustar os anúncios que estão perdendo competitividade.
               </p>
               <div className="space-y-2 mb-3">
                 <div className="p-2.5 rounded-lg bg-gray-50">
                   <p className="text-xs font-semibold text-gray-700 mb-1">Cenário Conservador vs Moderado</p>
-                  <p className="text-xs text-gray-500">Define o quanto você acredita que vai vender após recuperar o preço. O <strong>Conservador</strong> é mais cauteloso; o <strong>Moderado</strong> assume um desempenho melhor.</p>
+                  <p className="text-xs text-gray-500">O <strong>Conservador</strong> considera uma recuperação parcial: a cada 4 SKUs ajustados, estimamos aproximadamente 1 venda recuperada em 10 dias. O <strong>Moderado</strong> considera um desempenho melhor: a cada 2 SKUs ajustados, estimamos aproximadamente 1 venda recuperada em 10 dias.</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-gray-50">
                   <p className="text-xs font-semibold text-gray-700 mb-1">SKUs para ganhar</p>
-                  <p className="text-xs text-gray-500">Use o slider para indicar <strong>quantos anúncios perdendo você pretende ajustar</strong>. Quanto mais você recuperar, maior a projeção.</p>
+                  <p className="text-xs text-gray-500">Use o slider para indicar <strong>quantos anúncios perdendo você pretende ajustar</strong>. A projeção multiplica essa quantidade pela venda recuperável estimada e pelo ticket médio dos SKUs perdendo.</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-gray-50">
-                  <p className="text-xs font-semibold text-gray-700 mb-1">Por que o valor não cresce linearmente?</p>
-                  <p className="text-xs text-gray-500">Quanto mais anúncios concorrendo no mesmo nicho, menor a fatia de mercado disponível para cada um. A projeção leva isso em conta e reduz a estimativa automaticamente para não ser irreal.</p>
+                  <p className="text-xs font-semibold text-gray-700 mb-1">Exemplo prático</p>
+                  <p className="text-xs text-gray-500">Se existem 8 SKUs perdendo e o ticket médio é de R$ 131, no cenário conservador o sistema estima cerca de 2 vendas recuperadas em 10 dias. Então: 2 vendas × R$ 131 = R$ 262 de receita estimada.</p>
                 </div>
               </div>
               <p className="text-xs text-gray-400 leading-relaxed">
-                Os valores são estimativas baseadas no seu ticket médio atual e não constituem garantia de receita.
+                Os valores são estimativas baseadas no ticket médio dos SKUs perdendo e não constituem garantia de receita. A projeção serve para visualizar o tamanho aproximado da oportunidade.
               </p>
             </div>
           </div>
