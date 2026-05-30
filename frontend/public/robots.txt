@@ -18,4 +18,4 @@ Disallow: /team
 Disallow: /setup-cookies
 Disallow: /ml-cookies
 
-Sitemap: https://mlsmarthub.com.br/sitemap.xml
+Sitemap: https://app.mlsmarthub.com.br/sitemap.xml

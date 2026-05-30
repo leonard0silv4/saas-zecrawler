@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-const SITE_URL = 'https://mlsmarthub.com.br';
+const SITE_URL = 'https://app.mlsmarthub.com.br';
 const SITE_NAME = 'ML SmartHub';
 
 export default function SEO({ title, description, canonical, ogImage = '/logo.png' }) {

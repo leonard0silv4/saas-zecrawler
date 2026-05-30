@@ -46,6 +46,18 @@ Cada pasta de spec deve conter:
 - As props e estados internos de componentes grandes ainda não têm testes automatizados de UI.
 - O mapa de módulos por plano existe no frontend e no backend; mudanças de plano devem ser revisadas nos dois lados para evitar divergência visual.
 
+## Arquitetura de Domínios (desde 2026-05-30)
+
+| Domínio | Serve | Tecnologia |
+|---|---|---|
+| `mlsmarthub.com.br` / `www.` | Landing page de marketing | HTML estático (`/var/www/mlsmarthub-landing/`) |
+| `app.mlsmarthub.com.br` | React SPA + API | Nginx → dist + proxy `:3333` |
+
+**Landing page local:** `landing/index.html` na raiz do projeto.
+**Deploy manual:** `rsync -avz --delete dist/ root@178.104.105.239:/var/www/saas-zecrawler/frontend/dist/`
+
+Ao alterar preços ou funcionalidades descritos na landing, atualizar `landing/index.html` e re-enviar para a VPS.
+
 ## Rotina de Manutenção
 
 Ao alterar uma página ou componente, atualize a pasta correspondente nesta árvore. Ao adicionar nova página, crie uma nova pasta com `requirements.md`, `design.md` e `tasks.md`.

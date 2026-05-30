@@ -24,4 +24,9 @@ Login e cadastro usam funções do `AuthContext`. Recuperação e reset usam o s
 
 **Erros de API:** substituídos pelo componente `Alert variant="error"` (com botão de fechar) em vez do `div.bg-red-50` inline.
 
-`ForgotPasswordPage` e `ResetPasswordPage` mantêm `PublicLayout` — não foram alteradas nesta sessão.
+`ForgotPasswordPage` foi redesenhada com o mesmo padrão split-screen (2026-05-30):
+- Painel esquerdo: 3 estados (form / sucesso / email não encontrado), usa `Alert` component
+- Painel direito: `bg-gradient-to-br from-brand-700 to-brand-900` com 3 pontos de segurança (Clock, Mail, ShieldCheck)
+- Sem `PublicLayout` — layout próprio como Login e Register
+
+`ResetPasswordPage` ainda usa `PublicLayout` — pendente de atualização futura.
