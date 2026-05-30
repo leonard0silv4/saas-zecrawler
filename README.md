@@ -5,7 +5,7 @@ Plataforma SaaS multi-tenant para monitoramento de e-commerce (Mercado Livre).
 ## Arquitetura
 
 ```
-zecrawler-saas/
+saas-zecrawler/
 ├── backend/                    # Node.js + Express + MongoDB
 │   ├── config/
 │   │   ├── database.js         # Conexão MongoDB centralizada
@@ -59,12 +59,12 @@ FRONTEND_URL=http://localhost:5173
 
 ## Planos de Assinatura
 
-| Plano      | Preço      | Links  | Módulos                                    |
-|------------|------------|--------|--------------------------------------------|
-| Gratuito   | R$ 0       | 10     | Links                                      |
-| Starter    | R$ 19,90   | 100    | Links, Mercado Livre                       |
-| Pro        | R$ 29,90   | 500    | Links, ML, monitor sellers, Catálogo       |
-| Business   | R$ 59,90   | 1.000  | Tudo + API access + Suporte prioritário    |
+| Plano    | Preço    | Links | Módulos                                 |
+| -------- | -------- | ----- | --------------------------------------- |
+| Gratuito | R$ 0     | 10    | Links                                   |
+| Starter  | R$ 19,90 | 100   | Links, Mercado Livre                    |
+| Pro      | R$ 29,90 | 500   | Links, ML, monitor sellers, Catálogo    |
+| Business | R$ 59,90 | 1.000 | Tudo + API access + Suporte prioritário |
 
 Configurados em `backend/config/plans.js`.
 
@@ -73,6 +73,7 @@ Configurados em `backend/config/plans.js`.
 Todas as rotas com prefixo `/api`. Autenticação via `Authorization: Bearer <token>`.
 
 ### Auth (público)
+
 ```
 POST /api/auth/register   { name, email, password }
 POST /api/auth/login      { email, password }
@@ -80,12 +81,14 @@ GET  /api/plans
 ```
 
 ### Auth (autenticado)
+
 ```
 GET  /api/auth/me
 PUT  /api/auth/plan       { plan: "starter" }
 ```
 
 ### Links (todos os planos)
+
 ```
 GET    /api/links?page=1&perPage=20&storeName=mercadolivre
 POST   /api/links          { link, myPrice, tag }
@@ -99,6 +102,7 @@ POST   /api/links/clear-rates/:storeName
 ```
 
 ### Catálogo (Pro+)
+
 ```
 GET    /api/catalog?search=&cursor=&limit=50
 POST   /api/catalog        { sku1, produto, medidas, largura, comprimento, altura }
@@ -108,6 +112,7 @@ POST   /api/catalog/import  (upload .xlsx)
 ```
 
 ### Mercado Livre (Starter+)
+
 ```
 GET /api/meli/auth?token=     (redireciona OAuth ML)
 GET /api/meli/callback        (callback OAuth)
@@ -117,6 +122,7 @@ GET /api/meli/shipment/:shipmentId
 ```
 
 ### Cookies ML
+
 ```
 GET    /api/cookies
 POST   /api/cookies   { cookies: [...] }
@@ -124,6 +130,7 @@ DELETE /api/cookies
 ```
 
 ### Stripe Billing
+
 ```
 POST /api/stripe/checkout    { planSlug: "pro" }       → { url } (redirect to Stripe)
 POST /api/stripe/portal                                → { url } (Stripe Customer Portal)
@@ -135,6 +142,7 @@ POST /api/stripe/webhook     (raw body, public)        → Stripe events
 ## Stripe — Setup Completo
 
 ### 1. Criar produtos no Stripe
+
 ```bash
 cd backend
 STRIPE_SECRET_KEY=sk_test_... node src/scripts/seedStripeProducts.js
@@ -143,6 +151,7 @@ STRIPE_SECRET_KEY=sk_test_... node src/scripts/seedStripeProducts.js
 O script cria 3 produtos (Starter, Pro, Business) com preços mensais em BRL e imprime os `price_*` IDs.
 
 ### 2. Configurar .env
+
 ```env
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -152,6 +161,7 @@ STRIPE_PRICE_BUSINESS=price_1Ghi...
 ```
 
 ### 3. Criar webhook no Stripe Dashboard
+
 - URL: `https://seudominio.com/api/stripe/webhook`
 - Eventos necessários:
   - `checkout.session.completed`
@@ -160,6 +170,7 @@ STRIPE_PRICE_BUSINESS=price_1Ghi...
   - `invoice.payment_failed`
 
 ### 4. Ativar Customer Portal no Stripe Dashboard
+
 - Stripe Dashboard → Settings → Billing → Customer Portal
 - Habilitar: trocar plano, cancelar, atualizar cartão, ver faturas
 
@@ -209,16 +220,16 @@ webhook: customer.subscription.deleted → user.plan = "free"
 
 ## Diferenças do Projeto Original
 
-| Antes                                    | Agora                                          |
-|------------------------------------------|-------------------------------------------------|
-| `uid` (string solta)                     | `ownerId` (ObjectId tipado + index)             |
-| `verifyToken.recoverAuth()` em cada rota | `req.user` via middleware + `getOwnerId(req)`   |
-| Sem controle de plano                    | `requireModule()` + `checkLinkLimit()`          |
-| 3 models de expedição em 3 arquivos      | 1 arquivo `Expedicao.js` com 3 exports          |
-| SSE global                               | SSE por `ownerId` (multi-tenant)                |
-| Depende de Python/Pickle                 | Cookies direto no MongoDB                       |
-| Rotas sem prefixo                        | Todas em `/api/*`                               |
-| Sem frontend                             | React + Vite + Tailwind completo                |
+| Antes                                    | Agora                                         |
+| ---------------------------------------- | --------------------------------------------- |
+| `uid` (string solta)                     | `ownerId` (ObjectId tipado + index)           |
+| `verifyToken.recoverAuth()` em cada rota | `req.user` via middleware + `getOwnerId(req)` |
+| Sem controle de plano                    | `requireModule()` + `checkLinkLimit()`        |
+| 3 models de expedição em 3 arquivos      | 1 arquivo `Expedicao.js` com 3 exports        |
+| SSE global                               | SSE por `ownerId` (multi-tenant)              |
+| Depende de Python/Pickle                 | Cookies direto no MongoDB                     |
+| Rotas sem prefixo                        | Todas em `/api/*`                             |
+| Sem frontend                             | React + Vite + Tailwind completo              |
 
 ## Deploy na VPS
 

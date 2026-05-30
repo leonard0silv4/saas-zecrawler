@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="/var/www/zecrawler-saas"
+REPO_DIR="/var/www/saas-zecrawler"
 LANDING_TARGET="/var/www/mlsmarthub-landing"
 
 echo "==> [1/5] git pull"
