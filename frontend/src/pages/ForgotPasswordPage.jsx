@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
 
       {/* ── Painel esquerdo: form ──────────────────────────────── */}
       <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-center px-8 lg:px-14 py-12 bg-white shrink-0">
-        <img src="/logo.png" alt="ML SmartHub" className="h-9 w-auto mb-10" />
+        <img src="/logo.png" alt="ML SmartHub" className="h-9 w-auto mb-10 self-start" />
 
         {sent ? (
           /* Sucesso */
