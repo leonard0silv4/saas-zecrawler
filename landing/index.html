@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ML SmartHub — Inteligência para vendedores do Mercado Livre</title>
-  <meta name="description" content="Monitore preços, acompanhe concorrentes e gerencie seus anúncios no Mercado Livre com o ML SmartHub. Plano gratuito disponível, sem cartão de crédito." />
+  <meta name="description"
+    content="Monitore preços, acompanhe concorrentes e gerencie seus anúncios no Mercado Livre com o ML SmartHub. Plano gratuito disponível, sem cartão de crédito." />
   <link rel="canonical" href="https://mlsmarthub.com.br/" />
   <meta property="og:title" content="ML SmartHub — Inteligência para vendedores do Mercado Livre" />
-  <meta property="og:description" content="Monitore preços, acompanhe concorrentes e gerencie seus anúncios no ML. Comece grátis." />
+  <meta property="og:description"
+    content="Monitore preços, acompanhe concorrentes e gerencie seus anúncios no ML. Comece grátis." />
   <meta property="og:image" content="https://mlsmarthub.com.br/logo.png" />
   <meta property="og:url" content="https://mlsmarthub.com.br/" />
   <meta property="og:type" content="website" />
@@ -15,7 +18,9 @@
   <link rel="icon" href="/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap"
+    rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -24,7 +29,7 @@
           fontFamily: { sans: ['"DM Sans"', 'system-ui', 'sans-serif'] },
           colors: {
             brand: {
-              50:  '#f0f7ff',
+              50: '#f0f7ff',
               100: '#e0effe',
               200: '#b9dffd',
               300: '#7cc5fc',
@@ -41,417 +46,805 @@
     }
   </script>
   <style>
-    html { scroll-behavior: smooth; }
-    body { font-family: "DM Sans", system-ui, sans-serif; background: #f8fafc; }
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: #f8fafc;
+    }
 
     .hero-grid {
-      background-image: linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px);
       background-size: 52px 52px;
     }
 
-    details summary { list-style: none; cursor: pointer; }
-    details summary::-webkit-details-marker { display: none; }
-    details[open] summary .chevron { transform: rotate(180deg); }
-    .chevron { transition: transform 0.2s ease; display: inline-block; }
+    details summary {
+      list-style: none;
+      cursor: pointer;
+    }
 
-    .feature-card { transition: box-shadow 0.2s, transform 0.2s; }
-    .feature-card:hover { box-shadow: 0 8px 30px -6px rgba(0,112,199,.12); transform: translateY(-2px); }
+    details summary::-webkit-details-marker {
+      display: none;
+    }
 
-    .plan-card { transition: box-shadow 0.2s, transform 0.2s; }
-    .plan-card:hover { transform: translateY(-3px); }
+    details[open] summary .chevron {
+      transform: rotate(180deg);
+    }
 
-    #mobile-menu { display: none; }
-    #mobile-menu.open { display: block; }
+    .chevron {
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
 
-    tbody tr:nth-child(even) { background: #f8fafc; }
-    tbody tr:hover { background: #f0f7ff; }
+    .feature-card {
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
 
-    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
-    .reveal.visible { opacity: 1; transform: none; }
+    .feature-card:hover {
+      box-shadow: 0 8px 30px -6px rgba(0, 112, 199, .12);
+      transform: translateY(-2px);
+    }
+
+    .plan-card {
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .plan-card:hover {
+      transform: translateY(-3px);
+    }
+
+    #mobile-menu {
+      display: none;
+    }
+
+    #mobile-menu.open {
+      display: block;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    tbody tr:hover {
+      background: #f0f7ff;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
   </style>
 </head>
+
 <body class="antialiased text-gray-800">
 
-<!-- NAV -->
-<nav id="nav" class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-    <a href="#" class="flex items-center gap-2.5 shrink-0">
-      <img src="/logo.png" alt="ML SmartHub" class="h-9 w-auto" />
-    </a>
-    <div class="hidden md:flex items-center gap-1">
-      <a href="#features" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">Funcionalidades</a>
-      <a href="#plans"    class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">Planos</a>
-      <a href="#faq"      class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">FAQ</a>
+  <!-- NAV -->
+  <nav id="nav" class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <a href="#" class="flex items-center gap-2.5 shrink-0">
+        <img src="/logo.png" alt="ML SmartHub" class="h-9 w-auto" />
+      </a>
+      <div class="hidden md:flex items-center gap-1">
+        <a href="#features"
+          class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">Funcionalidades</a>
+        <a href="#plans"
+          class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">Planos</a>
+        <a href="#faq"
+          class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors">FAQ</a>
+      </div>
+      <div class="hidden md:flex items-center gap-2">
+        <a href="https://app.mlsmarthub.com.br/login"
+          class="px-4 py-2 text-sm font-semibold text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">Entrar</a>
+        <a href="https://app.mlsmarthub.com.br/register"
+          class="px-4 py-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors">Criar
+          conta grátis</a>
+      </div>
+      <button id="hamburger" aria-label="Menu" onclick="document.getElementById('mobile-menu').classList.toggle('open')"
+        class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
     </div>
-    <div class="hidden md:flex items-center gap-2">
-      <a href="https://app.mlsmarthub.com.br/login"
-         class="px-4 py-2 text-sm font-semibold text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">Entrar</a>
-      <a href="https://app.mlsmarthub.com.br/register"
-         class="px-4 py-2 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg shadow-sm transition-colors">Criar conta grátis</a>
+    <div id="mobile-menu" class="md:hidden bg-white border-t border-gray-100 px-4 pb-4">
+      <div class="pt-3 space-y-1">
+        <a href="#features" onclick="document.getElementById('mobile-menu').classList.remove('open')"
+          class="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Funcionalidades</a>
+        <a href="#plans" onclick="document.getElementById('mobile-menu').classList.remove('open')"
+          class="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Planos</a>
+        <a href="#faq" onclick="document.getElementById('mobile-menu').classList.remove('open')"
+          class="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">FAQ</a>
+      </div>
+      <div class="mt-3 flex flex-col gap-2 pt-3 border-t border-gray-100">
+        <a href="https://app.mlsmarthub.com.br/login"
+          class="block text-center py-2.5 text-sm font-semibold text-brand-600 border border-brand-200 rounded-lg hover:bg-brand-50">Entrar</a>
+        <a href="https://app.mlsmarthub.com.br/register"
+          class="block text-center py-2.5 text-sm font-semibold bg-brand-600 text-white rounded-lg hover:bg-brand-700">Criar
+          conta grátis</a>
+      </div>
     </div>
-    <button id="hamburger" aria-label="Menu"
-            onclick="document.getElementById('mobile-menu').classList.toggle('open')"
-            class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-      </svg>
-    </button>
-  </div>
-  <div id="mobile-menu" class="md:hidden bg-white border-t border-gray-100 px-4 pb-4">
-    <div class="pt-3 space-y-1">
-      <a href="#features" onclick="document.getElementById('mobile-menu').classList.remove('open')"
-         class="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Funcionalidades</a>
-      <a href="#plans"    onclick="document.getElementById('mobile-menu').classList.remove('open')"
-         class="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Planos</a>
-      <a href="#faq"      onclick="document.getElementById('mobile-menu').classList.remove('open')"
-         class="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">FAQ</a>
-    </div>
-    <div class="mt-3 flex flex-col gap-2 pt-3 border-t border-gray-100">
-      <a href="https://app.mlsmarthub.com.br/login"
-         class="block text-center py-2.5 text-sm font-semibold text-brand-600 border border-brand-200 rounded-lg hover:bg-brand-50">Entrar</a>
-      <a href="https://app.mlsmarthub.com.br/register"
-         class="block text-center py-2.5 text-sm font-semibold bg-brand-600 text-white rounded-lg hover:bg-brand-700">Criar conta grátis</a>
-    </div>
-  </div>
-</nav>
+  </nav>
 
-<!-- HERO -->
-<section class="relative bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white overflow-hidden">
-  <div class="hero-grid absolute inset-0 pointer-events-none"></div>
-  <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
-  <div class="absolute bottom-0 left-1/3 w-72 h-72 rounded-full bg-brand-400/20 blur-3xl pointer-events-none"></div>
-  <div class="relative max-w-5xl mx-auto px-4 sm:px-6 py-24 sm:py-32 text-center">
-    <span class="inline-block mb-6 px-4 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide border border-white/20">
-      100% web &nbsp;·&nbsp; sem instalação &nbsp;·&nbsp; plano gratuito
-    </span>
-    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 tracking-tight">
-      Inteligência para quem<br class="hidden sm:block" /> vende no Mercado Livre
-    </h1>
-    <p class="text-brand-200 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-      Monitore preços, acompanhe concorrentes e gerencie seus anúncios — tudo em um único painel.
-    </p>
-    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+  <!-- HERO -->
+  <section class="relative bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white overflow-hidden">
+    <div class="hero-grid absolute inset-0 pointer-events-none"></div>
+    <div class="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-0 left-1/3 w-72 h-72 rounded-full bg-brand-400/20 blur-3xl pointer-events-none"></div>
+    <div class="relative max-w-5xl mx-auto px-4 sm:px-6 py-24 sm:py-32 text-center">
+      <span
+        class="inline-block mb-6 px-4 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-xs font-semibold tracking-wide border border-white/20">
+        100% web &nbsp;·&nbsp; sem instalação &nbsp;·&nbsp; plano gratuito
+      </span>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 tracking-tight">
+        Inteligência para quem<br class="hidden sm:block" /> vende no Mercado Livre
+      </h1>
+      <p class="text-brand-200 text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
+        Monitore preços, acompanhe concorrentes e gerencie seus anúncios — tudo em um único painel.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="https://app.mlsmarthub.com.br/register"
+          class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white text-brand-700 font-bold rounded-xl shadow-lg hover:bg-brand-50 transition-colors text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Criar conta grátis
+        </a>
+        <a href="#plans"
+          class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-transparent border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors text-sm">
+          Ver planos
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS BAR -->
+  <section class="bg-gray-900 border-b border-gray-800">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div>
+          <div class="text-4xl font-bold text-white tracking-tight">24/7</div>
+          <div class="text-sm text-gray-400 mt-1 font-medium">Monitoramento automático</div>
+        </div>
+        <div>
+          <div class="text-4xl font-bold text-white tracking-tight">1h</div>
+          <div class="text-sm text-gray-400 mt-1 font-medium">Intervalo padrão de scraping</div>
+        </div>
+        <div>
+          <div class="text-4xl font-bold text-white tracking-tight">4</div>
+          <div class="text-sm text-gray-400 mt-1 font-medium">Planos disponíveis</div>
+        </div>
+        <div>
+          <div class="text-4xl font-bold text-white tracking-tight">100%</div>
+          <div class="text-sm text-gray-400 mt-1 font-medium">Web — sem instalação</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features" class="py-20 bg-gray-50/80">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14 reveal">
+        <span
+          class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">Funcionalidades</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Por que o ML SmartHub?</h2>
+        <p class="text-gray-500 text-lg max-w-xl mx-auto">Ferramentas construídas por quem conhece o dia a dia do
+          vendedor.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
+          <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 mb-5">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Dados em tempo real</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Acompanhe preços, estoque e variações dos seus produtos e
+            concorrentes diretamente do Mercado Livre, com atualizações automáticas e histórico completo.</p>
+        </div>
+        <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
+          <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-purple-50 mb-5">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Monitor de concorrentes</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Rastreie sellers estratégicos, receba alertas quando novos
+            produtos aparecerem ou preços mudarem. Tome decisões antes da concorrência.</p>
+        </div>
+        <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
+          <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-amber-50 mb-5">
+            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Automação inteligente</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Scraping automatizado com cron configurável, geração de XMLs
+            de análise de preço, catálogo integrado e respostas automáticas de perguntas.</p>
+        </div>
+        <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
+          <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50 mb-5">
+            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Gestão de equipes</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Adicione membros ao seu time com permissões granulares. Cada
+            colaborador acessa apenas o que precisa, com controle total pelo administrador.</p>
+        </div>
+        <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
+          <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-red-50 mb-5">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Segurança e privacidade</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Seus dados e credenciais do Mercado Livre ficam protegidos
+            com criptografia. Nunca compartilhamos suas informações com terceiros.</p>
+        </div>
+        <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
+          <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-50 mb-5">
+            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-base font-bold text-gray-900 mb-2">Multi-contas Mercado Livre</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Conecte múltiplas contas do ML em um único painel. Ideal para
+            operações com várias lojas ou marcas distintas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MISSÃO -->
+  <section class="py-16 bg-gradient-to-br from-brand-600 to-brand-700 text-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center reveal">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-5">Nossa missão</h2>
+      <p class="text-brand-100 text-lg leading-relaxed">Democratizar o acesso a ferramentas de inteligência competitiva
+        para vendedores de todos os tamanhos. Acreditamos que qualquer lojista — do pequeno empreendedor ao grande
+        atacadista — merece tecnologia de ponta para crescer com segurança e eficiência no maior marketplace da América
+        Latina.</p>
+    </div>
+  </section>
+
+  <!-- PLANOS -->
+  <section id="plans" class="py-20 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14 reveal">
+        <span
+          class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">Planos
+          e Preços</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Escolha o plano ideal para o seu negócio</h2>
+        <p class="text-gray-500 text-lg max-w-xl mx-auto">Comece gratuitamente e evolua conforme sua operação cresce.
+          Cancele quando quiser, sem multas.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
+        <!-- Gratuito -->
+        <div
+          class="plan-card relative bg-white rounded-2xl border-2 border-gray-200 flex flex-col overflow-hidden shadow-sm reveal">
+          <div class="h-1 bg-gray-300 shrink-0"></div>
+          <div class="p-6 flex flex-col flex-1">
+            <h3 class="text-base font-bold text-gray-900 mb-4">Gratuito</h3>
+            <div class="mb-5"><span class="text-3xl font-bold text-gray-900">R$ 0</span></div>
+            <div class="text-xs text-gray-500 space-y-1 mb-5">
+              <div>Até <strong class="text-gray-700">10</strong> links</div>
+              <div>Até <strong class="text-gray-700">1</strong> seller monitorado</div>
+              <div>Até <strong class="text-gray-700">1</strong> usuário</div>
+            </div>
+            <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Acompanhamento de Links</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Análise de Preços (XML)</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Dashboard Básico</li>
+            </ul>
+            <a href="https://app.mlsmarthub.com.br/register"
+              class="block text-center py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">Começar
+              grátis</a>
+          </div>
+        </div>
+        <!-- Starter -->
+        <div
+          class="plan-card relative bg-white rounded-2xl border-2 border-blue-200 flex flex-col overflow-hidden shadow-sm reveal">
+          <div class="h-1 bg-blue-400 shrink-0"></div>
+          <div class="p-6 flex flex-col flex-1">
+            <h3 class="text-base font-bold text-gray-900 mb-4">Starter</h3>
+            <div class="mb-5">
+              <div class="flex items-baseline gap-1"><span class="text-sm text-gray-400">R$</span><span
+                  class="text-3xl font-bold text-gray-900">19,90</span><span class="text-sm text-gray-400">/mês</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 space-y-1 mb-5">
+              <div>Até <strong class="text-gray-700">100</strong> links</div>
+              <div>Até <strong class="text-gray-700">3</strong> sellers monitorados</div>
+              <div>Até <strong class="text-gray-700">5</strong> usuários</div>
+            </div>
+            <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Tudo do Gratuito</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Contas Mercado Livre</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Dashboard Completo</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Suporte por email</li>
+            </ul>
+            <a href="https://app.mlsmarthub.com.br/register"
+              class="block text-center py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Assinar
+              Starter</a>
+          </div>
+        </div>
+        <!-- Pro -->
+        <div
+          class="plan-card relative bg-white rounded-2xl border-2 border-brand-400 flex flex-col overflow-hidden shadow-xl reveal">
+          <div class="h-1 bg-brand-600 shrink-0"></div>
+          <span
+            class="absolute top-4 right-4 bg-brand-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ring-2 ring-brand-300 ring-offset-1">Popular</span>
+          <div class="p-6 flex flex-col flex-1">
+            <h3 class="text-base font-bold text-gray-900 mb-4">Pro</h3>
+            <div class="mb-5">
+              <div class="flex items-baseline gap-1"><span class="text-sm text-gray-400">R$</span><span
+                  class="text-3xl font-bold text-gray-900">29,90</span><span class="text-sm text-gray-400">/mês</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 space-y-1 mb-5">
+              <div>Até <strong class="text-gray-700">500</strong> links</div>
+              <div>Até <strong class="text-gray-700">10</strong> sellers monitorados</div>
+              <div>Até <strong class="text-gray-700">10</strong> usuários</div>
+            </div>
+            <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Tudo do Starter</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Catálogo de Produtos</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Monitor Sellers avançado</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Multi-contas ML</li>
+            </ul>
+            <a href="https://app.mlsmarthub.com.br/register"
+              class="block text-center py-2.5 rounded-xl text-sm font-bold bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-sm">Assinar
+              Pro</a>
+          </div>
+        </div>
+        <!-- Business -->
+        <div
+          class="plan-card relative bg-white rounded-2xl border-2 border-amber-300 flex flex-col overflow-hidden shadow-sm reveal">
+          <div class="h-1 bg-amber-400 shrink-0"></div>
+          <span
+            class="absolute top-4 right-4 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">Completo</span>
+          <div class="p-6 flex flex-col flex-1">
+            <h3 class="text-base font-bold text-gray-900 mb-4">Business</h3>
+            <div class="mb-5">
+              <div class="flex items-baseline gap-1"><span class="text-sm text-gray-400">R$</span><span
+                  class="text-3xl font-bold text-gray-900">59,90</span><span class="text-sm text-gray-400">/mês</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 space-y-1 mb-5">
+              <div>Até <strong class="text-gray-700">1.000</strong> links</div>
+              <div>Até <strong class="text-gray-700">20</strong> sellers monitorados</div>
+              <div>Até <strong class="text-gray-700">30</strong> usuários</div>
+            </div>
+            <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Tudo do Pro</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Mensagens ML</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Analytics &amp; Vendas ML</li>
+              <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> 20 times de acesso</li>
+            </ul>
+            <a href="https://app.mlsmarthub.com.br/register"
+              class="block text-center py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Assinar
+              Business</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela comparativa -->
+      <div class="reveal bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100">
+          <h3 class="text-lg font-bold text-gray-900">Comparação detalhada</h3>
+          <p class="text-sm text-gray-500 mt-1">Veja exatamente o que cada plano inclui</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[640px] text-sm">
+            <thead>
+              <tr class="border-b border-gray-100 bg-gray-50">
+                <th class="text-left px-6 py-4 font-medium text-gray-500 w-2/5">Recurso</th>
+                <th class="text-center px-3 py-4 font-bold text-gray-600">Gratuito</th>
+                <th class="text-center px-3 py-4 font-bold text-blue-700">Starter</th>
+                <th class="text-center px-3 py-4 font-bold text-brand-700 bg-brand-50/50">Pro</th>
+                <th class="text-center px-3 py-4 font-bold text-amber-700">Business</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr class="bg-gray-50">
+                <td colspan="5" class="px-6 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wider">Recursos
+                </td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Acompanhamento de Links</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Análise de Preços (XML)</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Dashboard</td>
+                <td class="px-3 py-3.5 text-center text-xs text-gray-500">Básico</td>
+                <td class="px-3 py-3.5 text-center text-xs text-gray-700 font-medium">Completo</td>
+                <td class="px-3 py-3.5 text-center text-xs text-gray-700 font-medium bg-brand-50/30">Completo</td>
+                <td class="px-3 py-3.5 text-center text-xs text-gray-700 font-medium">Completo</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Contas Mercado Livre</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Catálogo de Produtos</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Mensagens Mercado Livre</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold bg-brand-50/30">✗</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Analytics &amp; Vendas ML</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td>
+                <td class="px-3 py-3.5 text-center text-gray-300 font-bold bg-brand-50/30">✗</td>
+                <td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td>
+              </tr>
+              <tr class="bg-gray-50">
+                <td colspan="5" class="px-6 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wider">Limites
+                </td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Links monitorados</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">10</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">100</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">500</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1.000</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Sellers monitorados</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">3</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">10</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">20</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Usuários no time</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">5</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">10</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">30</td>
+              </tr>
+              <tr class="hover:bg-brand-50/20 transition-colors">
+                <td class="px-6 py-3.5 font-medium text-gray-700">Times</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">2</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">5</td>
+                <td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">20</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-20 bg-gray-50">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
+      <div class="text-center mb-14 reveal">
+        <span
+          class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">FAQ</span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Perguntas frequentes</h2>
+        <p class="text-gray-500 text-lg">Tudo que você precisa saber antes de começar.</p>
+      </div>
+      <div class="space-y-10">
+        <div class="reveal">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Sobre o sistema</h3>
+          <div class="space-y-2">
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">O que é o ML SmartHub?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">O ML SmartHub é uma plataforma para vendedores do
+                  Mercado Livre que automatiza o monitoramento de preços, acompanhamento de concorrentes, gestão de
+                  catálogo e comunicação com clientes. Tudo em um único painel, sem precisar alternar entre abas ou
+                  fazer comparações manuais.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Para quem é indicado?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Para qualquer pessoa que venda no Mercado Livre — desde
+                  pequenos empreendedores que querem acompanhar preços com mais eficiência até grandes operações com
+                  equipes e múltiplas contas conectadas.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Preciso instalar alguma coisa?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Não. O ML SmartHub é 100% online. Basta criar uma conta
+                  e acessar pelo navegador. Não há aplicativo para baixar nem configuração de servidor.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="reveal">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Funcionalidades</h3>
+          <div class="space-y-2">
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Como funciona o monitoramento de links?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Você cadastra os links dos produtos que deseja
+                  acompanhar — seus próprios anúncios ou os dos concorrentes. O sistema verifica automaticamente e exibe
+                  histórico de preço, posição e estoque.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">O que é o Monitor de Sellers?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">É uma funcionalidade que acompanha todos os produtos de
+                  um vendedor específico no Mercado Livre. Quando um novo produto aparece ou o preço de um existente
+                  muda, você recebe um alerta.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Como funciona a Análise de Preços (XML)?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">O sistema gera um arquivo XML compatível com
+                  ferramentas de precificação como o Bling, Tiny e outros ERPs. Você importa o XML e tem os preços da
+                  concorrência já organizados.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Posso conectar mais de uma conta do Mercado
+                  Livre?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor"
+                  stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Sim! Nos planos Pro e Business você pode conectar
+                  múltiplas contas ML e gerenciá-las pelo mesmo painel.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Como funciona a gestão de perguntas do Mercado
+                  Livre?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor"
+                  stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">No plano Business, o sistema sincroniza as perguntas
+                  dos compradores das suas contas ML conectadas. Você responde diretamente pela plataforma com templates
+                  de respostas.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="reveal">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Conta e planos</h3>
+          <div class="space-y-2">
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">O plano gratuito tem limite de tempo?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Não. O plano Gratuito é permanente e não expira. Você
+                  pode usar com até 10 links monitorados e 1 seller monitorado sem pagar nada.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Posso mudar de plano a qualquer momento?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Sim. Você pode fazer upgrade imediatamente pelo painel
+                  de Planos. O downgrade é aplicado ao fim do período de cobrança atual, sem cobranças adicionais.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">O pagamento é seguro?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Sim. Todo o processamento é feito pelo Stripe. O ML
+                  SmartHub não armazena dados do seu cartão.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Posso cancelar quando quiser?</span><svg
+                  class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Sim, sem multa e sem burocracia. A assinatura fica
+                  ativa até o fim do período já pago.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="reveal">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Segurança e privacidade</h3>
+          <div class="space-y-2">
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">Meus cookies do Mercado Livre ficam
+                  seguros?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor"
+                  stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Seus cookies são armazenados de forma criptografada e
+                  utilizados exclusivamente para consultas no Mercado Livre em seu nome. Nunca são compartilhados com
+                  terceiros.</p>
+              </div>
+            </details>
+            <details class="bg-white rounded-xl border border-gray-100 shadow-sm">
+              <summary
+                class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors">
+                <span class="text-sm font-semibold text-gray-800">O ML SmartHub acessa minha conta ML para fazer compras
+                  ou alterações?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none"
+                  stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg></summary>
+              <div class="px-5 pb-5 pt-1">
+                <p class="text-sm text-gray-600 leading-relaxed">Não. O sistema usa os cookies apenas para leitura de
+                  dados. Nenhuma ação de compra, venda ou modificação de anúncio é realizada automaticamente.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTÓRIA -->
+  <section class="py-20 bg-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 reveal">
+      <span
+        class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">Nossa
+        história</span>
+      <h2 class="text-3xl font-bold text-gray-900 mb-8">Como chegamos até aqui</h2>
+      <div class="space-y-5 text-gray-600 leading-relaxed">
+        <p>O ML SmartHub surgiu em 2024 a partir de uma dor real: vendedores profissionais gastavam horas por dia em
+          planilhas, abas abertas e comparações manuais para entender o que estava acontecendo com seus produtos e
+          concorrentes no Mercado Livre.</p>
+        <p>Nossa equipe de desenvolvedores especializados em e-commerce construiu uma plataforma que automatiza esse
+          trabalho — coleta de dados, análise de preços, monitoramento de sellers e gestão de perguntas — permitindo que
+          os vendedores foquem no que realmente importa: crescer o negócio.</p>
+        <p>A plataforma foi pensada para crescer junto com o vendedor — do pequeno empreendedor que está começando até
+          operações com múltiplas contas e equipes dedicadas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="py-20 bg-gradient-to-br from-brand-600 to-brand-800 text-white">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 text-center reveal">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4">Pronto para experimentar?</h2>
+      <p class="text-brand-200 text-lg mb-10">Crie sua conta grátis e explore a plataforma sem compromisso. O plano
+        gratuito não tem limite de tempo.</p>
       <a href="https://app.mlsmarthub.com.br/register"
-         class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-white text-brand-700 font-bold rounded-xl shadow-lg hover:bg-brand-50 transition-colors text-sm">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        class="inline-flex items-center gap-2.5 px-8 py-4 bg-white text-brand-700 font-bold rounded-xl text-base shadow-xl hover:bg-brand-50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
         Criar conta grátis
       </a>
-      <a href="#plans"
-         class="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-transparent border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors text-sm">
-        Ver planos
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-      </a>
+      <p class="text-brand-300 text-sm mt-5">Sem cartão de crédito &nbsp;·&nbsp; Cancele quando quiser</p>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- STATS BAR -->
-<section class="bg-gray-900 border-b border-gray-800">
-  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-      <div><div class="text-4xl font-bold text-white tracking-tight">24/7</div><div class="text-sm text-gray-400 mt-1 font-medium">Monitoramento automático</div></div>
-      <div><div class="text-4xl font-bold text-white tracking-tight">1h</div><div class="text-sm text-gray-400 mt-1 font-medium">Intervalo padrão de scraping</div></div>
-      <div><div class="text-4xl font-bold text-white tracking-tight">4</div><div class="text-sm text-gray-400 mt-1 font-medium">Planos disponíveis</div></div>
-      <div><div class="text-4xl font-bold text-white tracking-tight">100%</div><div class="text-sm text-gray-400 mt-1 font-medium">Web — sem instalação</div></div>
+  <!-- FOOTER -->
+  <footer class="bg-gray-900 border-t border-gray-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <img src="/logo.png" alt="ML SmartHub" class="h-8 w-auto" style="filter: brightness(0) invert(1);" />
+          <span class="text-sm text-gray-500">© 2025 ML SmartHub. Todos os direitos reservados.</span>
+        </div>
+        <nav class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
+          <a href="#plans" class="hover:text-gray-300 transition-colors">Planos</a>
+          <a href="#faq" class="hover:text-gray-300 transition-colors">FAQ</a>
+          <a href="https://app.mlsmarthub.com.br/login" class="hover:text-gray-300 transition-colors">Entrar</a>
+          <a href="https://app.mlsmarthub.com.br/register"
+            class="hover:text-white text-gray-300 font-medium transition-colors">Criar conta</a>
+        </nav>
+      </div>
     </div>
-  </div>
-</section>
+  </footer>
 
-<!-- FEATURES -->
-<section id="features" class="py-20 bg-gray-50/80">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6">
-    <div class="text-center mb-14 reveal">
-      <span class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">Funcionalidades</span>
-      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Por que o ML SmartHub?</h2>
-      <p class="text-gray-500 text-lg max-w-xl mx-auto">Ferramentas construídas por quem conhece o dia a dia do vendedor</p>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 mb-5">
-          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Dados em tempo real</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Acompanhe preços, estoque e variações dos seus produtos e concorrentes diretamente do Mercado Livre, com atualizações automáticas e histórico completo.</p>
-      </div>
-      <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-purple-50 mb-5">
-          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Monitor de concorrentes</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Rastreie sellers estratégicos, receba alertas quando novos produtos aparecerem ou preços mudarem. Tome decisões antes da concorrência.</p>
-      </div>
-      <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-amber-50 mb-5">
-          <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Automação inteligente</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Scraping automatizado com cron configurável, geração de XMLs de análise de preço, catálogo integrado e respostas automáticas de perguntas.</p>
-      </div>
-      <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-50 mb-5">
-          <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Gestão de equipes</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Adicione membros ao seu time com permissões granulares. Cada colaborador acessa apenas o que precisa, com controle total pelo administrador.</p>
-      </div>
-      <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-red-50 mb-5">
-          <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Segurança e privacidade</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Seus dados e credenciais do Mercado Livre ficam protegidos com criptografia. Nunca compartilhamos suas informações com terceiros.</p>
-      </div>
-      <div class="feature-card bg-white rounded-2xl border border-gray-100 p-6 shadow-sm reveal">
-        <div class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-50 mb-5">
-          <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        </div>
-        <h3 class="text-base font-bold text-gray-900 mb-2">Multi-contas Mercado Livre</h3>
-        <p class="text-sm text-gray-500 leading-relaxed">Conecte múltiplas contas do ML em um único painel. Ideal para operações com várias lojas ou marcas distintas.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- MISSÃO -->
-<section class="py-16 bg-gradient-to-br from-brand-600 to-brand-700 text-white">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center reveal">
-    <h2 class="text-2xl sm:text-3xl font-bold mb-5">Nossa missão</h2>
-    <p class="text-brand-100 text-lg leading-relaxed">Democratizar o acesso a ferramentas de inteligência competitiva para vendedores de todos os tamanhos. Acreditamos que qualquer lojista — do pequeno empreendedor ao grande atacadista — merece tecnologia de ponta para crescer com segurança e eficiência no maior marketplace da América Latina.</p>
-  </div>
-</section>
-
-<!-- PLANOS -->
-<section id="plans" class="py-20 bg-white">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6">
-    <div class="text-center mb-14 reveal">
-      <span class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">Planos e Preços</span>
-      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Escolha o plano ideal para o seu negócio</h2>
-      <p class="text-gray-500 text-lg max-w-xl mx-auto">Comece gratuitamente e evolua conforme sua operação cresce. Cancele quando quiser, sem multas.</p>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
-      <!-- Gratuito -->
-      <div class="plan-card relative bg-white rounded-2xl border-2 border-gray-200 flex flex-col overflow-hidden shadow-sm reveal">
-        <div class="h-1 bg-gray-300 shrink-0"></div>
-        <div class="p-6 flex flex-col flex-1">
-          <h3 class="text-base font-bold text-gray-900 mb-4">Gratuito</h3>
-          <div class="mb-5"><span class="text-3xl font-bold text-gray-900">R$ 0</span></div>
-          <div class="text-xs text-gray-500 space-y-1 mb-5">
-            <div>Até <strong class="text-gray-700">10</strong> links</div>
-            <div>Até <strong class="text-gray-700">1</strong> seller monitorado</div>
-            <div>Até <strong class="text-gray-700">1</strong> usuário</div>
-          </div>
-          <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Acompanhamento de Links</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Análise de Preços (XML)</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Dashboard Básico</li>
-          </ul>
-          <a href="https://app.mlsmarthub.com.br/register" class="block text-center py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">Começar grátis</a>
-        </div>
-      </div>
-      <!-- Starter -->
-      <div class="plan-card relative bg-white rounded-2xl border-2 border-blue-200 flex flex-col overflow-hidden shadow-sm reveal">
-        <div class="h-1 bg-blue-400 shrink-0"></div>
-        <div class="p-6 flex flex-col flex-1">
-          <h3 class="text-base font-bold text-gray-900 mb-4">Starter</h3>
-          <div class="mb-5"><div class="flex items-baseline gap-1"><span class="text-sm text-gray-400">R$</span><span class="text-3xl font-bold text-gray-900">19,90</span><span class="text-sm text-gray-400">/mês</span></div></div>
-          <div class="text-xs text-gray-500 space-y-1 mb-5">
-            <div>Até <strong class="text-gray-700">100</strong> links</div>
-            <div>Até <strong class="text-gray-700">3</strong> sellers monitorados</div>
-            <div>Até <strong class="text-gray-700">5</strong> usuários</div>
-          </div>
-          <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Tudo do Gratuito</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Contas Mercado Livre</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Dashboard Completo</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Suporte por email</li>
-          </ul>
-          <a href="https://app.mlsmarthub.com.br/register" class="block text-center py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Assinar Starter</a>
-        </div>
-      </div>
-      <!-- Pro -->
-      <div class="plan-card relative bg-white rounded-2xl border-2 border-brand-400 flex flex-col overflow-hidden shadow-xl reveal">
-        <div class="h-1 bg-brand-600 shrink-0"></div>
-        <span class="absolute top-4 right-4 bg-brand-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ring-2 ring-brand-300 ring-offset-1">Popular</span>
-        <div class="p-6 flex flex-col flex-1">
-          <h3 class="text-base font-bold text-gray-900 mb-4">Pro</h3>
-          <div class="mb-5"><div class="flex items-baseline gap-1"><span class="text-sm text-gray-400">R$</span><span class="text-3xl font-bold text-gray-900">29,90</span><span class="text-sm text-gray-400">/mês</span></div></div>
-          <div class="text-xs text-gray-500 space-y-1 mb-5">
-            <div>Até <strong class="text-gray-700">500</strong> links</div>
-            <div>Até <strong class="text-gray-700">10</strong> sellers monitorados</div>
-            <div>Até <strong class="text-gray-700">10</strong> usuários</div>
-          </div>
-          <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Tudo do Starter</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Catálogo de Produtos</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Monitor Sellers avançado</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Multi-contas ML</li>
-          </ul>
-          <a href="https://app.mlsmarthub.com.br/register" class="block text-center py-2.5 rounded-xl text-sm font-bold bg-brand-600 text-white hover:bg-brand-700 transition-colors shadow-sm">Assinar Pro</a>
-        </div>
-      </div>
-      <!-- Business -->
-      <div class="plan-card relative bg-white rounded-2xl border-2 border-amber-300 flex flex-col overflow-hidden shadow-sm reveal">
-        <div class="h-1 bg-amber-400 shrink-0"></div>
-        <span class="absolute top-4 right-4 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">Completo</span>
-        <div class="p-6 flex flex-col flex-1">
-          <h3 class="text-base font-bold text-gray-900 mb-4">Business</h3>
-          <div class="mb-5"><div class="flex items-baseline gap-1"><span class="text-sm text-gray-400">R$</span><span class="text-3xl font-bold text-gray-900">59,90</span><span class="text-sm text-gray-400">/mês</span></div></div>
-          <div class="text-xs text-gray-500 space-y-1 mb-5">
-            <div>Até <strong class="text-gray-700">1.000</strong> links</div>
-            <div>Até <strong class="text-gray-700">20</strong> sellers monitorados</div>
-            <div>Até <strong class="text-gray-700">30</strong> usuários</div>
-          </div>
-          <ul class="space-y-2 flex-1 mb-6 text-sm text-gray-600">
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Tudo do Pro</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Mensagens ML</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> Analytics &amp; Vendas ML</li>
-            <li class="flex gap-2"><span class="text-emerald-500 font-bold">✓</span> 20 times de acesso</li>
-          </ul>
-          <a href="https://app.mlsmarthub.com.br/register" class="block text-center py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors">Assinar Business</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabela comparativa -->
-    <div class="reveal bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div class="px-6 py-5 border-b border-gray-100">
-        <h3 class="text-lg font-bold text-gray-900">Comparação detalhada</h3>
-        <p class="text-sm text-gray-500 mt-1">Veja exatamente o que cada plano inclui</p>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full min-w-[640px] text-sm">
-          <thead>
-            <tr class="border-b border-gray-100 bg-gray-50">
-              <th class="text-left px-6 py-4 font-medium text-gray-500 w-2/5">Recurso</th>
-              <th class="text-center px-3 py-4 font-bold text-gray-600">Gratuito</th>
-              <th class="text-center px-3 py-4 font-bold text-blue-700">Starter</th>
-              <th class="text-center px-3 py-4 font-bold text-brand-700 bg-brand-50/50">Pro</th>
-              <th class="text-center px-3 py-4 font-bold text-amber-700">Business</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-50">
-            <tr class="bg-gray-50"><td colspan="5" class="px-6 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wider">Recursos</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Acompanhamento de Links</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Análise de Preços (XML)</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Dashboard</td><td class="px-3 py-3.5 text-center text-xs text-gray-500">Básico</td><td class="px-3 py-3.5 text-center text-xs text-gray-700 font-medium">Completo</td><td class="px-3 py-3.5 text-center text-xs text-gray-700 font-medium bg-brand-50/30">Completo</td><td class="px-3 py-3.5 text-center text-xs text-gray-700 font-medium">Completo</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Contas Mercado Livre</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Catálogo de Produtos</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold bg-brand-50/30">✓</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Mensagens Mercado Livre</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold bg-brand-50/30">✗</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Analytics &amp; Vendas ML</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold">✗</td><td class="px-3 py-3.5 text-center text-gray-300 font-bold bg-brand-50/30">✗</td><td class="px-3 py-3.5 text-center text-emerald-500 font-bold">✓</td></tr>
-            <tr class="bg-gray-50"><td colspan="5" class="px-6 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wider">Limites</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Links monitorados</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">10</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">100</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">500</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1.000</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Sellers monitorados</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">3</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">10</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">20</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Usuários no time</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">5</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">10</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">30</td></tr>
-            <tr class="hover:bg-brand-50/20 transition-colors"><td class="px-6 py-3.5 font-medium text-gray-700">Times</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">1</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">2</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 bg-brand-50/30">5</td><td class="px-3 py-3.5 text-center text-sm font-semibold text-gray-700">20</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- FAQ -->
-<section id="faq" class="py-20 bg-gray-50">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6">
-    <div class="text-center mb-14 reveal">
-      <span class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">FAQ</span>
-      <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Perguntas frequentes</h2>
-      <p class="text-gray-500 text-lg">Tudo que você precisa saber antes de começar.</p>
-    </div>
-    <div class="space-y-10">
-      <div class="reveal">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Sobre o sistema</h3>
-        <div class="space-y-2">
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">O que é o ML SmartHub?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">O ML SmartHub é uma plataforma para vendedores do Mercado Livre que automatiza o monitoramento de preços, acompanhamento de concorrentes, gestão de catálogo e comunicação com clientes. Tudo em um único painel, sem precisar alternar entre abas ou fazer comparações manuais.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Para quem é indicado?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Para qualquer pessoa que venda no Mercado Livre — desde pequenos empreendedores que querem acompanhar preços com mais eficiência até grandes operações com equipes e múltiplas contas conectadas.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Preciso instalar alguma coisa?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Não. O ML SmartHub é 100% online. Basta criar uma conta e acessar pelo navegador. Não há aplicativo para baixar nem configuração de servidor.</p></div></details>
-        </div>
-      </div>
-      <div class="reveal">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Funcionalidades</h3>
-        <div class="space-y-2">
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Como funciona o monitoramento de links?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Você cadastra os links dos produtos que deseja acompanhar — seus próprios anúncios ou os dos concorrentes. O sistema verifica automaticamente e exibe histórico de preço, posição e estoque.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">O que é o Monitor de Sellers?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">É uma funcionalidade que acompanha todos os produtos de um vendedor específico no Mercado Livre. Quando um novo produto aparece ou o preço de um existente muda, você recebe um alerta.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Como funciona a Análise de Preços (XML)?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">O sistema gera um arquivo XML compatível com ferramentas de precificação como o Bling, Tiny e outros ERPs. Você importa o XML e tem os preços da concorrência já organizados.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Posso conectar mais de uma conta do Mercado Livre?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Sim! Nos planos Pro e Business você pode conectar múltiplas contas ML e gerenciá-las pelo mesmo painel.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Como funciona a gestão de perguntas do Mercado Livre?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">No plano Business, o sistema sincroniza as perguntas dos compradores das suas contas ML conectadas. Você responde diretamente pela plataforma com templates de respostas.</p></div></details>
-        </div>
-      </div>
-      <div class="reveal">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Conta e planos</h3>
-        <div class="space-y-2">
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">O plano gratuito tem limite de tempo?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Não. O plano Gratuito é permanente e não expira. Você pode usar com até 10 links monitorados e 1 seller monitorado sem pagar nada.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Posso mudar de plano a qualquer momento?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Sim. Você pode fazer upgrade imediatamente pelo painel de Planos. O downgrade é aplicado ao fim do período de cobrança atual, sem cobranças adicionais.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">O pagamento é seguro?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Sim. Todo o processamento é feito pelo Stripe. O ML SmartHub não armazena dados do seu cartão.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Posso cancelar quando quiser?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Sim, sem multa e sem burocracia. A assinatura fica ativa até o fim do período já pago.</p></div></details>
-        </div>
-      </div>
-      <div class="reveal">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Segurança e privacidade</h3>
-        <div class="space-y-2">
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">Meus cookies do Mercado Livre ficam seguros?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Seus cookies são armazenados de forma criptografada e utilizados exclusivamente para consultas no Mercado Livre em seu nome. Nunca são compartilhados com terceiros.</p></div></details>
-          <details class="bg-white rounded-xl border border-gray-100 shadow-sm"><summary class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-50 rounded-xl transition-colors"><span class="text-sm font-semibold text-gray-800">O ML SmartHub acessa minha conta ML para fazer compras ou alterações?</span><svg class="chevron w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1"><p class="text-sm text-gray-600 leading-relaxed">Não. O sistema usa os cookies apenas para leitura de dados. Nenhuma ação de compra, venda ou modificação de anúncio é realizada automaticamente.</p></div></details>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- HISTÓRIA -->
-<section class="py-20 bg-white">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 reveal">
-    <span class="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-bold rounded-full mb-4 uppercase tracking-wider">Nossa história</span>
-    <h2 class="text-3xl font-bold text-gray-900 mb-8">Como chegamos até aqui</h2>
-    <div class="space-y-5 text-gray-600 leading-relaxed">
-      <p>O ML SmartHub surgiu em 2024 a partir de uma dor real: vendedores profissionais gastavam horas por dia em planilhas, abas abertas e comparações manuais para entender o que estava acontecendo com seus produtos e concorrentes no Mercado Livre.</p>
-      <p>Nossa equipe de desenvolvedores especializados em e-commerce construiu uma plataforma que automatiza esse trabalho — coleta de dados, análise de preços, monitoramento de sellers e gestão de perguntas — permitindo que os vendedores foquem no que realmente importa: crescer o negócio.</p>
-      <p>A plataforma foi pensada para crescer junto com o vendedor — do pequeno empreendedor que está começando até operações com múltiplas contas e equipes dedicadas.</p>
-    </div>
-  </div>
-</section>
-
-<!-- CTA FINAL -->
-<section class="py-20 bg-gradient-to-br from-brand-600 to-brand-800 text-white">
-  <div class="max-w-2xl mx-auto px-4 sm:px-6 text-center reveal">
-    <h2 class="text-3xl sm:text-4xl font-bold mb-4">Pronto para experimentar?</h2>
-    <p class="text-brand-200 text-lg mb-10">Crie sua conta grátis e explore a plataforma sem compromisso. O plano gratuito não tem limite de tempo.</p>
-    <a href="https://app.mlsmarthub.com.br/register"
-       class="inline-flex items-center gap-2.5 px-8 py-4 bg-white text-brand-700 font-bold rounded-xl text-base shadow-xl hover:bg-brand-50 transition-colors">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      Criar conta grátis
-    </a>
-    <p class="text-brand-300 text-sm mt-5">Sem cartão de crédito &nbsp;·&nbsp; Cancele quando quiser</p>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer class="bg-gray-900 border-t border-gray-800">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
-      <div class="flex items-center gap-3">
-        <img src="/logo.png" alt="ML SmartHub" class="h-8 w-auto" style="filter: brightness(0) invert(1);" />
-        <span class="text-sm text-gray-500">© 2025 ML SmartHub. Todos os direitos reservados.</span>
-      </div>
-      <nav class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
-        <a href="#plans" class="hover:text-gray-300 transition-colors">Planos</a>
-        <a href="#faq"   class="hover:text-gray-300 transition-colors">FAQ</a>
-        <a href="https://app.mlsmarthub.com.br/login"    class="hover:text-gray-300 transition-colors">Entrar</a>
-        <a href="https://app.mlsmarthub.com.br/register" class="hover:text-white text-gray-300 font-medium transition-colors">Criar conta</a>
-      </nav>
-    </div>
-  </div>
-</footer>
-
-<script type="application/ld+json">
+  <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"ML SmartHub","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://mlsmarthub.com.br","offers":{"@type":"Offer","price":"0","priceCurrency":"BRL"},"description":"Plataforma de gestão e inteligência competitiva para vendedores do Mercado Livre.","featureList":"Monitoramento de preços, Monitor de sellers, Análise de preços XML, Analytics ML, Mensagens ML, Gestão de equipes"}
 </script>
 
-<script>
-  const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-</script>
+  <script>
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
 </body>
+
 </html>
