@@ -14,30 +14,30 @@ Cada pasta de spec deve conter:
 
 ## Specs Por Área
 
-| Área | Pasta |
-|---|---|
-| Rotas e proteção de rotas | `frontend/docs/specs/app-routing/` |
-| Contextos globais | `frontend/docs/specs/contexts/` |
-| Serviço de API | `frontend/docs/specs/api-service/` |
-| Layout autenticado | `frontend/docs/specs/app-layout/` |
-| Autenticação pública | `frontend/docs/specs/auth-pages/` |
-| Dashboard | `frontend/docs/specs/dashboard/` |
-| Links | `frontend/docs/specs/links/` |
-| Análise de preços | `frontend/docs/specs/price-analyze/` |
-| Monitor de sellers | `frontend/docs/specs/seller-monitor/` |
-| Catálogo | `frontend/docs/specs/catalog/` |
-| Mercado Livre | `frontend/docs/specs/meli/` |
-| Analytics ML | `frontend/docs/specs/meli-analytics/` |
-| Mensagens ML | `frontend/docs/specs/meli-messages/` |
-| Planos e billing | `frontend/docs/specs/plans/` |
-| Time e permissões | `frontend/docs/specs/team/` |
-| Configurações | `frontend/docs/specs/settings/` |
-| Setup de cookies | `frontend/docs/specs/setup-cookies/` |
-| Ajuda | `frontend/docs/specs/help/` |
-| Páginas públicas | `frontend/docs/specs/public-pages/` |
-| Painel admin | `frontend/docs/specs/admin/` |
+| Área                       | Pasta                                    |
+| -------------------------- | ---------------------------------------- |
+| Rotas e proteção de rotas  | `frontend/docs/specs/app-routing/`       |
+| Contextos globais          | `frontend/docs/specs/contexts/`          |
+| Serviço de API             | `frontend/docs/specs/api-service/`       |
+| Layout autenticado         | `frontend/docs/specs/app-layout/`        |
+| Autenticação pública       | `frontend/docs/specs/auth-pages/`        |
+| Dashboard                  | `frontend/docs/specs/dashboard/`         |
+| Links                      | `frontend/docs/specs/links/`             |
+| Análise de preços          | `frontend/docs/specs/price-analyze/`     |
+| Monitor de sellers         | `frontend/docs/specs/seller-monitor/`    |
+| Catálogo                   | `frontend/docs/specs/catalog/`           |
+| Mercado Livre              | `frontend/docs/specs/meli/`              |
+| Analytics ML               | `frontend/docs/specs/meli-analytics/`    |
+| Mensagens ML               | `frontend/docs/specs/meli-messages/`     |
+| Planos e billing           | `frontend/docs/specs/plans/`             |
+| Time e permissões          | `frontend/docs/specs/team/`              |
+| Configurações              | `frontend/docs/specs/settings/`          |
+| Setup de cookies           | `frontend/docs/specs/setup-cookies/`     |
+| Ajuda                      | `frontend/docs/specs/help/`              |
+| Páginas públicas           | `frontend/docs/specs/public-pages/`      |
+| Painel admin               | `frontend/docs/specs/admin/`             |
 | Componentes compartilhados | `frontend/docs/specs/shared-components/` |
-| Hooks e utilitários | `frontend/docs/specs/hooks-utils/` |
+| Hooks e utilitários        | `frontend/docs/specs/hooks-utils/`       |
 
 ## Lacunas Identificadas
 
@@ -48,13 +48,13 @@ Cada pasta de spec deve conter:
 
 ## Arquitetura de Domínios (desde 2026-05-30)
 
-| Domínio | Serve | Tecnologia |
-|---|---|---|
+| Domínio                      | Serve                     | Tecnologia                                     |
+| ---------------------------- | ------------------------- | ---------------------------------------------- |
 | `mlsmarthub.com.br` / `www.` | Landing page de marketing | HTML estático (`/var/www/mlsmarthub-landing/`) |
-| `app.mlsmarthub.com.br` | React SPA + API | Nginx → dist + proxy `:3333` |
+| `app.mlsmarthub.com.br`      | React SPA + API           | Nginx → dist + proxy `:3333`                   |
 
 **Landing page local:** `landing/index.html` na raiz do projeto.
-**Deploy manual:** `rsync -avz --delete dist/ root@178.104.105.239:/var/www/saas-zecrawler/frontend/dist/`
+**Deploy manual:** `rsync -avz --delete dist/ ipvps:/var/www/saas-zecrawler/frontend/dist/`
 
 Ao alterar preços ou funcionalidades descritos na landing, atualizar `landing/index.html` e re-enviar para a VPS.
 
