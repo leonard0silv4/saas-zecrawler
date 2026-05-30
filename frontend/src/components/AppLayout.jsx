@@ -4,7 +4,8 @@ import { useNotifications } from "../contexts/NotificationContext";
 import {
   Link2, ShoppingBag, Package,
   LogOut, LayoutDashboard, Crown, Lock, Menu, X, CreditCard,
-  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle, HelpCircle, BarChart2
+  LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle, HelpCircle, BarChart2,
+  Bell, Search,
 } from "lucide-react";
 import { useState } from "react";
 import OnboardingModal from "./OnboardingModal";
@@ -37,10 +38,10 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-100/70">
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-gray-900/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
@@ -61,7 +62,6 @@ export default function AppLayout() {
           {/* Nav */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {NAV.map((item) => {
-              // Oculta itens exclusivos do owner para membros/admins
               if (item.ownerOnly && !isOwner) return null;
 
               const active = location.pathname === item.to;
@@ -78,8 +78,8 @@ export default function AppLayout() {
                     setSidebarOpen(false);
                   }}
                   className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-                    ${active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"}
+                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
+                    ${active ? "bg-brand-50 text-brand-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"}
                     ${locked ? "opacity-50 cursor-default" : ""}
                   `}
                 >
@@ -98,20 +98,18 @@ export default function AppLayout() {
           {/* User */}
           <div className="p-4 border-t border-gray-100">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-sm font-bold">
+              <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-sm font-bold">
                 {user?.name?.[0]?.toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.name}</p>
-                <span className={`inline-block text-xs px-2 py-0.5 rounded-full font-medium ${planColors[user?.effectivePlan || user?.plan] || planColors.free}`}>
-                  {user?.planConfig?.name || "Gratuito"}
-                </span>
+                <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
+                <p className="text-xs text-gray-400 truncate">{user?.planConfig?.name || "Gratuito"}</p>
               </div>
             </div>
             {user?.hasSubscription && isOwner && (
               <button
                 onClick={manageBilling}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all"
               >
                 <CreditCard size={16} />
                 Assinatura
@@ -120,14 +118,14 @@ export default function AppLayout() {
             <Link
               to="/ajuda"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all"
             >
               <HelpCircle size={16} />
               Ajuda
             </Link>
             <button
               onClick={logout}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
             >
               <LogOut size={16} />
               Sair
@@ -145,6 +143,32 @@ export default function AppLayout() {
           </button>
           <img src="/logo.png" alt="ML SmartHub" className="ml-3 h-7 w-auto" />
         </header>
+
+        {/* Top bar desktop */}
+        {/* <header className="hidden lg:flex sticky top-0 z-30 items-center gap-3 border-b border-gray-200 bg-white/80 px-4 py-3 backdrop-blur md:px-8">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              placeholder="Buscar produtos, links, sellers..."
+              className="w-full max-w-md rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none transition-colors placeholder:text-gray-400 focus:border-brand-300 focus:bg-white"
+            />
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              aria-label="Notificações"
+            >
+              <Bell size={18} />
+              {hasAnyDot && (
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
+              )}
+            </button>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
+              {user?.name?.[0]?.toUpperCase()}
+            </div>
+          </div>
+        </header> */}
 
         {/* Banner: cookies ML não configurados */}
         {isOwner && !hasCookies && (

@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   BarChart, Bar, AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
   Link2, Package, ShoppingBag, Lock, LineChart as LineChartIcon,
   Store, BarChart2, TrendingUp, TrendingDown, MessageSquare,
   Clock, Zap, Users, RefreshCw, ArrowRight, Award, Tag, Bell, Activity,
+  Sparkles, ArrowUpRight, ArrowDownRight, AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
@@ -69,30 +70,52 @@ function computeCatalogStats(productGroups) {
 
 // ── Shared components ──────────────────────────────────────────────────────
 
-function StatCard({ icon: Icon, label, value, sub, iconColor = "text-gray-600", iconBg = "bg-gray-50" }) {
+function StatCard({ icon: Icon, label, value, sub, iconColor = "text-gray-600", iconBg = "bg-gray-100", trend }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-      <div className={`inline-flex items-center justify-center w-9 h-9 rounded-lg mb-3 ${iconBg}`}>
-        <Icon size={18} className={iconColor} />
+    <div className="group relative rounded-2xl border border-gray-200/70 bg-white p-4 shadow-sm transition-all hover:border-gray-300 hover:shadow-md">
+      <div className="flex items-start justify-between">
+        <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
+          <Icon size={18} className={iconColor} />
+        </div>
+        {trend && (
+          <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+            trend.direction === "up" ? "bg-green-50 text-green-700" :
+            trend.direction === "down" ? "bg-red-50 text-red-700" :
+            "bg-gray-100 text-gray-600"
+          }`}>
+            {trend.direction === "up" && <ArrowUpRight size={12} />}
+            {trend.direction === "down" && <ArrowDownRight size={12} />}
+            {trend.value}
+          </span>
+        )}
       </div>
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value ?? "—"}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{value ?? "—"}</p>
+      {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
     </div>
   );
 }
 
 function StatCardSkeleton() {
-  return <div className="bg-white rounded-xl border border-gray-100 p-4 h-28 animate-pulse" />;
+  return <div className="h-[124px] animate-pulse rounded-2xl border border-gray-200/70 bg-gray-100/70" />;
 }
 
-function SectionHeader({ title, to, linkLabel = "Ver todos" }) {
+function SectionHeader({ title, to, linkLabel = "Ver todos", icon: Icon, accent = "bg-brand-500" }) {
   return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2.5">
+        {Icon ? (
+          <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-white ${accent}`}>
+            <Icon size={15} />
+          </span>
+        ) : (
+          <span className={`h-5 w-1 rounded-full ${accent}`} />
+        )}
+        <h2 className="text-base font-bold text-gray-900">{title}</h2>
+      </div>
       <Link
         to={to}
-        className="flex items-center gap-1 text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors"
+        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-50 hover:text-brand-700"
       >
         {linkLabel} <ArrowRight size={14} />
       </Link>
@@ -102,7 +125,19 @@ function SectionHeader({ title, to, linkLabel = "Ver todos" }) {
 
 function SectionWrap({ children }) {
   return (
-    <div className="bg-gray-50 rounded-2xl p-5 space-y-4">
+    <section className="space-y-4 rounded-3xl border border-gray-200/60 bg-gray-50/60 p-5">
+      {children}
+    </section>
+  );
+}
+
+function Panel({ title, icon: Icon, children, className }) {
+  return (
+    <div className={`rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm${className ? ` ${className}` : ""}`}>
+      <p className="mb-4 flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+        {Icon && <Icon size={15} className="text-gray-400" />}
+        {title}
+      </p>
       {children}
     </div>
   );
@@ -113,16 +148,16 @@ function RankList({ items, emptyText, badgeColor = "bg-brand-50 text-brand-700",
     return <p className="text-xs text-gray-400">{emptyText}</p>;
   }
   return (
-    <ol className="space-y-2">
+    <ol className="space-y-1">
       {items.map((item, i) => (
-        <li key={i} className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-2 min-w-0">
-            <span className={`w-5 h-5 shrink-0 rounded-full text-xs font-bold flex items-center justify-center ${badgeColor}`}>
+        <li key={i} className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-gray-50">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${badgeColor}`}>
               {i + 1}
             </span>
-            <span className="text-gray-700 font-medium truncate">{item[nameKey] || "—"}</span>
+            <span className="truncate font-medium text-gray-700">{item[nameKey] || "—"}</span>
           </span>
-          <span className="text-gray-500 font-semibold shrink-0 ml-2">{item[valueKey]}</span>
+          <span className="ml-2 shrink-0 font-semibold tabular-nums text-gray-500">{item[valueKey]}</span>
         </li>
       ))}
     </ol>
@@ -134,11 +169,11 @@ function RankList({ items, emptyText, badgeColor = "bg-brand-50 text-brand-700",
 function DarkTooltip({ active, payload, label, total }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#0f172a", border: "none", borderRadius: 6, padding: "10px 12px", fontSize: 11 }}>
-      {label && <p style={{ color: "#94a3b8", marginBottom: 4, fontSize: 10 }}>{label}</p>}
+    <div className="rounded-lg border border-white/10 bg-gray-900 px-3 py-2.5 text-[11px] shadow-xl">
+      {label && <p className="mb-1 text-[10px] text-gray-400">{label}</p>}
       {payload.map((p, i) => (
-        <p key={i} style={{ color: p.color, margin: "2px 0" }}>
-          {p.name}: <strong style={{ color: "#fff" }}>
+        <p key={i} style={{ color: p.color }} className="my-0.5">
+          {p.name}: <strong className="text-white">
             {p.value}{total ? ` (${((p.value / total) * 100).toFixed(1)}%)` : ""}
           </strong>
         </p>
@@ -156,7 +191,7 @@ function WinLossBar({ winning, losing, total, winColor = "#10b981", loseColor = 
 
   return (
     <div>
-      <div className="flex h-7 rounded-xl overflow-hidden gap-px">
+      <div className="flex h-8 gap-px overflow-hidden rounded-xl">
         {winPct > 0 && (
           <div
             className="flex items-center justify-center transition-all"
@@ -168,7 +203,7 @@ function WinLossBar({ winning, losing, total, winColor = "#10b981", loseColor = 
           </div>
         )}
         {neutralPct > 0 && (
-          <div className="bg-gray-100" style={{ width: `${neutralPct}%` }} />
+          <div className="bg-gray-200/80" style={{ width: `${neutralPct}%` }} />
         )}
         {losePct > 0 && (
           <div
@@ -181,19 +216,19 @@ function WinLossBar({ winning, losing, total, winColor = "#10b981", loseColor = 
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-gray-500">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: winColor }} />
+          <div className="h-2.5 w-2.5 rounded-sm" style={{ background: winColor }} />
           <span>Ganhando: <strong className="text-gray-700">{winning}</strong></span>
         </div>
         {neutral > 0 && (
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-sm bg-gray-200" />
+            <div className="h-2.5 w-2.5 rounded-sm bg-gray-300" />
             <span>Sem comparação: <strong className="text-gray-700">{neutral}</strong></span>
           </div>
         )}
         <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-sm" style={{ background: loseColor }} />
+          <div className="h-2.5 w-2.5 rounded-sm" style={{ background: loseColor }} />
           <span>Perdendo: <strong className="text-gray-700">{losing}</strong></span>
         </div>
       </div>
@@ -215,6 +250,7 @@ function LinksSection({ stats, loading }) {
       value: stats?.winning,
       sub: stats?.total ? `${((stats.winning / stats.total) * 100).toFixed(1)}% do total` : null,
       iconBg: "bg-green-50", iconColor: "text-green-600",
+      trend: { value: "Ganhando", direction: "up" },
     },
     {
       icon: TrendingDown, label: "Links Perdendo",
@@ -232,23 +268,22 @@ function LinksSection({ stats, loading }) {
 
   return (
     <SectionWrap>
-      <SectionHeader title="Links Monitorados" to="/links" />
+      <SectionHeader title="Links Monitorados" to="/links" icon={Link2} accent="bg-blue-500" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : cards.map((c) => <StatCard key={c.label} {...c} />)}
       </div>
       {!loading && (
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
-          <p className="text-sm font-medium text-gray-700 mb-4">Competitividade: Ganhando vs Perdendo</p>
+        <Panel title="Competitividade: Ganhando vs Perdendo">
           {stats?.total ? (
             <WinLossBar winning={stats.winning} losing={stats.losing} total={stats.total} />
           ) : (
-            <div className="h-20 flex items-center justify-center text-gray-400 text-sm">
+            <div className="flex h-20 items-center justify-center text-sm text-gray-400">
               Nenhum link cadastrado ainda
             </div>
           )}
-        </div>
+        </Panel>
       )}
     </SectionWrap>
   );
@@ -260,9 +295,9 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
   if (!isBusiness) {
     return (
       <SectionWrap>
-        <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" />
+        <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} accent="bg-amber-500" />
         <div className="flex flex-col items-center justify-center py-10 gap-3">
-          <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
             <Lock size={22} className="text-amber-500" />
           </div>
           <p className="text-gray-600 font-medium">Disponível no plano Business</p>
@@ -291,6 +326,7 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
       value: stats?.responseRate != null ? `${stats.responseRate.toFixed(1)}%` : "—",
       sub: `${stats?.answered ?? 0} de ${stats?.total ?? 0} respondidas`,
       iconBg: "bg-green-50", iconColor: "text-green-600",
+      trend: { value: "Ótimo", direction: "up" },
     },
     {
       icon: Clock, label: "Tempo Médio",
@@ -302,7 +338,7 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
       icon: Zap, label: "Pico de Mensagens",
       value: stats?.peakHour != null ? `${stats.peakHour}h` : "—",
       sub: "hora com mais perguntas",
-      iconBg: "bg-purple-50", iconColor: "text-purple-600",
+      iconBg: "bg-brand-50", iconColor: "text-brand-600",
     },
   ];
 
@@ -312,7 +348,7 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
 
   return (
     <SectionWrap>
-      <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" />
+      <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} accent="bg-amber-500" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
@@ -320,11 +356,10 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
       </div>
       {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Perguntas por Horário</p>
+          <Panel title="Perguntas por Horário" className="lg:col-span-2">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={hourlyData} barCategoryGap="20%">
-                <CartesianGrid strokeDasharray="" stroke="#f1f5f9" vertical={false} />
+                <CartesianGrid stroke="#f1f5f9" vertical={false} />
                 <XAxis
                   dataKey="hora"
                   tick={{ fontSize: 9, fill: "#94a3b8" }}
@@ -339,16 +374,13 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
                 />
                 <Tooltip
                   content={<DarkTooltip />}
-                  cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                  cursor={{ fill: "rgba(0,112,199,0.06)" }}
                 />
-                <Bar dataKey="Perguntas" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Perguntas" fill="#0070c7" radius={[4, 4, 0, 0]} maxBarSize={22} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-1.5">
-              <Users size={14} /> Top Respondedores
-            </p>
+          </Panel>
+          <Panel title="Top Respondedores" icon={Users}>
             <RankList
               items={stats?.topRespondedores}
               emptyText="Nenhum dado ainda. Os respondedores aparecerão aqui conforme as mensagens forem respondidas."
@@ -356,7 +388,7 @@ function MensagensMlSection({ stats, loading, isBusiness }) {
               nameKey="name"
               valueKey="answered"
             />
-          </div>
+          </Panel>
         </div>
       )}
     </SectionWrap>
@@ -377,6 +409,7 @@ function PriceAnalyzeSection({ xmlStats, loading, noStores }) {
       value: xmlStats?.taxaVitoria != null ? `${xmlStats.taxaVitoria.toFixed(1)}%` : "—",
       sub: `${xmlStats?.winning ?? 0} grupos ganhando`,
       iconBg: "bg-green-50", iconColor: "text-green-600",
+      trend: { value: "Vitória", direction: "up" },
     },
     {
       icon: TrendingDown, label: "Dif. Média",
@@ -385,6 +418,9 @@ function PriceAnalyzeSection({ xmlStats, loading, noStores }) {
         : "—",
       sub: "vs menor preço concorrente",
       iconBg: "bg-amber-50", iconColor: "text-amber-600",
+      trend: xmlStats?.difMedia != null
+        ? { value: `${Math.abs(xmlStats.difMedia).toFixed(1)}%`, direction: xmlStats.difMedia <= 0 ? "down" : "up" }
+        : undefined,
     },
     {
       icon: RefreshCw, label: "Reprecificações",
@@ -396,10 +432,10 @@ function PriceAnalyzeSection({ xmlStats, loading, noStores }) {
 
   return (
     <SectionWrap>
-      <SectionHeader title="Análise de Concorrência" to="/price-analyze" linkLabel="Ver análise" />
+      <SectionHeader title="Análise de Concorrência" to="/price-analyze" linkLabel="Ver análise" icon={BarChart2} accent="bg-sky-500" />
       {noStores && !loading && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-          <span className="mt-0.5">⚠️</span>
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-500" />
           <span>
             Suas lojas não estão configuradas — os dados de vitória/derrota podem estar incorretos.{" "}
             <Link to="/settings" className="font-semibold underline hover:text-amber-900">
@@ -413,7 +449,7 @@ function PriceAnalyzeSection({ xmlStats, loading, noStores }) {
           {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
         </div>
       ) : xmlStats === null || xmlStats === undefined ? (
-        <div className="text-center py-10 text-gray-400">
+        <div className="py-10 text-center text-gray-400">
           <BarChart2 size={32} className="mx-auto mb-2 opacity-30" />
           <p className="text-sm">Nenhuma análise gerada ainda.</p>
           <Link to="/price-analyze" className="text-sm text-brand-600 hover:underline">
@@ -425,8 +461,7 @@ function PriceAnalyzeSection({ xmlStats, loading, noStores }) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {cards.map((c) => <StatCard key={c.label} {...c} />)}
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <p className="text-sm font-medium text-gray-700 mb-4">Catálogos: Ganhando vs Perdendo</p>
+          <Panel title="Catálogos: Ganhando vs Perdendo">
             <WinLossBar
               winning={xmlStats.winning}
               losing={xmlStats.losing}
@@ -434,7 +469,7 @@ function PriceAnalyzeSection({ xmlStats, loading, noStores }) {
               winColor="#6366f1"
               loseColor="#f59e0b"
             />
-          </div>
+          </Panel>
         </>
       )}
     </SectionWrap>
@@ -465,13 +500,13 @@ function SellerSection({ stats, loading }) {
       icon: Package, label: "Estoque",
       value: stats?.stockChangesToday,
       sub: "novos produtos hoje",
-      iconBg: "bg-purple-50", iconColor: "text-purple-600",
+      iconBg: "bg-brand-50", iconColor: "text-brand-600",
     },
   ];
 
   return (
     <SectionWrap>
-      <SectionHeader title="Monitor Sellers" to="/seller-monitor" linkLabel="Ver sellers" />
+      <SectionHeader title="Monitor Sellers" to="/seller-monitor" linkLabel="Ver sellers" icon={Store} accent="bg-teal-500" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
@@ -479,10 +514,9 @@ function SellerSection({ stats, loading }) {
       </div>
       {!loading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Mudanças nos Anúncios (15 dias)</p>
+          <Panel title="Mudanças nos Anúncios (15 dias)" className="lg:col-span-2">
             {(stats?.alertsByDay?.length ?? 0) === 0 ? (
-              <div className="h-40 flex items-center justify-center text-gray-400 text-sm">
+              <div className="flex h-40 items-center justify-center text-sm text-gray-400">
                 Sem dados de alterações ainda
               </div>
             ) : (
@@ -490,8 +524,8 @@ function SellerSection({ stats, loading }) {
                 <AreaChart data={stats.alertsByDay}>
                   <defs>
                     <linearGradient id="gradMudancas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -512,20 +546,17 @@ function SellerSection({ stats, loading }) {
                     type="monotone"
                     dataKey="count"
                     name="Mudanças"
-                    stroke="#8b5cf6"
+                    stroke="#14b8a6"
                     strokeWidth={2}
                     fill="url(#gradMudancas)"
                     dot={false}
-                    activeDot={{ r: 5, fill: "#8b5cf6" }}
+                    activeDot={{ r: 5, fill: "#14b8a6" }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             )}
-          </div>
-          <div className="bg-white rounded-xl border border-gray-100 p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-1.5">
-              <Activity size={14} /> Sellers com mais mudanças
-            </p>
+          </Panel>
+          <Panel title="Sellers com mais mudanças" icon={Activity}>
             <RankList
               items={stats?.topSellers}
               emptyText="Nenhuma mudança nas últimas 24h"
@@ -533,7 +564,7 @@ function SellerSection({ stats, loading }) {
               nameKey="name"
               valueKey="alertsToday"
             />
-          </div>
+          </Panel>
         </div>
       )}
     </SectionWrap>
@@ -598,53 +629,67 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Olá, {user?.name?.split(" ")[0]} 👋
-          </h1>
-          <p className="text-gray-500 mt-1">
-            Plano{" "}
-            <span className="font-medium text-brand-600">{user?.planConfig?.name}</span>
-            {" — "}{user?.planConfig?.maxLinks} links e{" "}
-            {user?.planConfig?.maxSellerMonitors ?? 0} sellers monitorados
-          </p>
-        </div>
-        {lastUpdated && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <RefreshCw size={12} />
-            Atualizado às{" "}
-            {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+      {/* Header banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-600 to-brand-700 p-6 text-white shadow-sm">
+        <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">
+              Olá, {user?.name?.split(" ")[0]} 👋
+            </h1>
+            <p className="mt-1 text-sm text-brand-100">
+              Aqui está o resumo da sua operação hoje.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 font-semibold backdrop-blur">
+                <Sparkles size={13} /> Plano {user?.planConfig?.name}
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-brand-100">
+                {user?.planConfig?.maxLinks} links
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-brand-100">
+                {user?.planConfig?.maxSellerMonitors ?? 0} sellers
+              </span>
+            </div>
           </div>
-        )}
+          {lastUpdated && (
+            <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs text-brand-100 backdrop-blur">
+              <RefreshCw size={12} />
+              Atualizado às{" "}
+              {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Module navigation cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {MODULE_CARDS.map((card) => {
-          const locked = !canAccess(card.module);
-          const planLocked = locked && isBlockedByPlan(card.module);
-          const permissionLocked = locked && !planLocked;
-          return (
-            <Link
-              key={card.to}
-              to={planLocked ? "/plans" : card.to}
-              onClick={(e) => { if (permissionLocked) e.preventDefault(); }}
-              className={`group relative bg-white rounded-xl border border-gray-100 p-5 transition-all hover:shadow-md hover:border-gray-200 ${locked ? "opacity-60 cursor-default" : ""}`}
-            >
-              <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-4`}>
-                <card.icon size={20} className="text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-900 group-hover:text-brand-700 transition-colors">
-                {card.label}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">{card.desc}</p>
-              {planLocked && <Lock size={14} className="absolute top-4 right-4 text-amber-500" />}
-              {permissionLocked && <Lock size={14} className="absolute top-4 right-4 text-gray-400" />}
-            </Link>
-          );
-        })}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-400">Módulos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {MODULE_CARDS.map((card) => {
+            const locked = !canAccess(card.module);
+            const planLocked = locked && isBlockedByPlan(card.module);
+            const permissionLocked = locked && !planLocked;
+            return (
+              <Link
+                key={card.to}
+                to={planLocked ? "/plans" : card.to}
+                onClick={(e) => { if (permissionLocked) e.preventDefault(); }}
+                className={`group relative overflow-hidden rounded-2xl border border-gray-200/70 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-md ${locked ? "cursor-default opacity-60 hover:translate-y-0 hover:shadow-sm" : ""}`}
+              >
+                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm ${card.color}`}>
+                  <card.icon size={20} />
+                </div>
+                <h3 className="font-semibold text-gray-900 transition-colors group-hover:text-brand-700">
+                  {card.label}
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">{card.desc}</p>
+                {planLocked && <Lock size={14} className="absolute top-4 right-4 text-amber-500" />}
+                {permissionLocked && <Lock size={14} className="absolute top-4 right-4 text-gray-400" />}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Dashboard sections */}
