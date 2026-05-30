@@ -46,3 +46,6 @@ Thumbs.db
 # Opcional: certificados / chaves locais
 *.pem
 *.key
+
+CLAUDE.md
+AGENTS.md
