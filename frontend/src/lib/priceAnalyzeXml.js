@@ -1,41 +1,28 @@
 /**
- * Parser do XML produtos_mercadolivre.xml — equivalente ao xml-parser.ts do sistema antigo.
- * Lista padrão: VITE_PRICE_ANALYZE_MY_SELLERS ou constantes legadas; em parseXML, passe nomes
- * salvos em Configurações (conta) para sobrescrever.
+ * Parser do XML produtos_mercadolivre.xml.
+ * As lojas do cliente devem ser passadas explicitamente via myStoresUppercase.
+ * Use o hook useMyStores() para obter a lista combinada de mySellerNames + nicknames ML.
  */
-const ENV_STORES = import.meta.env.VITE_PRICE_ANALYZE_MY_SELLERS;
-
-export function getDefaultMyStoresUppercase() {
-  if (ENV_STORES) {
-    return ENV_STORES.split(",")
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean);
-  }
-  return [
-    "NETVASOSJARDINAGEM",
-    "JARDINOGARDEN",
-    "LYRIAFLORES",
-    "SOMBRITELA_LONDRINA",
-    "SOMBRITELA",
-    "SOMBRETELA",
-    "-1",
-  ];
-}
-
-/** @deprecated use getDefaultMyStoresUppercase — mantido para imports antigos */
-export const MY_STORES = getDefaultMyStoresUppercase();
 
 export const PRICE_DIFF_THRESHOLD = 10;
 
+/** @deprecated Use useMyStores() hook em vez disso. Mantido para não quebrar imports antigos. */
+export function getDefaultMyStoresUppercase() {
+  return [];
+}
+
+/** @deprecated Use getDefaultMyStoresUppercase() */
+export const MY_STORES = [];
+
 /**
  * @param {string} xmlContent
- * @param {string[]|undefined} myStoresUppercase — se definido e não vazio, substitui env/lista padrão
+ * @param {string[]} [myStoresUppercase] — nomes das lojas do cliente (uppercase). Se omitido ou vazio, nenhum produto é marcado como "minha loja".
  */
 export function parseXML(xmlContent, myStoresUppercase) {
   const storeSet =
     Array.isArray(myStoresUppercase) && myStoresUppercase.length > 0
       ? myStoresUppercase
-      : getDefaultMyStoresUppercase();
+      : [];
 
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlContent, "text/xml");
@@ -67,7 +54,7 @@ export function parseXML(xmlContent, myStoresUppercase) {
       vendedor,
       url,
       urlOriginal,
-      isMyStore: storeSet.includes(vendedor.toUpperCase()),
+      isMyStore: storeSet.length > 0 && storeSet.includes(vendedor.toUpperCase()),
       grupo,
     });
   }

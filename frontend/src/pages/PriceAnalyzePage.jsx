@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { ExternalLink, Filter, LineChart, RefreshCw, X, AlertTriangle, TrendingUp, Play } from "lucide-react";
+import { ExternalLink, Filter, LineChart, RefreshCw, X, AlertTriangle, TrendingUp, Play, Trophy, Eye, AlertCircle } from "lucide-react";
 import api from "../services/api";
-import { parseXML, getDefaultMyStoresUppercase } from "../lib/priceAnalyzeXml";
+import { parseXML, PRICE_DIFF_THRESHOLD } from "../lib/priceAnalyzeXml";
+import { useMyStores } from "../hooks/useMyStores";
 
 /** XML pode retornar 404 sem ser “erro” de sessão — axios global rejeita 404. */
 async function fetchPriceAnalyzeXmlText() {
@@ -30,6 +31,10 @@ function fmtMoney(n) {
   return `R$ ${Number(n).toFixed(2)}`;
 }
 
+function formatCurrency(n) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+}
+
 const GENERATE_TIMEOUT_MS = 15 * 60 * 1000;
 
 export default function PriceAnalyzePage() {
@@ -47,32 +52,9 @@ export default function PriceAnalyzePage() {
   const [filterNoComp, setFilterNoComp] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
   const [detail, setDetail] = useState(null);
-  /** `undefined` = ainda não carregou GET /settings; `null` = carregou e lista vazia (usa padrão env); array = nomes da conta */
-  const [storeOverride, setStoreOverride] = useState(undefined);
+  const { myStores, loading: storesLoading } = useMyStores();
 
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get("/settings")
-      .then(({ data }) => {
-        if (cancelled) return;
-        const arr = (data.mySellerNames || [])
-          .map((s) => String(s).trim().toUpperCase())
-          .filter(Boolean);
-        setStoreOverride(arr.length > 0 ? arr : null);
-      })
-      .catch(() => {
-        if (!cancelled) setStoreOverride(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const storesForBadge = useMemo(() => {
-    if (storeOverride && storeOverride.length > 0) return storeOverride;
-    return getDefaultMyStoresUppercase();
-  }, [storeOverride]);
+  const storesForBadge = useMemo(() => myStores, [myStores]);
 
   const loadXml = useCallback(async () => {
     setLoading(true);
@@ -86,13 +68,7 @@ export default function PriceAnalyzePage() {
         setNoXmlYet(true);
         return;
       }
-      const forParse =
-        storeOverride === undefined
-          ? undefined
-          : storeOverride && storeOverride.length > 0
-            ? storeOverride
-            : undefined;
-      const parsed = parseXML(text, forParse);
+      const parsed = parseXML(text, myStores);
       setProductGroups(parsed.productGroups);
       setExtractionDate(parsed.extractionDate);
     } catch (e) {
@@ -100,7 +76,7 @@ export default function PriceAnalyzePage() {
     } finally {
       setLoading(false);
     }
-  }, [storeOverride]);
+  }, [myStores]);
 
   useEffect(() => {
     loadXml();
@@ -163,7 +139,7 @@ export default function PriceAnalyzePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -214,6 +190,30 @@ export default function PriceAnalyzePage() {
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
           {error}
+        </div>
+      )}
+
+      {!storesLoading && myStores.length === 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle size={16} className="shrink-0 text-amber-500" />
+          <span className="flex-1">
+            <strong>Suas lojas não foram identificadas.</strong> Configure em{" "}
+            <strong>Configurações → Meus Sellers</strong> ou conecte uma conta Mercado Livre para que seus produtos sejam marcados corretamente na análise.
+          </span>
+          <div className="flex gap-2 shrink-0">
+            <Link
+              to="/settings"
+              className="rounded-lg bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700 transition-colors"
+            >
+              Configurações
+            </Link>
+            <Link
+              to="/meli"
+              className="rounded-lg border border-amber-400 px-3 py-1 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+            >
+              Conectar conta ML
+            </Link>
+          </div>
         </div>
       )}
 
@@ -447,40 +447,148 @@ export default function PriceAnalyzePage() {
       {detail && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDetail(null)}>
           <div
-            className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 shadow-xl"
+            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start gap-4 mb-4">
-              <h3 className="font-semibold text-gray-900">{detail.nome}</h3>
-              <button type="button" onClick={() => setDetail(null)} className="p-1 text-gray-400 hover:text-gray-700">
+            {/* Header gradiente */}
+            <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl flex-shrink-0">
+              <h3 className="text-xl font-bold text-white pr-10 leading-snug">{detail.nome}</h3>
+              <p className="text-blue-100 text-sm mt-0.5">SKU: {detail.grupo}</p>
+              <button
+                type="button"
+                onClick={() => setDetail(null)}
+                className="absolute right-4 top-4 text-white hover:bg-white/20 rounded-lg p-1.5 transition-all"
+              >
                 <X size={20} />
               </button>
             </div>
-            <ul className="space-y-2">
-              {[...detail.products]
-                .sort((a, b) => a.preco - b.preco)
-                .map((p) => (
-                  <li
-                    key={p.id + p.url}
-                    className={`flex justify-between items-center px-3 py-2 rounded-lg text-sm ${
-                      p.isMyStore ? "bg-emerald-50 border border-emerald-100" : "bg-gray-50"
-                    }`}
-                  >
-                    <div>
-                      <span className="font-medium">{p.vendedor}</span>
-                      {p.isMyStore && <span className="ml-2 text-xs text-emerald-700">(sua loja)</span>}
+
+            <div className="overflow-y-auto flex-1 p-6 space-y-5">
+              {/* Cards de resumo */}
+              {(() => {
+                const sorted = [...detail.products].sort((a, b) => a.preco - b.preco);
+                const bestPrice = sorted[0].preco;
+                const myProducts = sorted.filter((p) => p.isMyStore);
+
+                const analyzePrice = (price) => {
+                  const diff = price - bestPrice;
+                  const diffPercent = (diff / bestPrice) * 100;
+                  return { diff, diffPercent };
+                };
+
+                return (
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Melhor Preço</p>
+                          <Trophy size={16} className="text-green-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-green-700">{formatCurrency(bestPrice)}</p>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Maior Preço</p>
+                          <Eye size={16} className="text-blue-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-blue-700">{formatCurrency(detail.maxPrice)}</p>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Diferença</p>
+                          <AlertCircle size={16} className="text-amber-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-amber-700">{formatCurrency(detail.maxPrice - bestPrice)}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{fmtMoney(p.preco)}</span>
-                      {p.url && (
-                        <a href={p.url} target="_blank" rel="noreferrer" className="text-brand-600">
-                          <ExternalLink size={14} />
-                        </a>
+
+                    {/* Badges de contagem */}
+                    <div className="flex gap-2 flex-wrap">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                        Total de anúncios: {sorted.length}
+                      </span>
+                      {myProducts.length > 0 && (
+                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                          Seus anúncios: {myProducts.length}
+                        </span>
                       )}
                     </div>
-                  </li>
-                ))}
-            </ul>
+
+                    {/* Lista de concorrentes */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-5 bg-blue-600 rounded" />
+                        <h4 className="text-base font-bold text-gray-900">Análise de Concorrentes</h4>
+                      </div>
+                      <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                        {sorted.map((p) => {
+                          const { diff, diffPercent } = analyzePrice(p.preco);
+                          const isBestPrice = p.preco === bestPrice;
+                          const isCompetitorSignificant = !p.isMyStore && Math.abs(diffPercent) > PRICE_DIFF_THRESHOLD;
+
+                          return (
+                            <div
+                              key={p.id + p.url}
+                              className={`border-2 rounded-xl p-4 ${
+                                p.isMyStore
+                                  ? "bg-green-50 border-green-200 hover:border-green-300"
+                                  : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                              } transition-colors`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <span className="font-semibold text-gray-900 text-sm">{p.vendedor}</span>
+                                    {p.isMyStore && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-800">
+                                        Sua Loja
+                                      </span>
+                                    )}
+                                    {isBestPrice && (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-200 text-blue-800">
+                                        <Trophy size={10} /> Melhor
+                                      </span>
+                                    )}
+                                  </div>
+                                  {p.url && (
+                                    <a
+                                      href={p.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                                    >
+                                      Ver no Mercado Livre <ExternalLink size={11} />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-xl font-bold text-gray-900">{formatCurrency(p.preco)}</p>
+                                  {diff !== 0 && (
+                                    <p className={`text-xs font-semibold mt-0.5 ${diff > 0 ? "text-red-600" : "text-green-600"}`}>
+                                      {diff > 0 ? "+" : ""}{formatCurrency(diff)} ({diffPercent > 0 ? "+" : ""}{diffPercent.toFixed(1)}%)
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {isCompetitorSignificant && (
+                                <div className="mt-3 flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs">
+                                  <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                                  <span className="font-semibold">
+                                    Diferença significativa: {Math.abs(diffPercent).toFixed(1)}% {diffPercent > 0 ? "acima" : "abaixo"} do melhor preço
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
         </div>,
         document.body

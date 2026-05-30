@@ -91,7 +91,7 @@ export default function PlansPage() {
   const cancelPending = subStatus?.subscription?.cancelAtPeriodEnd;
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="mx-auto">
       {/* Header */}
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center justify-center gap-2">

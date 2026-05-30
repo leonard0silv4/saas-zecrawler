@@ -518,7 +518,7 @@ export default function TeamPage() {
   const deleteTeamTarget = teams.find((t) => t._id === deleteTeamId);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>

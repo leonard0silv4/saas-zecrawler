@@ -44,7 +44,7 @@ function AISection({ aiData, scenario, setScenario, winableSkus, setWinableSkus 
   if (!aiData || totalCount === 0) return null;
 
   return (
-    <div className="mb-4 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-xl p-4 shadow-sm">
+    <div className="mb-4 bg-white/80 backdrop-blur-sm border border-gray-100 rounded-xl p-4 shadow-sm hidden">
       <div className="flex items-center gap-2 mb-3">
         <Brain size={15} className="text-brand-600" />
         <span className="text-sm font-semibold text-gray-700">Inteligência de Receita</span>
@@ -57,7 +57,7 @@ function AISection({ aiData, scenario, setScenario, winableSkus, setWinableSkus 
       </div>
 
       {showHelp && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 "
           onClick={() => setShowHelp(false)}>
           <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}>
@@ -450,7 +450,7 @@ export default function LinksPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>

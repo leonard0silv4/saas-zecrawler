@@ -5,6 +5,7 @@ import { addSSEClient, removeSSEClient } from "../utils/sse.js";
 import { getOwnerId } from "../middleware/auth.js";
 
 import AuthController from "../controllers/AuthController.js";
+import DashboardController from "../controllers/DashboardController.js";
 import StripeController from "../controllers/StripeController.js";
 import LinkController from "../controllers/LinkController.js";
 import MeliController from "../controllers/MeliController.js";
@@ -52,6 +53,9 @@ r.post("/stripe/portal", StripeController.createPortal);
 r.get("/stripe/status", StripeController.status);
 r.post("/stripe/downgrade", StripeController.downgrade);
 // NOTE: /api/stripe/webhook is mounted in index.js (needs raw body)
+
+// ─── Dashboard ─────────────────────────────────────────────────
+r.get("/dashboard/stats", DashboardController.stats);
 
 // ─── Links ─────────────────────────────────────────────────────
 r.get("/links", requireModule("links"), LinkController.index);

@@ -488,7 +488,7 @@ export default function MeliMessagesPage() {
   const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

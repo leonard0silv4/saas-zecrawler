@@ -95,7 +95,7 @@ export default {
         return res.status(400).json({ error: `Resposta excede o limite de ${MAX_REPLY_LEN} caracteres` });
       }
 
-      const result = await answerQuestion({ ownerId, questionId, text: finalText, answeredBy });
+      const result = await answerQuestion({ ownerId, questionId, text: finalText, answeredBy, answeredByUserId: req.user?.id || null });
       return res.json({ ok: true, reply: result });
     } catch (error) {
       if (error.code === "ALREADY_ANSWERED") {

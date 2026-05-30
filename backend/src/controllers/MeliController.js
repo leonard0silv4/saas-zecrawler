@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import Conta from "../models/Conta.js";
 import MeliProduct from "../models/MeliProduct.js";
 import MeliQuestion from "../models/MeliQuestion.js";
+import User from "../models/User.js";
 import { renewToken } from "../utils/meliToken.js";
 import { getOwnerId } from "../middleware/auth.js";
 
@@ -325,6 +326,13 @@ export default {
         },
         { upsert: true, new: true }
       );
+
+      // Adiciona nickname em mySellerNames se ainda não estiver (não bloqueia o redirect)
+      if (userInfo.nickname?.trim()) {
+        User.findByIdAndUpdate(uid, { $addToSet: { mySellerNames: userInfo.nickname.trim() } })
+          .exec()
+          .catch(() => {});
+      }
 
       res.send(`<!DOCTYPE html>
 <html lang="pt-BR">

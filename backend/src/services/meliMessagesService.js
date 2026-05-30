@@ -226,7 +226,7 @@ export async function syncQuestionsForOwner(ownerId) {
   return { ownerId: String(ownerId), accounts: contas.length, syncedCount, results };
 }
 
-export async function answerQuestion({ ownerId, questionId, text, answeredBy = "manual" }) {
+export async function answerQuestion({ ownerId, questionId, text, answeredBy = "manual", answeredByUserId = null }) {
   const normalizedText = String(text || "").trim();
   if (!normalizedText) throw new Error("Texto da resposta é obrigatório");
 
@@ -321,6 +321,7 @@ export async function answerQuestion({ ownerId, questionId, text, answeredBy = "
         answer_status: resolvedStatus,
         answer_date_created: new Date(answerDate),
         answered_by: answeredBy,
+        answeredByUserId: answeredByUserId || null,
         last_synced_at: new Date(),
       },
       $setOnInsert: {

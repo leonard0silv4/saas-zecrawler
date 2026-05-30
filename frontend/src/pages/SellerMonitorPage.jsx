@@ -206,7 +206,7 @@ export default function SellerMonitorPage() {
   const canAddSeller = sellers.length < maxSellerMonitors;
 
   return (
-    <div className="space-y-4 max-w-7xl mx-auto">
+    <div className="space-y-4 mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
