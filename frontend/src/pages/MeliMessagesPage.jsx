@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MessageCircle, RefreshCcw } from "lucide-react";
+import { CheckCircle2, Clock, MessageCircle, RefreshCcw } from "lucide-react";
 import api from "../services/api";
 import { apiErrorMessage, notifyError, notifyWarning } from "../utils/notify.js";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -8,9 +8,12 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import { AccountSelector } from "../components/meli-messages/AccountSelector";
 import { ConversationList } from "../components/meli-messages/ConversationList";
 import { ChatThread } from "../components/meli-messages/ChatThread";
-import { TemplateEditor } from "../components/meli-messages/TemplateEditor";
+import { TemplateModal } from "../components/meli-messages/TemplateModal";
+import { ProductSearchModal } from "../components/meli-messages/ProductSearchModal";
 
 const QUESTIONS_POLL_MS = 5 * 60 * 1000;
+
+function cn(...c) { return c.filter(Boolean).join(" "); }
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -53,6 +56,9 @@ export default function MeliMessagesPage() {
   const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
   const [buyerThreadRefreshKey, setBuyerThreadRefreshKey] = useState(0);
   const [listingProduct, setListingProduct] = useState(null);
+
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [productModalOpen, setProductModalOpen] = useState(false);
 
   // Hashtag autocomplete
   const replyTextareaRef = useRef(null);
@@ -112,7 +118,6 @@ export default function MeliMessagesPage() {
     if (!hashDropdownOpen) return [];
     return templates.filter((t) => t.isActive && t.name.toLowerCase().includes(hashQuery)).slice(0, 6);
   }, [hashDropdownOpen, hashQuery, templates]);
-  const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
 
   // ─── Data fetching ────────────────────────────────────────────────────────────
   async function loadAccounts() {
@@ -209,10 +214,11 @@ export default function MeliMessagesPage() {
     return () => { cancelled = true; };
   }, [selectedConversationFromId, selectedUserId, buyerThreadRefreshKey]);
 
-  // Listing product: fetch full details by item_id whenever active question changes
+  // Bug fix: sempre limpar listingProduct antes de buscar, evita produto obsoleto durante transição
   useEffect(() => {
+    setListingProduct(null);
     const itemId = activeQuestion?.item_id;
-    if (!itemId) { setListingProduct(null); return; }
+    if (!itemId) return;
     let cancelled = false;
     api
       .get(`/meli/items/${itemId}/details`)
@@ -302,6 +308,18 @@ export default function MeliMessagesPage() {
     });
   }
 
+  // Toolbar: insere saudação no cursor
+  function insertGreeting() {
+    const text = `${getGreeting()}! `;
+    const ta = replyTextareaRef.current;
+    if (!ta) { setReplyText((prev) => text + prev); return; }
+    const start = ta.selectionStart ?? 0;
+    const end   = ta.selectionEnd   ?? 0;
+    setReplyText(replyText.slice(0, start) + text + replyText.slice(end));
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(start + text.length, start + text.length); });
+  }
+
+  // Bug fix: update otimista do status antes do refetch evita formulário reaparecer
   async function sendManualReply() {
     if (!activeQuestion) return;
     const text = replyText.trim();
@@ -310,6 +328,11 @@ export default function MeliMessagesPage() {
     try {
       await api.post(`/meli/messages/questions/${activeQuestion.question_id}/reply`, { text });
       setReplyText("");
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === activeQuestion.question_id ? { ...q, status: "ANSWERED" } : q
+        )
+      );
       await loadQuestions();
       fetchUnread();
       setBuyerThreadRefreshKey((k) => k + 1);
@@ -383,21 +406,59 @@ export default function MeliMessagesPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageCircle size={28} className="text-brand-600" />
-            Mensagens ML
-          </h1>
-          <p className="text-gray-500 mt-1">Gerencie perguntas, respostas e templates.</p>
+    <div className="-m-4 lg:-m-8 flex-1 flex flex-col bg-[#f8f9fa] overflow-hidden">
+      {/* Page header */}
+      <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <MessageCircle size={20} className="text-brand-600" />
+          <h1 className="text-base font-bold text-gray-900 whitespace-nowrap">Mensagens ML</h1>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="h-5 w-px bg-gray-200 shrink-0 mx-1" />
+
+        <AccountSelector
+          accounts={accounts}
+          selectedUserId={selectedUserId}
+          setSelectedUserId={setSelectedUserId}
+          hasDotForUserId={hasDotForUserId}
+          inline
+        />
+
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => setStatusFilter("UNANSWERED")}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 flex items-center gap-1.5",
+              statusFilter === "UNANSWERED"
+                ? "bg-brand-50 border-brand-300 text-brand-700"
+                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+            )}
+          >
+            <Clock size={12} /> Pendentes
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("ANSWERED")}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 flex items-center gap-1.5",
+              statusFilter === "ANSWERED"
+                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+            )}
+          >
+            <CheckCircle2 size={12} /> Respondidas
+          </button>
+
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 tabular-nums">
+            {conversations.length}
+          </span>
+
           <button
             type="button"
             onClick={loadQuestions}
             disabled={loadingQuestions || !selectedUserId}
-            className="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200"
+            className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-xs font-medium disabled:opacity-50 hover:bg-gray-100 hover:border-gray-300 transition-all duration-200"
           >
             {loadingQuestions ? "Carregando..." : "Atualizar"}
           </button>
@@ -405,77 +466,76 @@ export default function MeliMessagesPage() {
             type="button"
             onClick={syncNow}
             disabled={syncing}
-            className="px-4 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-bold disabled:opacity-50 flex items-center gap-2.5 hover:bg-brand-700 active:bg-brand-800 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 hover:bg-brand-700 active:bg-brand-800 transition-all duration-200 shadow-sm"
           >
-            <RefreshCcw size={16} className={syncing ? "animate-spin" : ""} />
+            <RefreshCcw size={13} className={syncing ? "animate-spin" : ""} />
             {syncing ? "Sincronizando..." : "Sincronizar"}
           </button>
         </div>
+      </header>
+
+      {/* Área principal 3 colunas */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        <ConversationList
+          conversations={conversations}
+          selectedConversationFromId={selectedConversationFromId}
+          onSelectConversation={handleSelectConversation}
+          loadingQuestions={loadingQuestions}
+          selectedUserId={selectedUserId}
+          statusFilter={statusFilter}
+        />
+        <ChatThread
+          selectedConversation={selectedConversation}
+          activeQuestion={activeQuestion}
+          listingProduct={listingProduct}
+          buyerThread={buyerThread}
+          loadingBuyerThread={loadingBuyerThread}
+          replyText={replyText}
+          hashAnchorRef={hashAnchorRef}
+          replyTextareaRef={replyTextareaRef}
+          hashDropdownOpen={hashDropdownOpen}
+          hashSuggestions={hashSuggestions}
+          hashDropdownIndex={hashDropdownIndex}
+          smartSuggestions={smartSuggestions}
+          sendingReply={sendingReply}
+          handleReplyChange={handleReplyChange}
+          handleReplyKeyDown={handleReplyKeyDown}
+          applySuggestion={applySuggestion}
+          applyHashTemplate={applyHashTemplate}
+          sendManualReply={sendManualReply}
+          openSelectedQuestionListing={openSelectedQuestionListing}
+          setDeleteQuestionModal={setDeleteQuestionModal}
+          onInsertGreeting={insertGreeting}
+          onOpenTemplateModal={() => setTemplateModalOpen(true)}
+          onOpenProductModal={() => setProductModalOpen(true)}
+        />
       </div>
 
-      <main className="space-y-6">
-        <AccountSelector
-          accounts={accounts}
-          selectedUserId={selectedUserId}
-          setSelectedUserId={setSelectedUserId}
-          hasDotForUserId={hasDotForUserId}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          questionsCount={conversations.length}
-        />
+      <TemplateModal
+        open={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        templates={templates}
+        onInsert={insertTemplateInReply}
+        newTemplateName={newTemplateName} setNewTemplateName={setNewTemplateName}
+        newTemplateContent={newTemplateContent} setNewTemplateContent={setNewTemplateContent}
+        createTemplate={createTemplate} savingTemplate={savingTemplate}
+        editingTemplateId={editingTemplateId} setEditingTemplateId={setEditingTemplateId}
+        editingTemplateName={editingTemplateName} setEditingTemplateName={setEditingTemplateName}
+        editingTemplateContent={editingTemplateContent} setEditingTemplateContent={setEditingTemplateContent}
+        saveTemplateEdit={saveTemplateEdit}
+        deleteTemplate={deleteTemplate} deletingTemplateId={deletingTemplateId}
+        startEditTemplate={startEditTemplate}
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <ConversationList
-            conversations={conversations}
-            selectedConversationFromId={selectedConversationFromId}
-            onSelectConversation={handleSelectConversation}
-            loadingQuestions={loadingQuestions}
-            selectedUserId={selectedUserId}
-            selectedAccount={selectedAccount}
-          />
-          <ChatThread
-            selectedConversation={selectedConversation}
-            activeQuestion={activeQuestion}
-            listingProduct={listingProduct}
-            buyerThread={buyerThread}
-            loadingBuyerThread={loadingBuyerThread}
-            replyText={replyText}
-            hashAnchorRef={hashAnchorRef}
-            replyTextareaRef={replyTextareaRef}
-            hashDropdownOpen={hashDropdownOpen}
-            hashSuggestions={hashSuggestions}
-            hashDropdownIndex={hashDropdownIndex}
-            smartSuggestions={smartSuggestions}
-            filteredProducts={filteredProducts}
-            productSearch={productSearch}
-            setProductSearch={setProductSearch}
-            loadingProducts={loadingProducts}
-            sendingReply={sendingReply}
-            handleReplyChange={handleReplyChange}
-            handleReplyKeyDown={handleReplyKeyDown}
-            applySuggestion={applySuggestion}
-            applyHashTemplate={applyHashTemplate}
-            insertProductLink={insertProductLink}
-            sendManualReply={sendManualReply}
-            openSelectedQuestionListing={openSelectedQuestionListing}
-            setDeleteQuestionModal={setDeleteQuestionModal}
-          />
-        </div>
-
-        <TemplateEditor
-          templates={templates}
-          newTemplateName={newTemplateName} setNewTemplateName={setNewTemplateName}
-          newTemplateContent={newTemplateContent} setNewTemplateContent={setNewTemplateContent}
-          createTemplate={createTemplate} savingTemplate={savingTemplate}
-          editingTemplateId={editingTemplateId} setEditingTemplateId={setEditingTemplateId}
-          editingTemplateName={editingTemplateName} setEditingTemplateName={setEditingTemplateName}
-          editingTemplateContent={editingTemplateContent} setEditingTemplateContent={setEditingTemplateContent}
-          saveTemplateEdit={saveTemplateEdit}
-          deleteTemplate={deleteTemplate} deletingTemplateId={deletingTemplateId}
-          insertTemplateInReply={insertTemplateInReply}
-          startEditTemplate={startEditTemplate}
-        />
-      </main>
+      <ProductSearchModal
+        open={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        products={filteredProducts}
+        productSearch={productSearch}
+        setProductSearch={setProductSearch}
+        loadingProducts={loadingProducts}
+        onInsert={insertProductLink}
+      />
 
       <ConfirmDialog
         open={!!deleteQuestionModal}

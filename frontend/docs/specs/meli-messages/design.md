@@ -5,8 +5,9 @@
 - `src/pages/MeliMessagesPage.jsx` — lógica de estado e handlers (reformulado em 2026-05-30)
 - `src/components/meli-messages/AccountSelector.jsx` — seletor de contas ML + filtro de status
 - `src/components/meli-messages/ConversationList.jsx` — painel esquerdo: lista de conversas agrupadas por comprador
-- `src/components/meli-messages/ChatThread.jsx` — painel direito: thread de chat + card de anúncio + formulário de resposta
-- `src/components/meli-messages/TemplateEditor.jsx` — seção de gerenciamento de templates
+- `src/components/meli-messages/ChatThread.jsx` — painel central: thread de chat + card de anúncio + formulário de resposta + painel de histórico
+- `src/components/meli-messages/TemplateModal.jsx` — modal com abas "Usar" (selecionar/inserir template) e "Gerenciar" (CRUD)
+- `src/components/meli-messages/ProductSearchModal.jsx` — modal de busca e inserção de links de anúncios
 
 ## Implementação
 
@@ -28,7 +29,17 @@ O estado completo permanece em `MeliMessagesPage` — os componentes filhos rece
 
 **Hashtag autocomplete:** regex `/(^|\s)#(\w*)$/` sobre o texto antes do cursor; seleção por teclado (ArrowUp/Down, Enter, Escape).
 
-**Ordem do formulário de resposta (chat-first):** sugestões rápidas → textarea → botão Enviar → (separador) → busca de produto. A busca de produto é secundária e fica abaixo do envio para não quebrar o fluxo de digitação.
+**Hashtag autocomplete:** atalho de teclado mantido — digitar `#` no textarea abre dropdown inline de templates. O botão "Templates" na toolbar abre o `TemplateModal`.
+
+**Busca de produto:** movida para `ProductSearchModal`, aberta pelo botão "Anúncios" na toolbar do `ChatThread`.
+
+## Redesign 2026-05-31 (full-height + modais)
+
+- Layout full-height: `TemplateEditor.jsx` removido do fundo da página; layout agora é `header (shrink-0)` + `flex-1 (ConversationList + ChatThread)` sem painel inferior fixo
+- `TemplateEditor.jsx` substituído por `TemplateModal.jsx` — modal com tabs "Usar" e "Gerenciar"
+- `ProductSearchModal.jsx` criado — modal para busca e inserção de links de anúncios
+- `ChatThread.jsx`: toolbar simplificada (botões "Templates", "Anúncios", "Saudação"), sem inline product search; histórico usa `break-words` para não quebrar bubbles com URLs longas; fontes levemente aumentadas (bubbles `text-sm`, pergunta ativa `text-base`)
+- `AppLayout.jsx`: `<main>` recebeu `flex flex-col` para propagar altura definitiva via flex; `MeliMessagesPage` usa `flex-1` em vez de `h-[calc(100%+...)]`
 
 ## Reformulação 2026-05-30 (chat redesign)
 
