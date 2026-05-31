@@ -77,3 +77,12 @@ meliQuestionSchema.index({ ownerId: 1, user_id: 1, status: 1 });
 meliQuestionSchema.index({ ownerId: 1, question_id: 1 }, { unique: true });
 meliMessageTemplateSchema.index({ ownerId: 1, name: 1 }, { unique: true });
 ```
+
+## UI Frontend (chat redesign — 2026-05-30)
+
+A página `/meli/messages` foi reformulada para interface de chat:
+
+- **ConversationList**: painel esquerdo — agrupa perguntas por `from_id` no frontend, exibe avatar com iniciais, badge de pendentes, preview da última pergunta.
+- **ChatThread**: painel direito — bolhas de chat (comprador à esquerda, vendedor à direita) carregadas via `GET /meli/messages/questions/buyer-thread`. Inclui `ListingCard` com dados de `MeliProduct` buscados pelo `item_id` da pergunta ativa.
+- **Pergunta ativa**: primeira `UNANSWERED` da conversa selecionada; todas as ações de resposta e exclusão operam sobre ela.
+- **Sem novos endpoints**: o redesign consome apenas os endpoints existentes.

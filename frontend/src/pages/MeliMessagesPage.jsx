@@ -6,9 +6,9 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { useSmartSuggestions } from "../hooks/useSmartSuggestions";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { AccountSelector } from "../components/meli-messages/AccountSelector";
-import { QuestionList }    from "../components/meli-messages/QuestionList";
-import { ReplyComposer }   from "../components/meli-messages/ReplyComposer";
-import { TemplateEditor }  from "../components/meli-messages/TemplateEditor";
+import { ConversationList } from "../components/meli-messages/ConversationList";
+import { ChatThread } from "../components/meli-messages/ChatThread";
+import { TemplateEditor } from "../components/meli-messages/TemplateEditor";
 
 const QUESTIONS_POLL_MS = 5 * 60 * 1000;
 
@@ -35,7 +35,7 @@ export default function MeliMessagesPage() {
   const [productSearch, setProductSearch] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
+  const [selectedConversationFromId, setSelectedConversationFromId] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
 
@@ -51,6 +51,7 @@ export default function MeliMessagesPage() {
   const [deletingQuestion, setDeletingQuestion] = useState(false);
   const [buyerThread, setBuyerThread] = useState([]);
   const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
+  const [buyerThreadRefreshKey, setBuyerThreadRefreshKey] = useState(0);
 
   // Hashtag autocomplete
   const replyTextareaRef = useRef(null);
@@ -58,6 +59,64 @@ export default function MeliMessagesPage() {
   const [hashQuery, setHashQuery] = useState("");
   const [hashDropdownOpen, setHashDropdownOpen] = useState(false);
   const [hashDropdownIndex, setHashDropdownIndex] = useState(0);
+
+  // ─── Derived values ───────────────────────────────────────────────────────────
+  const conversations = useMemo(() => {
+    const map = new Map();
+    for (const q of questions) {
+      if (!map.has(q.from_id)) {
+        map.set(q.from_id, {
+          from_id: q.from_id,
+          from_nickname: q.from_nickname,
+          questions: [],
+          lastDate: q.date_created,
+          unansweredCount: 0,
+          lastQuestionText: q.text,
+          item_title: q.item_title,
+        });
+      }
+      const conv = map.get(q.from_id);
+      conv.questions.push(q);
+      if (new Date(q.date_created) > new Date(conv.lastDate)) {
+        conv.lastDate = q.date_created;
+        conv.lastQuestionText = q.text;
+        conv.item_title = q.item_title;
+      }
+      if (q.status === "UNANSWERED") conv.unansweredCount++;
+    }
+    return [...map.values()].sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
+  }, [questions]);
+
+  const selectedConversation = useMemo(
+    () => conversations.find((c) => c.from_id === selectedConversationFromId) || null,
+    [conversations, selectedConversationFromId]
+  );
+
+  const activeQuestion = useMemo(() => {
+    if (!selectedConversation) return null;
+    return (
+      selectedConversation.questions.find((q) => q.status === "UNANSWERED") ||
+      selectedConversation.questions[selectedConversation.questions.length - 1] ||
+      null
+    );
+  }, [selectedConversation]);
+
+  const listingProduct = useMemo(
+    () => products.find((p) => String(p.id) === String(activeQuestion?.item_id)) || null,
+    [products, activeQuestion]
+  );
+
+  const smartSuggestions = useSmartSuggestions(activeQuestion?.text);
+  const filteredProducts = useMemo(() => {
+    const s = productSearch.trim().toLowerCase();
+    if (!s) return products.slice(0, 8);
+    return products.filter((p) => String(p.title || p.SKU || "").toLowerCase().includes(s)).slice(0, 8);
+  }, [products, productSearch]);
+  const hashSuggestions = useMemo(() => {
+    if (!hashDropdownOpen) return [];
+    return templates.filter((t) => t.isActive && t.name.toLowerCase().includes(hashQuery)).slice(0, 6);
+  }, [hashDropdownOpen, hashQuery, templates]);
+  const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
 
   // ─── Data fetching ────────────────────────────────────────────────────────────
   async function loadAccounts() {
@@ -80,11 +139,6 @@ export default function MeliMessagesPage() {
       });
       const items = Array.isArray(data?.items) ? data.items : [];
       setQuestions(items);
-      setSelectedQuestionId((prev) => {
-        if (items.length === 0) return null;
-        if (prev != null && items.some((q) => q.question_id === prev)) return prev;
-        return items[0]?.question_id ?? null;
-      });
     } catch (error) {
       if (!silent) notifyError(error.response?.data?.error || "Erro ao carregar perguntas");
     } finally {
@@ -105,6 +159,7 @@ export default function MeliMessagesPage() {
     }
   }
 
+  // ─── Effects ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try { await Promise.all([loadAccounts(), loadTemplates()]); }
@@ -114,11 +169,20 @@ export default function MeliMessagesPage() {
 
   useEffect(() => {
     if (!selectedUserId) return;
-    setSelectedQuestionId(null);
+    setSelectedConversationFromId(null);
     setReplyText("");
     loadQuestions();
     loadProducts("");
   }, [selectedUserId, statusFilter, loadQuestions]);
+
+  // Auto-select first conversation
+  useEffect(() => {
+    if (conversations.length === 0) { setSelectedConversationFromId(null); return; }
+    setSelectedConversationFromId((prev) => {
+      if (prev != null && conversations.some((c) => c.from_id === prev)) return prev;
+      return conversations[0]?.from_id ?? null;
+    });
+  }, [conversations]);
 
   useEffect(() => {
     if (!selectedUserId) return;
@@ -136,19 +200,20 @@ export default function MeliMessagesPage() {
 
   // Buyer thread
   useEffect(() => {
-    if (!selectedQuestionId) { setBuyerThread([]); return; }
-    const q = questions.find((q) => q.question_id === selectedQuestionId);
-    if (!q?.from_id) { setBuyerThread([]); return; }
+    if (!selectedConversationFromId) { setBuyerThread([]); return; }
     let cancelled = false;
     setLoadingBuyerThread(true);
-    api.get("/meli/messages/questions/buyer-thread", { params: { from_id: q.from_id, user_id: selectedUserId } })
+    api
+      .get("/meli/messages/questions/buyer-thread", {
+        params: { from_id: selectedConversationFromId, user_id: selectedUserId },
+      })
       .then(({ data }) => { if (!cancelled) setBuyerThread(Array.isArray(data?.items) ? data.items : []); })
       .catch(() => { if (!cancelled) setBuyerThread([]); })
       .finally(() => { if (!cancelled) setLoadingBuyerThread(false); });
     return () => { cancelled = true; };
-  }, [selectedQuestionId, selectedUserId]);
+  }, [selectedConversationFromId, selectedUserId, buyerThreadRefreshKey]);
 
-  // Hashtag dropdown: fechar ao clicar fora
+  // Hashtag dropdown: close on outside click
   useEffect(() => {
     if (!hashDropdownOpen) return;
     function close(e) {
@@ -158,24 +223,12 @@ export default function MeliMessagesPage() {
     return () => document.removeEventListener("mousedown", close);
   }, [hashDropdownOpen]);
 
-  // ─── Derived values ───────────────────────────────────────────────────────────
-  const selectedQuestion = useMemo(
-    () => questions.find((q) => q.question_id === selectedQuestionId) || null,
-    [questions, selectedQuestionId]
-  );
-  const smartSuggestions = useSmartSuggestions(selectedQuestion?.text);
-  const filteredProducts = useMemo(() => {
-    const s = productSearch.trim().toLowerCase();
-    if (!s) return products.slice(0, 8);
-    return products.filter((p) => String(p.title || p.SKU || "").toLowerCase().includes(s)).slice(0, 8);
-  }, [products, productSearch]);
-  const hashSuggestions = useMemo(() => {
-    if (!hashDropdownOpen) return [];
-    return templates.filter((t) => t.isActive && t.name.toLowerCase().includes(hashQuery)).slice(0, 6);
-  }, [hashDropdownOpen, hashQuery, templates]);
-  const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
-
   // ─── Handlers ─────────────────────────────────────────────────────────────────
+  function handleSelectConversation(fromId) {
+    setSelectedConversationFromId(fromId);
+    setReplyText("");
+  }
+
   function applySuggestion(text) {
     setReplyText((prev) => (prev.trim() ? `${prev.trimEnd()}\n${text}` : text));
     requestAnimationFrame(() => {
@@ -242,26 +295,27 @@ export default function MeliMessagesPage() {
   }
 
   async function sendManualReply() {
-    if (!selectedQuestion) return;
+    if (!activeQuestion) return;
     const text = replyText.trim();
     if (!text) { notifyWarning("Digite uma resposta antes de enviar"); return; }
     setSendingReply(true);
     try {
-      await api.post(`/meli/messages/questions/${selectedQuestion.question_id}/reply`, { text });
+      await api.post(`/meli/messages/questions/${activeQuestion.question_id}/reply`, { text });
       setReplyText("");
       await loadQuestions();
       fetchUnread();
+      setBuyerThreadRefreshKey((k) => k + 1);
     } catch (error) {
       notifyError(apiErrorMessage(error, "Erro ao enviar resposta manual"));
     } finally { setSendingReply(false); }
   }
 
   async function openSelectedQuestionListing() {
-    if (!selectedQuestion?.item_id) { notifyWarning("A pergunta selecionada não possui item_id"); return; }
-    const local = products.find((p) => String(p.id || "") === String(selectedQuestion.item_id));
+    if (!activeQuestion?.item_id) { notifyWarning("A pergunta selecionada não possui item_id"); return; }
+    const local = products.find((p) => String(p.id || "") === String(activeQuestion.item_id));
     if (local?.permalink) { window.open(local.permalink, "_blank", "noopener,noreferrer"); return; }
     try {
-      const { data } = await api.get(`/meli/items/${selectedQuestion.item_id}/permalink`);
+      const { data } = await api.get(`/meli/items/${activeQuestion.item_id}/permalink`);
       if (data?.permalink) { window.open(data.permalink, "_blank", "noopener,noreferrer"); return; }
       notifyWarning("Não foi possível localizar o permalink do anúncio");
     } catch (error) {
@@ -314,8 +368,8 @@ export default function MeliMessagesPage() {
     try {
       await api.delete(`/meli/messages/questions/${deleteQuestionModal.question_id}`);
       setDeleteQuestionModal(null);
-      setSelectedQuestionId(null);
       await loadQuestions();
+      setBuyerThreadRefreshKey((k) => k + 1);
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao excluir pergunta");
     } finally { setDeletingQuestion(false); }
@@ -361,22 +415,22 @@ export default function MeliMessagesPage() {
           hasDotForUserId={hasDotForUserId}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
-          questionsCount={questions.length}
+          questionsCount={conversations.length}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <QuestionList
-            selectedUserId={selectedUserId}
+          <ConversationList
+            conversations={conversations}
+            selectedConversationFromId={selectedConversationFromId}
+            onSelectConversation={handleSelectConversation}
             loadingQuestions={loadingQuestions}
-            questions={questions}
-            selectedQuestionId={selectedQuestionId}
-            setSelectedQuestionId={setSelectedQuestionId}
-            setReplyText={setReplyText}
-            setDeleteQuestionModal={setDeleteQuestionModal}
+            selectedUserId={selectedUserId}
             selectedAccount={selectedAccount}
           />
-          <ReplyComposer
-            selectedQuestion={selectedQuestion}
+          <ChatThread
+            selectedConversation={selectedConversation}
+            activeQuestion={activeQuestion}
+            listingProduct={listingProduct}
             buyerThread={buyerThread}
             loadingBuyerThread={loadingBuyerThread}
             replyText={replyText}
@@ -386,7 +440,6 @@ export default function MeliMessagesPage() {
             hashSuggestions={hashSuggestions}
             hashDropdownIndex={hashDropdownIndex}
             smartSuggestions={smartSuggestions}
-            products={products}
             filteredProducts={filteredProducts}
             productSearch={productSearch}
             setProductSearch={setProductSearch}

@@ -2,22 +2,35 @@
 
 ## Arquivos
 
-- `src/pages/MeliMessagesPage.jsx` — toda a lógica de estado (23 vars) e handlers
+- `src/pages/MeliMessagesPage.jsx` — lógica de estado e handlers (reformulado em 2026-05-30)
 - `src/components/meli-messages/AccountSelector.jsx` — seletor de contas ML + filtro de status
-- `src/components/meli-messages/QuestionList.jsx` — painel esquerdo de lista de perguntas
-- `src/components/meli-messages/ReplyComposer.jsx` — painel direito de composição de resposta
+- `src/components/meli-messages/ConversationList.jsx` — painel esquerdo: lista de conversas agrupadas por comprador
+- `src/components/meli-messages/ChatThread.jsx` — painel direito: thread de chat + card de anúncio + formulário de resposta
 - `src/components/meli-messages/TemplateEditor.jsx` — seção de gerenciamento de templates
 
 ## Implementação
 
-O estado completo (contas, perguntas, reply, templates, produtos, hashtag autocomplete) permanece em `MeliMessagesPage` — os componentes filhos recebem tudo via props. Isso evita o lifting de state e mantém a lógica de polling centralizada.
+O estado completo permanece em `MeliMessagesPage` — os componentes filhos recebem tudo via props.
+
+**Agrupamento de conversas:** `useMemo` sobre `questions` agrupa por `from_id`, calcula `lastDate`, `unansweredCount`, `lastQuestionText`. Ordenado por `lastDate` DESC.
+
+**Seleção de conversa:** `selectedConversationFromId` (Number | null) substitui o antigo `selectedQuestionId`. Auto-seleção da primeira conversa via `useEffect` sobre `conversations`.
+
+**Pergunta ativa:** `activeQuestion` = primeira UNANSWERED da conversa (ou a última se todas respondidas). Usada para enviar resposta e para abrir o permalink do anúncio.
+
+**Card de anúncio:** `listingProduct` buscado no estado `products` (carregado de `/meli/products/autocomplete`) pelo `item_id` da `activeQuestion`. Exibe thumbnail, preço, estoque, status e permalink.
+
+**Chat bubbles:** `buyerThread` (carregado da API ao selecionar conversa) renderizado com bolhas à esquerda (comprador, `bg-gray-100`) e à direita (vendedor, `bg-brand-600`). Auto-scroll para o fim via `useRef + useEffect`.
+
+**Refresh do thread:** `buyerThreadRefreshKey` (incrementado em `sendManualReply` e `confirmDeleteQuestion`) força recarregamento sem trocar a conversa selecionada.
 
 **Polling:** `QUESTIONS_POLL_MS = 5min`, pausa se `document.hidden`.
 
-**Buyer thread:** carregado por `useEffect` ao mudar `selectedQuestionId`. Cancelado via flag `cancelled` no cleanup.
-
 **Hashtag autocomplete:** regex `/(^|\s)#(\w*)$/` sobre o texto antes do cursor; seleção por teclado (ArrowUp/Down, Enter, Escape).
 
-## Refactor 2026-05-30
+## Reformulação 2026-05-30 (chat redesign)
 
-`MeliMessagesPage` reduzida de 1.036 → ~270 linhas. Modal inline de exclusão de pergunta substituído por `ConfirmDialog`.
+- `QuestionList.jsx` substituído por `ConversationList.jsx` (agrupamento por comprador, avatares com iniciais, badges de pendentes)
+- `ReplyComposer.jsx` substituído por `ChatThread.jsx` (bolhas de chat, `ListingCard` embutido, auto-scroll)
+- `selectedQuestionId` → `selectedConversationFromId`
+- Adicionado `buyerThreadRefreshKey` para forçar reload do thread sem trocar conversa
