@@ -145,7 +145,7 @@ export function ChatThread({
   handleReplyKeyDown,
   applySuggestion,
   applyHashTemplate,
-  sendManualReply,
+  onRequestSend,
   openSelectedQuestionListing,
   setDeleteQuestionModal,
   onOpenTemplates,
@@ -400,7 +400,7 @@ export function ChatThread({
               {/* Send button */}
               <button
                 type="button"
-                onClick={sendManualReply}
+                onClick={onRequestSend}
                 disabled={sendingReply || !replyText.trim()}
                 className="ml-auto px-5 py-2 rounded-lg bg-brand-600 text-white text-sm font-bold flex items-center gap-2.5 disabled:opacity-50 hover:bg-brand-700 active:bg-brand-800 transition-all duration-200 shadow-sm hover:shadow-md"
               >

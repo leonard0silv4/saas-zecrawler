@@ -10,6 +10,7 @@ import { ConversationList } from "../components/meli-messages/ConversationList";
 import { ChatThread } from "../components/meli-messages/ChatThread";
 import { TemplateModal } from "../components/meli-messages/TemplateModal";
 import { ProductSearchModal } from "../components/meli-messages/ProductSearchModal";
+import { ConfirmReplyModal } from "../components/meli-messages/ConfirmReplyModal";
 
 const QUESTIONS_POLL_MS = 5 * 60 * 1000;
 
@@ -55,6 +56,7 @@ export default function MeliMessagesPage() {
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [deleteQuestionModal, setDeleteQuestionModal] = useState(null);
+  const [confirmReplyModal, setConfirmReplyModal] = useState(false);
   const [deletingQuestion, setDeletingQuestion] = useState(false);
 
   // Buyer thread
@@ -337,6 +339,11 @@ export default function MeliMessagesPage() {
     });
   }
 
+  function openConfirmReply() {
+    if (!activeQuestion || !replyText.trim()) return;
+    setConfirmReplyModal(true);
+  }
+
   async function sendManualReply() {
     if (!activeQuestion) return;
     const text = replyText.trim();
@@ -515,7 +522,7 @@ export default function MeliMessagesPage() {
           handleReplyKeyDown={handleReplyKeyDown}
           applySuggestion={applySuggestion}
           applyHashTemplate={applyHashTemplate}
-          sendManualReply={sendManualReply}
+          onRequestSend={openConfirmReply}
           openSelectedQuestionListing={openSelectedQuestionListing}
           setDeleteQuestionModal={setDeleteQuestionModal}
           onOpenTemplates={() => setTemplateModalOpen(true)}
@@ -550,6 +557,15 @@ export default function MeliMessagesPage() {
         setProductSearch={setProductSearch}
         loadingProducts={loadingProducts}
         onInsert={insertProductLink}
+      />
+
+      <ConfirmReplyModal
+        open={confirmReplyModal}
+        onClose={() => setConfirmReplyModal(false)}
+        onConfirm={async () => { await sendManualReply(); setConfirmReplyModal(false); }}
+        question={activeQuestion}
+        replyText={replyText}
+        sending={sendingReply}
       />
 
       <ConfirmDialog
