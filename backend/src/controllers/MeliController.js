@@ -110,16 +110,6 @@ export async function syncProductsForConta(conta, ownerId) {
     }
     if (i + BATCH < allIds.length) await new Promise((r) => setTimeout(r, DELAY_MS));
   }
-  // Remove produtos que o vendedor não possui mais (não vieram no sync atual)
-  const deleted = await MeliProduct.deleteMany({
-    ownerId: ownerObjectId,
-    contaId: conta._id,
-    id: { $nin: allIds },
-  });
-  if (deleted.deletedCount > 0) {
-    console.log(`[Sync] Removed ${deleted.deletedCount} orphaned products for conta=${conta.user_id}`);
-  }
-
   return total;
 }
 
@@ -292,10 +282,6 @@ async function revalidateMeliItemsForAutocomplete(ownerObjectId, cachedDocs, { m
   }
 
   return out.slice(0, maxResults);
-}
-
-function findCachedProduct(ownerObjectId, itemId, fields) {
-  return MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId }).select(fields).lean();
 }
 
 export default {
@@ -601,7 +587,10 @@ export default {
       const ownerId = getOwnerId(req);
       const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
 
-      const cached = await findCachedProduct(ownerObjectId, itemId, "permalink");
+      // 1. Tenta no cache — sem filtro de status
+      const cached = await MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId })
+        .select("permalink")
+        .lean();
       if (cached?.permalink) {
         return res.json({ permalink: cached.permalink, source: "cache" });
       }
@@ -625,23 +614,6 @@ export default {
       return res.status(404).json({ error: "Anúncio não encontrado" });
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar permalink do anúncio" });
-    }
-  },
-
-  async getItemDetails(req, res) {
-    const { itemId } = req.params;
-    if (!itemId) return res.status(400).json({ error: "itemId é obrigatório" });
-    try {
-      const ownerId = getOwnerId(req);
-      const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
-      const product = await findCachedProduct(
-        ownerObjectId, itemId,
-        "id title thumbnail price available_quantity status permalink SKU"
-      );
-      if (!product) return res.status(404).json({ error: "Anúncio não encontrado no cache" });
-      return res.json(product);
-    } catch (err) {
-      return res.status(500).json({ error: "Erro ao buscar detalhes do anúncio" });
     }
   },
 
