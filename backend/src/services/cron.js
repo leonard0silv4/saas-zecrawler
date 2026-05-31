@@ -8,7 +8,6 @@ import { runAllActiveSellers } from "./sellerScraper.js";
 import { syncQuestionsForOwner } from "./meliMessagesService.js";
 import { syncOrdersForConta } from "../controllers/MeliAnalyticsController.js";
 import { syncProductsForConta } from "../controllers/MeliController.js";
-import { runDataCleanup } from "./dataCleanupService.js";
 
 /**
  * Cron: atualiza links de todos os usuários com sendEmail habilitado.
@@ -148,15 +147,6 @@ export function startCronJobs() {
       }
     } catch (err) {
       console.error("[Cron] Products sync schedule:", err.message);
-    }
-  });
-
-  // Limpeza de dados antigos: todo dia às 3h (retenção de 90 dias)
-  cron.schedule("0 3 * * *", async () => {
-    try {
-      await runDataCleanup();
-    } catch (e) {
-      console.error("[Cron] Data cleanup:", e);
     }
   });
 
