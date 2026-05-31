@@ -42,6 +42,19 @@ GET /meli/products/autocomplete?q=<query>&user_id=<uid>
   6. Retorna { source: "api", items }
 ```
 
+## Limpeza de Produtos Órfãos
+
+Ao final de cada `syncProductsForConta`, produtos no MongoDB que não constam no resultado
+atual da API ML são apagados. Isso garante que anúncios encerrados, excluídos ou transferidos
+não acumulem no banco indefinidamente.
+
+```
+MeliProduct.deleteMany({ ownerId, contaId, id: { $nin: allIds } })
+```
+
+É seguro porque `allIds` só existe após `fetchAllSellerItemIds` completar com sucesso —
+qualquer falha na API lança erro e interrompe o fluxo antes da deleção.
+
 ## Sincronização de Produtos (`syncProductsForConta`)
 
 ```
