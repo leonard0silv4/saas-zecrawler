@@ -1,4 +1,4 @@
-import { Loader2, MessageSquare } from "lucide-react";
+import { ArrowDown, ArrowUp, Loader2, MessageSquare } from "lucide-react";
 import { getInitials } from "./utils";
 
 function cn(...c) { return c.filter(Boolean).join(" "); }
@@ -22,6 +22,8 @@ export function ConversationList({
   loadingQuestions,
   selectedUserId,
   selectedAccount,
+  sortOrder,
+  setSortOrder,
 }) {
   return (
     <section className="bg-white rounded-lg border border-gray-200 lg:col-span-2 flex flex-col overflow-hidden shadow-sm">
@@ -34,11 +36,21 @@ export function ConversationList({
             </p>
           )}
         </div>
-        {conversations.length > 0 && (
-          <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full tabular-nums">
-            {conversations.length}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSortOrder((s) => (s === "desc" ? "asc" : "desc"))}
+            title={sortOrder === "desc" ? "Mais novas primeiro" : "Mais antigas primeiro"}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+          >
+            {sortOrder === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+          </button>
+          {conversations.length > 0 && (
+            <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full tabular-nums">
+              {conversations.length}
+            </span>
+          )}
+        </div>
       </div>
 
       {!selectedUserId ? (
@@ -57,9 +69,9 @@ export function ConversationList({
           <p className="text-sm text-gray-400">Nenhuma conversa encontrada.</p>
         </div>
       ) : (
-        <div className="overflow-y-auto max-h-[600px] divide-y divide-gray-100">
+        <div className="overflow-y-auto flex-1">
           {conversations.map((conv) => {
-            const isSelected = conv.from_id === selectedConversationFromId;
+            const isSelected = String(conv.from_id) === String(selectedConversationFromId);
             const initials = getInitials(conv.from_nickname);
             return (
               <button
@@ -67,7 +79,7 @@ export function ConversationList({
                 type="button"
                 onClick={() => onSelectConversation(conv.from_id)}
                 className={cn(
-                  "w-full text-left px-5 py-4 transition-all duration-200 relative border-l-4",
+                  "w-full text-left px-5 py-4 transition-all duration-200 relative border-l-4 border-b border-b-gray-100 last:border-b-0",
                   isSelected
                     ? "bg-brand-50 border-l-brand-600 shadow-sm"
                     : "hover:bg-gray-50 border-l-transparent hover:shadow-sm"

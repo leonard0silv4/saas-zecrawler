@@ -8,7 +8,8 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import { AccountSelector } from "../components/meli-messages/AccountSelector";
 import { ConversationList } from "../components/meli-messages/ConversationList";
 import { ChatThread } from "../components/meli-messages/ChatThread";
-import { TemplateEditor } from "../components/meli-messages/TemplateEditor";
+import { TemplateModal } from "../components/meli-messages/TemplateModal";
+import { ProductSearchModal } from "../components/meli-messages/ProductSearchModal";
 
 const QUESTIONS_POLL_MS = 5 * 60 * 1000;
 
@@ -26,6 +27,8 @@ export default function MeliMessagesPage() {
   const [accounts, setAccounts] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [statusFilter, setStatusFilter] = useState("UNANSWERED");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [threadSortOrder, setThreadSortOrder] = useState("asc");
   const [questions, setQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -39,6 +42,7 @@ export default function MeliMessagesPage() {
   const [replyText, setReplyText] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
 
+  // Template CRUD state
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateContent, setNewTemplateContent] = useState("");
   const [editingTemplateId, setEditingTemplateId] = useState(null);
@@ -47,12 +51,19 @@ export default function MeliMessagesPage() {
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [deletingTemplateId, setDeletingTemplateId] = useState(null);
 
+  // Modals
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [productModalOpen, setProductModalOpen] = useState(false);
   const [deleteQuestionModal, setDeleteQuestionModal] = useState(null);
   const [deletingQuestion, setDeletingQuestion] = useState(false);
+
+  // Buyer thread
   const [buyerThread, setBuyerThread] = useState([]);
   const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
   const [buyerThreadRefreshKey, setBuyerThreadRefreshKey] = useState(0);
-  const [listingProduct, setListingProduct] = useState(null);
+
+  // listing products per item_id (Map<itemId, product>)
+  const [listingProductsMap, setListingProductsMap] = useState(new Map());
 
   // Hashtag autocomplete
   const replyTextareaRef = useRef(null);
@@ -85,11 +96,16 @@ export default function MeliMessagesPage() {
       }
       if (q.status === "UNANSWERED") conv.unansweredCount++;
     }
-    return [...map.values()].sort((a, b) => (b.lastDate > a.lastDate ? 1 : -1));
-  }, [questions]);
+    const sorted = [...map.values()].sort((a, b) =>
+      sortOrder === "desc"
+        ? b.lastDate > a.lastDate ? 1 : -1
+        : a.lastDate > b.lastDate ? 1 : -1
+    );
+    return sorted;
+  }, [questions, sortOrder]);
 
   const selectedConversation = useMemo(
-    () => conversations.find((c) => c.from_id === selectedConversationFromId) || null,
+    () => conversations.find((c) => String(c.from_id) === String(selectedConversationFromId)) || null,
     [conversations, selectedConversationFromId]
   );
 
@@ -103,15 +119,18 @@ export default function MeliMessagesPage() {
   }, [selectedConversation]);
 
   const smartSuggestions = useSmartSuggestions(activeQuestion?.text);
+
   const filteredProducts = useMemo(() => {
     const s = productSearch.trim().toLowerCase();
     if (!s) return products.slice(0, 8);
     return products.filter((p) => String(p.title || p.SKU || "").toLowerCase().includes(s)).slice(0, 8);
   }, [products, productSearch]);
+
   const hashSuggestions = useMemo(() => {
     if (!hashDropdownOpen) return [];
     return templates.filter((t) => t.isActive && t.name.toLowerCase().includes(hashQuery)).slice(0, 6);
   }, [hashDropdownOpen, hashQuery, templates]);
+
   const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
 
   // ─── Data fetching ────────────────────────────────────────────────────────────
@@ -175,11 +194,12 @@ export default function MeliMessagesPage() {
   useEffect(() => {
     if (conversations.length === 0) { setSelectedConversationFromId(null); return; }
     setSelectedConversationFromId((prev) => {
-      if (prev != null && conversations.some((c) => c.from_id === prev)) return prev;
+      if (prev != null && conversations.some((c) => String(c.from_id) === String(prev))) return prev;
       return conversations[0]?.from_id ?? null;
     });
   }, [conversations]);
 
+  // Polling
   useEffect(() => {
     if (!selectedUserId) return;
     const id = setInterval(() => {
@@ -188,6 +208,7 @@ export default function MeliMessagesPage() {
     return () => clearInterval(id);
   }, [selectedUserId, statusFilter, loadQuestions]);
 
+  // Product search debounce
   useEffect(() => {
     if (!selectedUserId || !accounts.length) return;
     const handle = setTimeout(() => loadProducts(productSearch), 300);
@@ -209,17 +230,31 @@ export default function MeliMessagesPage() {
     return () => { cancelled = true; };
   }, [selectedConversationFromId, selectedUserId, buyerThreadRefreshKey]);
 
-  // Listing product: fetch full details by item_id whenever active question changes
+  // Fetch listing details for all unique item_ids in buyerThread
   useEffect(() => {
-    const itemId = activeQuestion?.item_id;
-    if (!itemId) { setListingProduct(null); return; }
-    let cancelled = false;
-    api
-      .get(`/meli/items/${itemId}/details`)
-      .then(({ data }) => { if (!cancelled) setListingProduct(data || null); })
-      .catch(() => { if (!cancelled) setListingProduct(null); });
-    return () => { cancelled = true; };
-  }, [activeQuestion?.item_id]);
+    if (buyerThread.length === 0) return;
+    const uniqueItemIds = [...new Set(buyerThread.map((q) => q.item_id).filter(Boolean))];
+    uniqueItemIds.forEach((itemId) => {
+      if (listingProductsMap.has(itemId)) return; // already fetched
+      api
+        .get(`/meli/items/${itemId}/details`)
+        .then(({ data }) => {
+          if (data) {
+            setListingProductsMap((prev) => {
+              const next = new Map(prev);
+              next.set(itemId, data);
+              return next;
+            });
+          }
+        })
+        .catch(() => {});
+    });
+  }, [buyerThread]);
+
+  // Clear listing map when conversation changes
+  useEffect(() => {
+    setListingProductsMap(new Map());
+  }, [selectedConversationFromId]);
 
   // Hashtag dropdown: close on outside click
   useEffect(() => {
@@ -310,6 +345,24 @@ export default function MeliMessagesPage() {
     try {
       await api.post(`/meli/messages/questions/${activeQuestion.question_id}/reply`, { text });
       setReplyText("");
+
+      // Update otimista imediato
+      setBuyerThread((prev) =>
+        prev.map((q) =>
+          q.question_id === activeQuestion.question_id
+            ? { ...q, status: "ANSWERED", answer_text: text, answer_date_created: new Date().toISOString(), answered_by: "manual" }
+            : q
+        )
+      );
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === activeQuestion.question_id
+            ? { ...q, status: "ANSWERED", answer_text: text }
+            : q
+        )
+      );
+
+      // Sincroniza estado real em background
       await loadQuestions();
       fetchUnread();
       setBuyerThreadRefreshKey((k) => k + 1);
@@ -320,7 +373,8 @@ export default function MeliMessagesPage() {
 
   async function openSelectedQuestionListing() {
     if (!activeQuestion?.item_id) { notifyWarning("A pergunta selecionada não possui item_id"); return; }
-    if (listingProduct?.permalink) { window.open(listingProduct.permalink, "_blank", "noopener,noreferrer"); return; }
+    const cached = listingProductsMap.get(activeQuestion.item_id);
+    if (cached?.permalink) { window.open(cached.permalink, "_blank", "noopener,noreferrer"); return; }
     try {
       const { data } = await api.get(`/meli/items/${activeQuestion.item_id}/permalink`);
       if (data?.permalink) { window.open(data.permalink, "_blank", "noopener,noreferrer"); return; }
@@ -342,8 +396,11 @@ export default function MeliMessagesPage() {
     const name = newTemplateName.trim(); const content = newTemplateContent.trim();
     if (!name || !content) { notifyWarning("Informe nome e conteúdo do template"); return; }
     setSavingTemplate(true);
-    try { await api.post("/meli/messages/templates", { name, content, isActive: true }); setNewTemplateName(""); setNewTemplateContent(""); await loadTemplates(); }
-    catch (error) { notifyError(error.response?.data?.error || "Erro ao criar template"); }
+    try {
+      await api.post("/meli/messages/templates", { name, content, isActive: true });
+      setNewTemplateName(""); setNewTemplateContent("");
+      await loadTemplates();
+    } catch (error) { notifyError(error.response?.data?.error || "Erro ao criar template"); }
     finally { setSavingTemplate(false); }
   }
 
@@ -351,8 +408,11 @@ export default function MeliMessagesPage() {
     const name = editingTemplateName.trim(); const content = editingTemplateContent.trim();
     if (!name || !content) { notifyWarning("Nome e conteúdo são obrigatórios"); return; }
     setSavingTemplate(true);
-    try { await api.put(`/meli/messages/templates/${editingTemplateId}`, { name, content }); setEditingTemplateId(null); setEditingTemplateName(""); setEditingTemplateContent(""); await loadTemplates(); }
-    catch (error) { notifyError(error.response?.data?.error || "Erro ao atualizar template"); }
+    try {
+      await api.put(`/meli/messages/templates/${editingTemplateId}`, { name, content });
+      setEditingTemplateId(null); setEditingTemplateName(""); setEditingTemplateContent("");
+      await loadTemplates();
+    } catch (error) { notifyError(error.response?.data?.error || "Erro ao atualizar template"); }
     finally { setSavingTemplate(false); }
   }
 
@@ -383,8 +443,9 @@ export default function MeliMessagesPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+    <div className="flex flex-col h-full gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <MessageCircle size={28} className="text-brand-600" />
@@ -413,69 +474,83 @@ export default function MeliMessagesPage() {
         </div>
       </div>
 
-      <main className="space-y-6">
-        <AccountSelector
-          accounts={accounts}
+      {/* Account selector row */}
+      <AccountSelector
+        accounts={accounts}
+        selectedUserId={selectedUserId}
+        setSelectedUserId={setSelectedUserId}
+        hasDotForUserId={hasDotForUserId}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        questionsCount={conversations.length}
+      />
+
+      {/* Chat grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1 min-h-0">
+        <ConversationList
+          conversations={conversations}
+          selectedConversationFromId={selectedConversationFromId}
+          onSelectConversation={handleSelectConversation}
+          loadingQuestions={loadingQuestions}
           selectedUserId={selectedUserId}
-          setSelectedUserId={setSelectedUserId}
-          hasDotForUserId={hasDotForUserId}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          questionsCount={conversations.length}
+          selectedAccount={selectedAccount}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
         />
-
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <ConversationList
-            conversations={conversations}
-            selectedConversationFromId={selectedConversationFromId}
-            onSelectConversation={handleSelectConversation}
-            loadingQuestions={loadingQuestions}
-            selectedUserId={selectedUserId}
-            selectedAccount={selectedAccount}
-          />
-          <ChatThread
-            selectedConversation={selectedConversation}
-            activeQuestion={activeQuestion}
-            listingProduct={listingProduct}
-            buyerThread={buyerThread}
-            loadingBuyerThread={loadingBuyerThread}
-            replyText={replyText}
-            hashAnchorRef={hashAnchorRef}
-            replyTextareaRef={replyTextareaRef}
-            hashDropdownOpen={hashDropdownOpen}
-            hashSuggestions={hashSuggestions}
-            hashDropdownIndex={hashDropdownIndex}
-            smartSuggestions={smartSuggestions}
-            filteredProducts={filteredProducts}
-            productSearch={productSearch}
-            setProductSearch={setProductSearch}
-            loadingProducts={loadingProducts}
-            sendingReply={sendingReply}
-            handleReplyChange={handleReplyChange}
-            handleReplyKeyDown={handleReplyKeyDown}
-            applySuggestion={applySuggestion}
-            applyHashTemplate={applyHashTemplate}
-            insertProductLink={insertProductLink}
-            sendManualReply={sendManualReply}
-            openSelectedQuestionListing={openSelectedQuestionListing}
-            setDeleteQuestionModal={setDeleteQuestionModal}
-          />
-        </div>
-
-        <TemplateEditor
-          templates={templates}
-          newTemplateName={newTemplateName} setNewTemplateName={setNewTemplateName}
-          newTemplateContent={newTemplateContent} setNewTemplateContent={setNewTemplateContent}
-          createTemplate={createTemplate} savingTemplate={savingTemplate}
-          editingTemplateId={editingTemplateId} setEditingTemplateId={setEditingTemplateId}
-          editingTemplateName={editingTemplateName} setEditingTemplateName={setEditingTemplateName}
-          editingTemplateContent={editingTemplateContent} setEditingTemplateContent={setEditingTemplateContent}
-          saveTemplateEdit={saveTemplateEdit}
-          deleteTemplate={deleteTemplate} deletingTemplateId={deletingTemplateId}
-          insertTemplateInReply={insertTemplateInReply}
-          startEditTemplate={startEditTemplate}
+        <ChatThread
+          selectedConversation={selectedConversation}
+          activeQuestion={activeQuestion}
+          listingProductsMap={listingProductsMap}
+          buyerThread={buyerThread}
+          loadingBuyerThread={loadingBuyerThread}
+          replyText={replyText}
+          hashAnchorRef={hashAnchorRef}
+          replyTextareaRef={replyTextareaRef}
+          hashDropdownOpen={hashDropdownOpen}
+          hashSuggestions={hashSuggestions}
+          hashDropdownIndex={hashDropdownIndex}
+          smartSuggestions={smartSuggestions}
+          sendingReply={sendingReply}
+          handleReplyChange={handleReplyChange}
+          handleReplyKeyDown={handleReplyKeyDown}
+          applySuggestion={applySuggestion}
+          applyHashTemplate={applyHashTemplate}
+          sendManualReply={sendManualReply}
+          openSelectedQuestionListing={openSelectedQuestionListing}
+          setDeleteQuestionModal={setDeleteQuestionModal}
+          onOpenTemplates={() => setTemplateModalOpen(true)}
+          onOpenProducts={() => setProductModalOpen(true)}
+          threadSortOrder={threadSortOrder}
+          setThreadSortOrder={setThreadSortOrder}
         />
-      </main>
+      </div>
+
+      {/* Modals */}
+      <TemplateModal
+        open={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        templates={templates}
+        onInsert={insertTemplateInReply}
+        newTemplateName={newTemplateName} setNewTemplateName={setNewTemplateName}
+        newTemplateContent={newTemplateContent} setNewTemplateContent={setNewTemplateContent}
+        createTemplate={createTemplate} savingTemplate={savingTemplate}
+        editingTemplateId={editingTemplateId} setEditingTemplateId={setEditingTemplateId}
+        editingTemplateName={editingTemplateName} setEditingTemplateName={setEditingTemplateName}
+        editingTemplateContent={editingTemplateContent} setEditingTemplateContent={setEditingTemplateContent}
+        saveTemplateEdit={saveTemplateEdit}
+        deleteTemplate={deleteTemplate} deletingTemplateId={deletingTemplateId}
+        startEditTemplate={startEditTemplate}
+      />
+
+      <ProductSearchModal
+        open={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        products={filteredProducts}
+        productSearch={productSearch}
+        setProductSearch={setProductSearch}
+        loadingProducts={loadingProducts}
+        onInsert={insertProductLink}
+      />
 
       <ConfirmDialog
         open={!!deleteQuestionModal}
