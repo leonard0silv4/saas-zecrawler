@@ -83,6 +83,16 @@ meliQuestionSchema.index({ ownerId: 1, question_id: 1 }, { unique: true });
 meliMessageTemplateSchema.index({ ownerId: 1, name: 1 }, { unique: true });
 ```
 
+## UI Frontend (ajustes visuais — 2026-05-31)
+
+Remodelagem visual dos componentes da página `/meli/messages` (apenas CSS/Tailwind, sem mudanças de lógica):
+
+- **Geral**: cards passaram de `rounded-xl border-gray-100` para `rounded-lg border-gray-200 shadow-sm` — bordas mais definidas e sombra sutil.
+- **AccountSelector**: padding maior (`p-5`), botões de conta com `shadow-md` no ativo e borda explícita no inativo, filtros com `shadow-sm` no selecionado e hover states nos inativos, badge de contagem com borda.
+- **ConversationList**: header com `px-5 py-4`, título `font-bold text-base`, avatar `w-10 h-10` com `border border-brand-200`, badge de não-lidas com `shadow-md border border-white`, timestamps em `text-xs` com `font-medium`.
+- **ChatThread**: header com `px-5 py-4`, avatar com border, bubbles do comprador com `px-4 py-3 max-w-xs`, bubbles do vendedor com `shadow-md`, botão Enviar com `font-bold shadow-sm hover:shadow-md`, textarea com `focus:ring-2`, label "Enviar resposta" → "Enviar".
+- **TemplateEditor**: botão Criar mudou de `bg-gray-900` para `bg-brand-600` (consistência com o resto da UI), inputs com `focus:ring-2`, padding geral aumentado, label "Inserir na resposta" → "Inserir".
+
 ## UI Frontend (chat redesign — 2026-05-30)
 
 A página `/meli/messages` foi reformulada para interface de chat:

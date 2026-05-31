@@ -24,18 +24,18 @@ export function ConversationList({
   selectedAccount,
 }) {
   return (
-    <section className="bg-white rounded-xl border border-gray-100 lg:col-span-2 flex flex-col overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between shrink-0">
+    <section className="bg-white rounded-lg border border-gray-200 lg:col-span-2 flex flex-col overflow-hidden shadow-sm">
+      <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
         <div>
-          <h2 className="font-semibold text-gray-900 text-sm">Conversas</h2>
+          <h2 className="font-bold text-gray-900 text-base">Conversas</h2>
           {selectedAccount && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 mt-1">
               {selectedAccount.nickname || selectedAccount.user_id}
             </p>
           )}
         </div>
         {conversations.length > 0 && (
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full tabular-nums">
+          <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full tabular-nums">
             {conversations.length}
           </span>
         )}
@@ -57,7 +57,7 @@ export function ConversationList({
           <p className="text-sm text-gray-400">Nenhuma conversa encontrada.</p>
         </div>
       ) : (
-        <div className="overflow-y-auto max-h-[600px] divide-y divide-gray-50">
+        <div className="overflow-y-auto max-h-[600px] divide-y divide-gray-100">
           {conversations.map((conv) => {
             const isSelected = conv.from_id === selectedConversationFromId;
             const initials = getInitials(conv.from_nickname);
@@ -67,43 +67,43 @@ export function ConversationList({
                 type="button"
                 onClick={() => onSelectConversation(conv.from_id)}
                 className={cn(
-                  "w-full text-left px-4 py-3 transition-colors relative border-l-[3px]",
+                  "w-full text-left px-5 py-4 transition-all duration-200 relative border-l-4",
                   isSelected
-                    ? "bg-brand-50 border-l-brand-600"
-                    : "hover:bg-gray-50 border-l-transparent"
+                    ? "bg-brand-50 border-l-brand-600 shadow-sm"
+                    : "hover:bg-gray-50 border-l-transparent hover:shadow-sm"
                 )}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3.5">
                   <div className="relative shrink-0 mt-0.5">
-                    <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold select-none">
+                    <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-sm font-bold select-none border border-brand-200">
                       {initials}
                     </div>
                     {conv.unansweredCount > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                      <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none shadow-md border border-white">
                         {conv.unansweredCount > 9 ? "9+" : conv.unansweredCount}
                       </span>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                    <div className="flex items-baseline justify-between gap-3 mb-1">
                       <span className={cn(
                         "text-sm truncate",
                         conv.unansweredCount > 0
-                          ? "font-semibold text-gray-900"
-                          : "font-medium text-gray-700"
+                          ? "font-bold text-gray-900"
+                          : "font-semibold text-gray-800"
                       )}>
                         {conv.from_nickname || `Comprador #${conv.from_id}`}
                       </span>
-                      <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">
+                      <span className="text-xs text-gray-500 shrink-0 tabular-nums font-medium">
                         {formatRelativeTime(conv.lastDate)}
                       </span>
                     </div>
                     {conv.item_title && (
-                      <p className="text-[10px] text-brand-600 truncate mb-0.5 font-medium">
+                      <p className="text-xs text-brand-700 truncate mb-1 font-semibold">
                         {conv.item_title}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500 line-clamp-1">
+                    <p className="text-xs text-gray-600 line-clamp-1">
                       {conv.lastQuestionText}
                     </p>
                   </div>

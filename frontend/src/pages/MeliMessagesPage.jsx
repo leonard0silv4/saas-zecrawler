@@ -386,8 +386,8 @@ export default function MeliMessagesPage() {
     <div className="space-y-6 mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageCircle size={22} className="text-brand-600" />
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <MessageCircle size={28} className="text-brand-600" />
             Mensagens ML
           </h1>
           <p className="text-gray-500 mt-1">Gerencie perguntas, respostas e templates.</p>
@@ -397,7 +397,7 @@ export default function MeliMessagesPage() {
             type="button"
             onClick={loadQuestions}
             disabled={loadingQuestions || !selectedUserId}
-            className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm disabled:opacity-50"
+            className="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200"
           >
             {loadingQuestions ? "Carregando..." : "Atualizar"}
           </button>
@@ -405,9 +405,9 @@ export default function MeliMessagesPage() {
             type="button"
             onClick={syncNow}
             disabled={syncing}
-            className="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-bold disabled:opacity-50 flex items-center gap-2.5 hover:bg-brand-700 active:bg-brand-800 transition-all duration-200 shadow-sm hover:shadow-md"
           >
-            <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
+            <RefreshCcw size={16} className={syncing ? "animate-spin" : ""} />
             {syncing ? "Sincronizando..." : "Sincronizar"}
           </button>
         </div>
