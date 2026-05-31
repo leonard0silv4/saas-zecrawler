@@ -110,6 +110,16 @@ export async function syncProductsForConta(conta, ownerId) {
     }
     if (i + BATCH < allIds.length) await new Promise((r) => setTimeout(r, DELAY_MS));
   }
+  // Remove produtos que o vendedor não possui mais (não vieram no sync atual)
+  const deleted = await MeliProduct.deleteMany({
+    ownerId: ownerObjectId,
+    contaId: conta._id,
+    id: { $nin: allIds },
+  });
+  if (deleted.deletedCount > 0) {
+    console.log(`[Sync] Removed ${deleted.deletedCount} orphaned products for conta=${conta.user_id}`);
+  }
+
   return total;
 }
 
