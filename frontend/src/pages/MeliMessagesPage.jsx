@@ -52,6 +52,7 @@ export default function MeliMessagesPage() {
   const [buyerThread, setBuyerThread] = useState([]);
   const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
   const [buyerThreadRefreshKey, setBuyerThreadRefreshKey] = useState(0);
+  const [listingProduct, setListingProduct] = useState(null);
 
   // Hashtag autocomplete
   const replyTextareaRef = useRef(null);
@@ -77,14 +78,14 @@ export default function MeliMessagesPage() {
       }
       const conv = map.get(q.from_id);
       conv.questions.push(q);
-      if (new Date(q.date_created) > new Date(conv.lastDate)) {
+      if (q.date_created > conv.lastDate) {
         conv.lastDate = q.date_created;
         conv.lastQuestionText = q.text;
         conv.item_title = q.item_title;
       }
       if (q.status === "UNANSWERED") conv.unansweredCount++;
     }
-    return [...map.values()].sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
+    return [...map.values()].sort((a, b) => (b.lastDate > a.lastDate ? 1 : -1));
   }, [questions]);
 
   const selectedConversation = useMemo(
@@ -100,8 +101,6 @@ export default function MeliMessagesPage() {
       null
     );
   }, [selectedConversation]);
-
-  const [listingProduct, setListingProduct] = useState(null);
 
   const smartSuggestions = useSmartSuggestions(activeQuestion?.text);
   const filteredProducts = useMemo(() => {
@@ -321,8 +320,7 @@ export default function MeliMessagesPage() {
 
   async function openSelectedQuestionListing() {
     if (!activeQuestion?.item_id) { notifyWarning("A pergunta selecionada não possui item_id"); return; }
-    const local = products.find((p) => String(p.id || "") === String(activeQuestion.item_id));
-    if (local?.permalink) { window.open(local.permalink, "_blank", "noopener,noreferrer"); return; }
+    if (listingProduct?.permalink) { window.open(listingProduct.permalink, "_blank", "noopener,noreferrer"); return; }
     try {
       const { data } = await api.get(`/meli/items/${activeQuestion.item_id}/permalink`);
       if (data?.permalink) { window.open(data.permalink, "_blank", "noopener,noreferrer"); return; }
@@ -378,7 +376,6 @@ export default function MeliMessagesPage() {
       await api.delete(`/meli/messages/questions/${deleteQuestionModal.question_id}`);
       setDeleteQuestionModal(null);
       await loadQuestions();
-      setBuyerThreadRefreshKey((k) => k + 1);
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao excluir pergunta");
     } finally { setDeletingQuestion(false); }

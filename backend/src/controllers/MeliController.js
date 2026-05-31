@@ -284,6 +284,10 @@ async function revalidateMeliItemsForAutocomplete(ownerObjectId, cachedDocs, { m
   return out.slice(0, maxResults);
 }
 
+function findCachedProduct(ownerObjectId, itemId, fields) {
+  return MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId }).select(fields).lean();
+}
+
 export default {
   async authRedirect(req, res) {
     try {
@@ -587,10 +591,7 @@ export default {
       const ownerId = getOwnerId(req);
       const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
 
-      // 1. Tenta no cache — sem filtro de status
-      const cached = await MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId })
-        .select("permalink")
-        .lean();
+      const cached = await findCachedProduct(ownerObjectId, itemId, "permalink");
       if (cached?.permalink) {
         return res.json({ permalink: cached.permalink, source: "cache" });
       }
@@ -623,9 +624,10 @@ export default {
     try {
       const ownerId = getOwnerId(req);
       const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
-      const product = await MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId })
-        .select("id title thumbnail price available_quantity status permalink SKU")
-        .lean();
+      const product = await findCachedProduct(
+        ownerObjectId, itemId,
+        "id title thumbnail price available_quantity status permalink SKU"
+      );
       if (!product) return res.status(404).json({ error: "Anúncio não encontrado no cache" });
       return res.json(product);
     } catch (err) {

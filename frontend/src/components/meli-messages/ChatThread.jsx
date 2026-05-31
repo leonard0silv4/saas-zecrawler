@@ -11,6 +11,7 @@ import {
   Trash2,
   Zap,
 } from "lucide-react";
+import { getInitials } from "./utils";
 
 function cn(...c) { return c.filter(Boolean).join(" "); }
 
@@ -27,13 +28,6 @@ function formatDate(value) {
 function formatPrice(price) {
   if (price == null) return null;
   return price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function getInitials(name) {
-  if (!name) return "?";
-  const words = name.trim().split(/\s+/);
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
 const STATUS_BADGE = {
@@ -154,8 +148,8 @@ export function ChatThread({
 
   const buyerName = selectedConversation.from_nickname || `Comprador #${selectedConversation.from_id}`;
   const initials = getInitials(buyerName);
-  const allAnswered = !activeQuestion || activeQuestion.status === "ANSWERED";
-  const fallbackQuestion = activeQuestion || selectedConversation.questions[0] || null;
+  const allAnswered = activeQuestion?.status !== "UNANSWERED";
+  const fallbackQuestion = activeQuestion;
 
   return (
     <section className="bg-white rounded-xl border border-gray-100 lg:col-span-3 flex flex-col overflow-hidden">
