@@ -28,6 +28,8 @@ O estado completo permanece em `MeliMessagesPage` — os componentes filhos rece
 
 **Hashtag autocomplete:** regex `/(^|\s)#(\w*)$/` sobre o texto antes do cursor; seleção por teclado (ArrowUp/Down, Enter, Escape).
 
+**Ordem do formulário de resposta (chat-first):** sugestões rápidas → textarea → botão Enviar → (separador) → busca de produto. A busca de produto é secundária e fica abaixo do envio para não quebrar o fluxo de digitação.
+
 ## Reformulação 2026-05-30 (chat redesign)
 
 - `QuestionList.jsx` substituído por `ConversationList.jsx` (agrupamento por comprador, avatares com iniciais, badges de pendentes)

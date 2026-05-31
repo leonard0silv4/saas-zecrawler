@@ -295,63 +295,8 @@ export function ChatThread({
               </div>
             )}
 
-            {/* Product search */}
-            <div>
-              <label className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
-                <Search size={10} /> Inserir link de anúncio na resposta
-              </label>
-              <input
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 transition"
-                placeholder="Buscar produto..."
-                value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
-              />
-              {loadingProducts && (
-                <p className="text-[10px] text-gray-400 mt-1">Buscando...</p>
-              )}
-              {!loadingProducts && productSearch.trim() && filteredProducts.length === 0 && (
-                <p className="text-[10px] text-amber-700 mt-1">Nenhum anúncio ativo encontrado.</p>
-              )}
-              {filteredProducts.length > 0 && (
-                <div className="mt-1.5 border border-gray-100 rounded-lg max-h-36 overflow-y-auto divide-y divide-gray-50">
-                  {filteredProducts.map((p) => (
-                    <button
-                      key={p._id || p.id}
-                      type="button"
-                      onClick={() => insertProductLink(p.permalink || "")}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 flex gap-2.5 items-center transition-colors"
-                    >
-                      <div className="w-9 h-9 shrink-0 rounded-md border border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
-                        {p.thumbnail ? (
-                          <img
-                            src={p.thumbnail}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                            onError={(e) => { e.currentTarget.style.display = "none"; }}
-                          />
-                        ) : (
-                          <Package size={14} className="text-gray-300" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-gray-900 line-clamp-1">
-                          {p.title || p.SKU || "Produto"}
-                        </p>
-                        <p className="text-[10px] text-brand-600 truncate">
-                          {p.permalink || "Sem permalink"}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Textarea with hashtag autocomplete */}
             <div>
-              <label className="text-[10px] text-gray-400 mb-1 block">Sua resposta</label>
               <div className="relative" ref={hashAnchorRef}>
                 <textarea
                   ref={replyTextareaRef}
@@ -402,6 +347,60 @@ export function ChatThread({
                 )}
                 {sendingReply ? "Enviando..." : "Enviar resposta"}
               </button>
+            </div>
+
+            {/* Product search — secondary, below send */}
+            <div className="border-t border-gray-100 pt-3">
+              <label className="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
+                <Search size={10} /> Inserir link de anúncio na resposta
+              </label>
+              <input
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-300 focus:border-brand-300 transition"
+                placeholder="Buscar produto..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+              />
+              {loadingProducts && (
+                <p className="text-[10px] text-gray-400 mt-1">Buscando...</p>
+              )}
+              {!loadingProducts && productSearch.trim() && filteredProducts.length === 0 && (
+                <p className="text-[10px] text-amber-700 mt-1">Nenhum anúncio ativo encontrado.</p>
+              )}
+              {filteredProducts.length > 0 && (
+                <div className="mt-1.5 border border-gray-100 rounded-lg max-h-36 overflow-y-auto divide-y divide-gray-50">
+                  {filteredProducts.map((p) => (
+                    <button
+                      key={p._id || p.id}
+                      type="button"
+                      onClick={() => insertProductLink(p.permalink || "")}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 flex gap-2.5 items-center transition-colors"
+                    >
+                      <div className="w-9 h-9 shrink-0 rounded-md border border-gray-100 bg-gray-50 overflow-hidden flex items-center justify-center">
+                        {p.thumbnail ? (
+                          <img
+                            src={p.thumbnail}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          />
+                        ) : (
+                          <Package size={14} className="text-gray-300" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-gray-900 line-clamp-1">
+                          {p.title || p.SKU || "Produto"}
+                        </p>
+                        <p className="text-[10px] text-brand-600 truncate">
+                          {p.permalink || "Sem permalink"}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
