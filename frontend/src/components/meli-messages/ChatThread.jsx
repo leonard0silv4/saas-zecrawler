@@ -134,10 +134,11 @@ export function ChatThread({
   openSelectedQuestionListing,
   setDeleteQuestionModal,
 }) {
-  const chatEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [buyerThread, selectedConversation?.from_id]);
 
   if (!selectedConversation) {
@@ -202,7 +203,7 @@ export function ChatThread({
       </div>
 
       {/* Chat bubbles */}
-      <div className="flex-1 overflow-y-auto max-h-[380px] px-4 py-4 space-y-4">
+      <div ref={chatContainerRef} className="flex-1 overflow-y-auto max-h-[380px] px-4 py-4 space-y-4">
         {loadingBuyerThread ? (
           <div className="flex justify-center py-8">
             <Loader2 size={18} className="animate-spin text-gray-300" />
@@ -262,7 +263,6 @@ export function ChatThread({
             );
           })
         )}
-        <div ref={chatEndRef} />
       </div>
 
       {/* Reply form */}

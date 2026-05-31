@@ -13,6 +13,11 @@ PUT    /meli/messages/templates/:id                    →  requireModule("meliM
 DELETE /meli/messages/templates/:id                    →  requireModule("meliMessages") → deleteTemplate
 POST   /meli/messages/sync                             →  requireModule("meliMessages") → sync
 GET    /meli/messages/unread-count                     →  requireModule("meliMessages") → unreadCount
+
+GET    /meli/items/:itemId/details                     →  requireModule("meli") → getItemDetails
+  → MeliProduct.findOne({ ownerId, id: itemId })
+  → retorna { id, title, thumbnail, price, available_quantity, status, permalink, SKU }
+  → 404 se não encontrado no cache local
 ```
 
 ## Fluxo de Resposta
@@ -85,4 +90,4 @@ A página `/meli/messages` foi reformulada para interface de chat:
 - **ConversationList**: painel esquerdo — agrupa perguntas por `from_id` no frontend, exibe avatar com iniciais, badge de pendentes, preview da última pergunta.
 - **ChatThread**: painel direito — bolhas de chat (comprador à esquerda, vendedor à direita) carregadas via `GET /meli/messages/questions/buyer-thread`. Inclui `ListingCard` com dados de `MeliProduct` buscados pelo `item_id` da pergunta ativa.
 - **Pergunta ativa**: primeira `UNANSWERED` da conversa selecionada; todas as ações de resposta e exclusão operam sobre ela.
-- **Sem novos endpoints**: o redesign consome apenas os endpoints existentes.
+- **Listing card**: dados buscados via `GET /meli/items/:itemId/details` (endpoint dedicado que consulta `MeliProduct` no MongoDB por `ownerId + id`). Retorna `title, thumbnail, price, available_quantity, status, permalink, SKU`.

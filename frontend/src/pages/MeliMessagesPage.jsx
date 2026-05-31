@@ -101,10 +101,7 @@ export default function MeliMessagesPage() {
     );
   }, [selectedConversation]);
 
-  const listingProduct = useMemo(
-    () => products.find((p) => String(p.id) === String(activeQuestion?.item_id)) || null,
-    [products, activeQuestion]
-  );
+  const [listingProduct, setListingProduct] = useState(null);
 
   const smartSuggestions = useSmartSuggestions(activeQuestion?.text);
   const filteredProducts = useMemo(() => {
@@ -212,6 +209,18 @@ export default function MeliMessagesPage() {
       .finally(() => { if (!cancelled) setLoadingBuyerThread(false); });
     return () => { cancelled = true; };
   }, [selectedConversationFromId, selectedUserId, buyerThreadRefreshKey]);
+
+  // Listing product: fetch full details by item_id whenever active question changes
+  useEffect(() => {
+    const itemId = activeQuestion?.item_id;
+    if (!itemId) { setListingProduct(null); return; }
+    let cancelled = false;
+    api
+      .get(`/meli/items/${itemId}/details`)
+      .then(({ data }) => { if (!cancelled) setListingProduct(data || null); })
+      .catch(() => { if (!cancelled) setListingProduct(null); });
+    return () => { cancelled = true; };
+  }, [activeQuestion?.item_id]);
 
   // Hashtag dropdown: close on outside click
   useEffect(() => {

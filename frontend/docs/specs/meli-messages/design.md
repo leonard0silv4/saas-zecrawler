@@ -18,7 +18,7 @@ O estado completo permanece em `MeliMessagesPage` — os componentes filhos rece
 
 **Pergunta ativa:** `activeQuestion` = primeira UNANSWERED da conversa (ou a última se todas respondidas). Usada para enviar resposta e para abrir o permalink do anúncio.
 
-**Card de anúncio:** `listingProduct` buscado no estado `products` (carregado de `/meli/products/autocomplete`) pelo `item_id` da `activeQuestion`. Exibe thumbnail, preço, estoque, status e permalink.
+**Card de anúncio:** `listingProduct` (estado) buscado via `GET /meli/items/:itemId/details` sempre que `activeQuestion.item_id` muda. Retorna dados completos do `MeliProduct` no MongoDB: `title, thumbnail, price, available_quantity, status, permalink`. Independente do estado `products` do formulário de busca.
 
 **Chat bubbles:** `buyerThread` (carregado da API ao selecionar conversa) renderizado com bolhas à esquerda (comprador, `bg-gray-100`) e à direita (vendedor, `bg-brand-600`). Auto-scroll para o fim via `useRef + useEffect`.
 

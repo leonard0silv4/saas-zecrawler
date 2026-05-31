@@ -93,6 +93,7 @@ r.delete("/meli/accounts/:userId", requireModule("meli"), MeliController.disconn
 r.get("/meli/products", requireModule("meli"), MeliController.getProducts);
 r.get("/meli/products/autocomplete", requireModule("meli"), MeliController.autocompleteProducts);
 r.get("/meli/items/:itemId/permalink", requireModule("meli"), MeliController.getItemPermalink);
+r.get("/meli/items/:itemId/details", requireModule("meli"), MeliController.getItemDetails);
 r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShipment);
 r.get("/meli/messages/questions", requireModule("meliMessages"), MeliMessagesController.listQuestions);
 r.get("/meli/messages/questions/buyer-thread", requireModule("meliMessages"), MeliMessagesController.buyerThread);

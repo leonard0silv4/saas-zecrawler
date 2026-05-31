@@ -617,6 +617,22 @@ export default {
     }
   },
 
+  async getItemDetails(req, res) {
+    const { itemId } = req.params;
+    if (!itemId) return res.status(400).json({ error: "itemId é obrigatório" });
+    try {
+      const ownerId = getOwnerId(req);
+      const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+      const product = await MeliProduct.findOne({ ownerId: ownerObjectId, id: itemId })
+        .select("id title thumbnail price available_quantity status permalink SKU")
+        .lean();
+      if (!product) return res.status(404).json({ error: "Anúncio não encontrado no cache" });
+      return res.json(product);
+    } catch (err) {
+      return res.status(500).json({ error: "Erro ao buscar detalhes do anúncio" });
+    }
+  },
+
   async getShipment(req, res) {
     const { shipmentId } = req.params;
     if (!shipmentId || !/^\d+$/.test(shipmentId)) {
