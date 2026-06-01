@@ -15,5 +15,5 @@
 ## Melhorias Identificadas
 
 - [ ]* 6. Adicionar suporte a respostas automáticas baseadas em palavras-chave
-- [ ]* 7. Notificação SSE em tempo real quando nova pergunta é sincronizada
+- [x] 7. Webhook `/hookmessages` + notificação SSE `meli:question` em tempo real quando nova pergunta chega do ML; inclui fallback por `items` com mapeamento por conta, item cacheado ou sincronização global com cooldown quando o painel ML não envia `questions`
 - [ ]* 8. Exportar histórico de perguntas/respostas para CSV

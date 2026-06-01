@@ -13,6 +13,7 @@ PUT    /meli/messages/templates/:id                    →  requireModule("meliM
 DELETE /meli/messages/templates/:id                    →  requireModule("meliMessages") → deleteTemplate
 POST   /meli/messages/sync                             →  requireModule("meliMessages") → sync
 GET    /meli/messages/unread-count                     →  requireModule("meliMessages") → unreadCount
+POST   /hookmessages                                  →  público → hookMessages (webhook ML questions)
 
 GET    /meli/items/:itemId/details                     →  requireModule("meli") → getItemDetails
   → MeliProduct.findOne({ ownerId, id: itemId })
@@ -55,6 +56,22 @@ syncQuestionsForOwner(ownerId):
         GET /items/:item_id → item_status
         MeliQuestion.findOneAndUpdate({ ownerId, question_id }, { upsert: true })
   → retorna { syncedCount }
+```
+
+## Fluxo de Webhook
+
+```
+POST /hookmessages { topic, resource, user_id, application_id }
+  → se ML_APPLICATION_ID estiver configurado e não bater: 200 ignored
+  → se topic == "items": syncQuestionsForContaUserId(user_id); se não mapear, tenta MeliProduct por item_id; se ainda não mapear, sync global com cooldown de 60s; emitSSE se syncedCount > 0
+  → se topic != "questions": 200 ignored
+  → parseQuestionIdFromResource(resource)
+  → Conta.findOne({ user_id, ativa })
+  → token = renewToken(conta)
+  → GET https://api.mercadolibre.com/questions/:id
+  → mapQuestionPayload + MeliQuestion.updateOne({ ownerId, question_id }, upsert)
+  → emitSSE(ownerId, "meli:question", { user_id, question_id, from_id, status })
+  → sempre responde 200 para o Mercado Livre
 ```
 
 ## Cron de Sincronização

@@ -21,4 +21,5 @@ Central de perguntas e respostas Mercado Livre em `/meli/messages`.
 - Deve gerenciar templates via modal com aba "Templates" (busca + inserção) e aba "Gerenciar" (CRUD).
 - Deve buscar anúncios e inserir permalink via modal dedicada.
 - Deve atualizar contagem global de não lidas após ações relevantes.
+- Deve recarregar silenciosamente a lista e o thread ativo ao receber evento SSE `meli:question` da conta selecionada.
 - A tela deve ocupar 100vh sem scroll de página (layout `h-full flex flex-col`).

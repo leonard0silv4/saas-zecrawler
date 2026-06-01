@@ -2,9 +2,19 @@ import mongoose from "mongoose";
 import MeliQuestion from "../models/MeliQuestion.js";
 import MeliMessageTemplate from "../models/MeliMessageTemplate.js";
 import { getOwnerId } from "../middleware/auth.js";
-import { answerQuestion, syncQuestionsForOwner } from "../services/meliMessagesService.js";
+import { answerQuestion, syncQuestionFromWebhook, syncQuestionsForAllActiveContas, syncQuestionsForContaUserId, syncQuestionsForItemResource, syncQuestionsForOwner } from "../services/meliMessagesService.js";
+import { emitSSE } from "../utils/sse.js";
 
 const MAX_REPLY_LEN = 2000;
+const ITEM_WEBHOOK_SYNC_COOLDOWN_MS = 30000;
+const ITEM_WEBHOOK_GLOBAL_SYNC_COOLDOWN_MS = 60000;
+const itemWebhookSyncByUserId = new Map();
+let lastItemWebhookGlobalSyncAt = 0;
+const WEBHOOK_DEBUG = process.env.ML_WEBHOOK_DEBUG === "true";
+
+function debugWebhook(message, data) {
+  if (WEBHOOK_DEBUG) console.log(message, data);
+}
 
 function toObjectId(value) {
   if (value instanceof mongoose.Types.ObjectId) return value;
@@ -18,6 +28,136 @@ function parsePage(value, fallback) {
 }
 
 export default {
+  async hookMessages(req, res) {
+    const payload = req.body || {};
+    const configuredAppId = process.env.ML_APPLICATION_ID;
+
+    if (configuredAppId && String(payload.application_id || "") !== String(configuredAppId)) {
+      debugWebhook("[MeliMessages Webhook] ignored application_id_mismatch", {
+        application_id: payload.application_id,
+        expected: configuredAppId,
+        topic: payload.topic,
+        resource: payload.resource,
+        user_id: payload.user_id,
+      });
+      return res.json({ ok: true, ignored: true, reason: "application_id_mismatch" });
+    }
+
+    if (payload.topic === "items") {
+      const syncKey = String(payload.user_id || "");
+      const lastSyncAt = itemWebhookSyncByUserId.get(syncKey) || 0;
+      if (Date.now() - lastSyncAt < ITEM_WEBHOOK_SYNC_COOLDOWN_MS) {
+        return res.json({ ok: true, ignored: true, reason: "item_sync_cooldown" });
+      }
+      itemWebhookSyncByUserId.set(syncKey, Date.now());
+
+      try {
+        let result = await syncQuestionsForContaUserId(payload.user_id);
+        if (result.ignored && result.reason === "account_not_found") {
+          result = await syncQuestionsForItemResource(payload.resource);
+        }
+        if (result.ignored && result.reason === "item_not_found") {
+          if (Date.now() - lastItemWebhookGlobalSyncAt < ITEM_WEBHOOK_GLOBAL_SYNC_COOLDOWN_MS) {
+            result = { ok: true, ignored: true, reason: "item_global_sync_cooldown", itemFallbackReason: result.reason };
+          } else {
+            lastItemWebhookGlobalSyncAt = Date.now();
+            result = await syncQuestionsForAllActiveContas();
+            result.fallbackScope = "all_active_accounts";
+          }
+        }
+        debugWebhook("[MeliMessages Webhook] item fallback sync", {
+          topic: payload.topic,
+          resource: payload.resource,
+          user_id: payload.user_id,
+          application_id: payload.application_id,
+          result,
+        });
+        if (!result.ignored && result.syncedCount > 0) {
+          if (result.ownerId) {
+            emitSSE(result.ownerId, "meli:question", {
+              user_id: result.user_id,
+              syncedCount: result.syncedCount,
+              fallbackTopic: "items",
+            });
+          } else if (Array.isArray(result.results)) {
+            for (const ownerResult of result.results) {
+              if (ownerResult.ownerId && ownerResult.syncedCount > 0) {
+                const accountResults = Array.isArray(ownerResult.results) ? ownerResult.results : [];
+                const changedAccounts = accountResults.filter((row) => row.syncedCount > 0);
+                if (changedAccounts.length) {
+                  for (const accountResult of changedAccounts) {
+                    emitSSE(ownerResult.ownerId, "meli:question", {
+                      user_id: accountResult.user_id,
+                      syncedCount: accountResult.syncedCount,
+                      fallbackTopic: "items",
+                      fallbackScope: "all_active_accounts",
+                    });
+                  }
+                } else {
+                  emitSSE(ownerResult.ownerId, "meli:question", {
+                    syncedCount: ownerResult.syncedCount,
+                    fallbackTopic: "items",
+                    fallbackScope: "all_active_accounts",
+                  });
+                }
+              }
+            }
+          }
+        }
+        return res.json(result);
+      } catch (error) {
+        console.error("[MeliMessages Webhook] item fallback failed", {
+          resource: payload.resource,
+          user_id: payload.user_id,
+          error: error.message,
+          status: error.response?.status,
+        });
+        return res.json({ ok: true, queued: false, error: "item_fallback_failed" });
+      }
+    }
+
+    if (payload.topic !== "questions") {
+      debugWebhook("[MeliMessages Webhook] ignored unsupported_topic", {
+        topic: payload.topic,
+        resource: payload.resource,
+        user_id: payload.user_id,
+        application_id: payload.application_id,
+      });
+      return res.json({ ok: true, ignored: true, reason: "unsupported_topic" });
+    }
+
+    try {
+      const result = await syncQuestionFromWebhook({ userId: payload.user_id, resource: payload.resource });
+      debugWebhook("[MeliMessages Webhook] processed", {
+        topic: payload.topic,
+        resource: payload.resource,
+        user_id: payload.user_id,
+        application_id: payload.application_id,
+        result,
+      });
+      if (result.ownerId && !result.ignored) {
+        emitSSE(result.ownerId, "meli:question", {
+          user_id: result.user_id,
+          question_id: result.question_id,
+          from_id: result.from_id,
+          status: result.status,
+          inserted: result.inserted,
+          updated: result.updated,
+        });
+      }
+      return res.json(result);
+    } catch (error) {
+      console.error("[MeliMessages Webhook]", {
+        topic: payload.topic,
+        resource: payload.resource,
+        user_id: payload.user_id,
+        error: error.message,
+        status: error.response?.status,
+      });
+      return res.json({ ok: true, queued: false, error: "webhook_processing_failed" });
+    }
+  },
+
   async listQuestions(req, res) {
     try {
       const ownerId = toObjectId(getOwnerId(req));

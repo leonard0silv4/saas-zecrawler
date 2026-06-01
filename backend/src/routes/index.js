@@ -36,6 +36,7 @@ r.post("/auth/reset-password",   AuthController.resetPassword);
 // ─── ML OAuth (public callbacks) ───────────────────────────────
 r.get("/meli/auth", MeliController.authRedirect);
 r.get("/meli/callback", MeliController.authCallback);
+r.post("/hookmessages", MeliMessagesController.hookMessages);
 
 // ─── All routes below require authentication ───────────────────
 r.use(authenticate);

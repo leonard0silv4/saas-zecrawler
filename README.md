@@ -116,10 +116,15 @@ POST   /api/catalog/import  (upload .xlsx)
 ```
 GET /api/meli/auth?token=     (redireciona OAuth ML)
 GET /api/meli/callback        (callback OAuth)
+POST /api/hookmessages       (webhook público ML questions)
 GET /api/meli/accounts
 GET /api/meli/products?user_id=
 GET /api/meli/shipment/:shipmentId
 ```
+
+#### Teste local do webhook ML
+
+Para testar chamadas reais do Mercado Livre localmente, suba o backend em `localhost:3333`, exponha-o com um túnel HTTPS (ngrok ou cloudflared) e configure temporariamente no painel do app ML a URL `https://<tunel>/api/hookmessages`. Para teste simulado, envie um `POST` com `topic: "questions"`, `resource: "/questions/<id>"` e `user_id` de uma conta conectada.
 
 ### Cookies ML
 
