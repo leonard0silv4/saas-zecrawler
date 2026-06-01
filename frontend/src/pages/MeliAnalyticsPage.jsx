@@ -27,11 +27,12 @@ const PERIODS = [
 export default function MeliAnalyticsPage() {
   const [accounts,        setAccounts]        = useState([]);
   const [selectedAccount, setSelectedAccount] = useState("");
+  const [unifiedView, setUnifiedView] = useState(false);
   const [period,          setPeriod]          = useState("30d");
   const [activeTab,       setActiveTab]       = useState("estoque");
 
   const tabLoadedRef   = useRef(new Set());
-  const prevContextRef = useRef({ account: null, period: null });
+  const prevContextRef = useRef({ account: null, period: null, unifiedView: null });
   const tabSectionRef  = useRef(null);
 
   const [summary,         setSummary]         = useState(null);
@@ -61,36 +62,40 @@ export default function MeliAnalyticsPage() {
 
   const params = useCallback(() => {
     const p = { period };
-    if (selectedAccount) p.user_id = selectedAccount;
+    if (!unifiedView && selectedAccount) p.user_id = selectedAccount;
     return p;
-  }, [period, selectedAccount]);
+  }, [period, selectedAccount, unifiedView]);
 
   useEffect(() => {
-    if (!selectedAccount) return;
+    if (!unifiedView && !selectedAccount) return;
     loadSummary();
     loadChart();
-  }, [selectedAccount, period]);
+  }, [selectedAccount, period, unifiedView]);
 
   useEffect(() => {
-    if (!selectedAccount) return;
-    if (prevContextRef.current.account !== selectedAccount || prevContextRef.current.period !== period) {
+    if (!unifiedView && !selectedAccount) return;
+    if (
+      prevContextRef.current.account !== selectedAccount ||
+      prevContextRef.current.period !== period ||
+      prevContextRef.current.unifiedView !== unifiedView
+    ) {
       tabLoadedRef.current = new Set();
-      prevContextRef.current = { account: selectedAccount, period };
+      prevContextRef.current = { account: selectedAccount, period, unifiedView };
     }
     if (tabLoadedRef.current.has(activeTab)) return;
     if (activeTab === "top")     loadTop();
     if (activeTab === "pedidos") loadOrders();
     if (activeTab === "estoque") loadInventory();
     tabLoadedRef.current.add(activeTab);
-  }, [activeTab, selectedAccount, period]);
+  }, [activeTab, selectedAccount, period, unifiedView]);
 
   useEffect(() => {
-    if (activeTab === "estoque" && selectedAccount) loadInventory();
-  }, [inventoryFilter, inventorySort]);
+    if (activeTab === "estoque" && (unifiedView || selectedAccount)) loadInventory();
+  }, [inventoryFilter, inventorySort, activeTab, selectedAccount, unifiedView]);
 
   useEffect(() => {
-    if (activeTab === "top" && selectedAccount) loadTop();
-  }, [topSort, topOnlyActive]);
+    if (activeTab === "top" && (unifiedView || selectedAccount)) loadTop();
+  }, [topSort, topOnlyActive, activeTab, selectedAccount, unifiedView]);
 
   async function loadSummary() {
     setLoadingSummary(true);
@@ -131,12 +136,18 @@ export default function MeliAnalyticsPage() {
   async function handleSync(force = false) {
     setSyncing(true);
     try {
-      const qp = { ...(selectedAccount ? { user_id: selectedAccount } : {}), ...(force ? { force: "true" } : {}) };
+      const qp = { ...(!unifiedView && selectedAccount ? { user_id: selectedAccount } : {}), ...(force ? { force: "true" } : {}) };
       const { data } = await api.post("/meli/analytics/sync", null, { params: qp });
-      notifySuccess(force ? `Re-sync completo: ${data.synced} pedidos atualizados` : `${data.synced} pedidos sincronizados`);
+      const accountsText = unifiedView && data.accounts ? " em " + data.accounts + " lojas" : "";
+      const slowHint = unifiedView ? " Esse processo pode demorar um pouco." : "";
+      const baseMessage = force
+        ? "Re-sync completo: " + data.synced + " pedidos atualizados" + accountsText + "."
+        : data.synced + " pedidos sincronizados" + accountsText + ".";
+      notifySuccess(baseMessage + slowHint);
       loadSummary(); loadChart();
       if (activeTab === "top")     loadTop();
       if (activeTab === "pedidos") loadOrders();
+      if (activeTab === "estoque") loadInventory();
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao sincronizar");
     } finally { setSyncing(false); }
@@ -158,7 +169,23 @@ export default function MeliAnalyticsPage() {
           <p className="text-gray-500 mt-1 text-sm">Vendas, estoque Full e KPIs financeiros — exclusivo Business</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <AccountSelect accounts={accounts} value={selectedAccount} onChange={setSelectedAccount} />
+          <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
+            <button
+              type="button"
+              onClick={() => setUnifiedView(false)}
+              className={"px-3 py-1.5 rounded-lg transition-all font-medium " + (!unifiedView ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+            >
+              Loja
+            </button>
+            <button
+              type="button"
+              onClick={() => setUnifiedView(true)}
+              className={"px-3 py-1.5 rounded-lg transition-all font-medium " + (unifiedView ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+            >
+              Todas
+            </button>
+          </div>
+          <AccountSelect accounts={accounts} value={selectedAccount} onChange={setSelectedAccount} disabled={unifiedView} />
           <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
             {PERIODS.map((p) => (
               <button
@@ -174,15 +201,15 @@ export default function MeliAnalyticsPage() {
           </div>
           <button
             onClick={() => handleSync(false)}
-            disabled={syncing || !selectedAccount}
+            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm"
           >
             <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
-            {syncing ? "Sincronizando…" : "Sincronizar"}
+            {syncing ? "Sincronizando…" : (unifiedView ? "Sincronizar todas" : "Sincronizar")}
           </button>
           <button
             onClick={() => handleSync(true)}
-            disabled={syncing || !selectedAccount}
+            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
             title="Re-processa 90 dias"
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold disabled:opacity-50 transition-colors"
           >
@@ -204,7 +231,7 @@ export default function MeliAnalyticsPage() {
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-sm font-bold text-gray-800">Receita & Pedidos diários</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Período selecionado — receita bruta e volume de pedidos</p>
+            <p className="text-xs text-gray-400 mt-0.5">{unifiedView ? "Todas as lojas — receita bruta e volume de pedidos" : "Período selecionado — receita bruta e volume de pedidos"}</p>
           </div>
           {!loadingChart && chartData.length > 0 && (
             <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full">

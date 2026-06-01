@@ -3,13 +3,17 @@
 ## Endpoints
 
 ```
-POST /meli/analytics/sync         →  requireModule("meliAnalytics") → sync
-GET  /meli/analytics/summary      →  requireModule("meliAnalytics") → summary
-GET  /meli/analytics/sales-chart  →  requireModule("meliAnalytics") → salesChart
+POST /meli/analytics/sync         →  requireModule("meliAnalytics") → sync (com `user_id` = loja; sem `user_id` = todas)
+GET  /meli/analytics/summary      →  requireModule("meliAnalytics") → summary (agrega todas sem `user_id`)
+GET  /meli/analytics/sales-chart  →  requireModule("meliAnalytics") → salesChart (agrega todas sem `user_id`)
 GET  /meli/analytics/top-products →  requireModule("meliAnalytics") → topProducts
 GET  /meli/analytics/orders       →  requireModule("meliAnalytics") → orders
 GET  /meli/analytics/inventory    →  requireModule("meliAnalytics") → inventory
 ```
+
+## Filtros de Loja
+
+Todos os endpoints de leitura aceitam `user_id` opcional. Quando presente, filtram uma loja; quando ausente, agregam todas as lojas do owner. O sync segue a mesma regra e retorna `accounts` com a quantidade de contas processadas.
 
 ## Fluxo de Sincronização de Pedidos
 

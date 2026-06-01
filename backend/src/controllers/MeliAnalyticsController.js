@@ -249,7 +249,7 @@ const MeliAnalyticsController = {
         }
       }
 
-      res.json({ synced: total, forceFrom });
+      res.json({ synced: total, forceFrom, accounts: contas.length });
     } catch (err) {
       console.error("analytics sync error:", err);
       res.status(500).json({ error: "Erro ao sincronizar pedidos" });

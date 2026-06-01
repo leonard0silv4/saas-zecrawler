@@ -9,7 +9,7 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
 ## Requisitos Funcionais
 
 ### RF-01 Sincronização de Pedidos
-- `POST /meli/analytics/sync` sincroniza pedidos de todas as contas ML ativas do owner (ou de uma conta específica via `user_id`).
+- `POST /meli/analytics/sync` sincroniza pedidos de todas as contas ML ativas do owner (ou de uma conta específica via `user_id`) e retorna `{ synced, forceFrom, accounts }`.
 - Busca pedidos a partir da data do último pedido salvo menos 1 dia (ou 90 dias se não houver pedidos).
 - `force=true` força re-sync completo dos últimos 90 dias.
 - Busca taxa ML real via `GET /collections/:payment_id` (único endpoint que retorna `net_received_amount`).
@@ -18,7 +18,7 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
 - Após sync de pedidos, sincroniza também os produtos (`syncProductsForConta`).
 
 ### RF-02 Resumo Financeiro
-- `GET /meli/analytics/summary?period=30d&user_id=<uid>` retorna:
+- `GET /meli/analytics/summary?period=30d&user_id=<uid>` retorna as métricas abaixo; sem `user_id`, agrega todas as lojas:
   - `faturamento` — soma de `total_amount` dos pedidos pagos
   - `taxa_ml` — soma de `ml_fee`
   - `liq_marketplace` — faturamento - taxa_ml
@@ -26,19 +26,19 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
   - `ticket_medio` — faturamento / pedidos
 
 ### RF-03 Gráfico de Vendas
-- `GET /meli/analytics/sales-chart?period=30d` retorna array diário com `{ date, receita, pedidos }`.
+- `GET /meli/analytics/sales-chart?period=30d` retorna array diário com `{ date, receita, pedidos }`; sem `user_id`, agrega todas as lojas.
 - Preenche dias sem vendas com zeros (série contínua).
 
 ### RF-04 Top Produtos
-- `GET /meli/analytics/top-products?period=30d&sortBy=receita|unidades&onlyActive=true` retorna os N produtos mais vendidos.
+- `GET /meli/analytics/top-products?period=30d&sortBy=receita|unidades&onlyActive=true` retorna os N produtos mais vendidos; sem `user_id`, considera todas as lojas.
 - Faz lookup em `MeliProduct` para enriquecer com `thumbnail`, `permalink` e `productStatus`.
 - `onlyActive=true` filtra apenas produtos com status `active` no cache.
 
 ### RF-05 Listagem de Pedidos
-- `GET /meli/analytics/orders?period=30d&page=1&limit=50` retorna pedidos paginados.
+- `GET /meli/analytics/orders?period=30d&page=1&limit=50` retorna pedidos paginados; sem `user_id`, lista todas as lojas.
 
 ### RF-06 Inventário
-- `GET /meli/analytics/inventory?filter=full|normal|ruptura&sortBy=sold|velocity|stock|price` retorna produtos do cache.
+- `GET /meli/analytics/inventory?filter=full|normal|ruptura&sortBy=sold|velocity|stock|price` retorna produtos do cache; sem `user_id`, lista todas as lojas.
 - `filter=ruptura` retorna apenas produtos com `alertRuptura = "RUPTURA"`.
 
 ### RF-07 Sincronização Automática (Cron)

@@ -10,5 +10,6 @@
 
 - [x] Documentar endpoints e fluxo de sincronização.
 - [x] Documentar tratamento de erro 403.
+- [x] Documentar visão unificada sem `user_id` e retorno `accounts` no sync.
 - [ ] Padronizar payload de erro detalhado entre sync manual e cron.
 - [ ] Medir custo das agregações em bases com alto volume de pedidos.
