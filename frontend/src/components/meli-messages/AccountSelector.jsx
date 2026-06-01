@@ -27,13 +27,13 @@ export function AccountSelector({
   const triggerHasDot = hasDotForUserId(selectedUserId);
 
   return (
-    <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+    <div className="flex flex-col gap-2 shrink-0 sm:flex-row sm:items-center sm:gap-2.5">
       {/* Store dropdown */}
-      <div ref={ref} className="relative">
+      <div ref={ref} className="relative w-full sm:w-auto">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="relative flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 min-w-[160px] transition-colors shadow-sm"
+          className="relative flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 w-full sm:min-w-[160px] sm:w-auto transition-colors shadow-sm"
         >
           <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-brand-100 shrink-0">
             <Store size={13} className="text-brand-600" />
@@ -79,36 +79,38 @@ export function AccountSelector({
         )}
       </div>
 
-      {/* Status filters */}
-      <button
-        type="button"
-        onClick={() => setStatusFilter("UNANSWERED")}
-        className={cn(
-          "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5",
-          statusFilter === "UNANSWERED"
-            ? "bg-brand-50 border-brand-300 text-brand-700 shadow-sm"
-            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-        )}
-      >
-        <Clock size={14} /> Pendentes
-      </button>
-      <button
-        type="button"
-        onClick={() => setStatusFilter("ANSWERED")}
-        className={cn(
-          "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5",
-          statusFilter === "ANSWERED"
-            ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm"
-            : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-        )}
-      >
-        <CheckCircle2 size={14} /> Respondidas
-      </button>
+      {/* Status filters + count — one row on mobile, continues the flex-row on sm+ */}
+      <div className="flex items-center gap-2 sm:contents">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("UNANSWERED")}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5",
+            statusFilter === "UNANSWERED"
+              ? "bg-brand-50 border-brand-300 text-brand-700 shadow-sm"
+              : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+          )}
+        >
+          <Clock size={14} /> Pendentes
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("ANSWERED")}
+          className={cn(
+            "px-3.5 py-2 rounded-xl text-sm font-medium border transition-all duration-200 flex items-center gap-1.5",
+            statusFilter === "ANSWERED"
+              ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm"
+              : "bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+          )}
+        >
+          <CheckCircle2 size={14} /> Respondidas
+        </button>
 
-      {/* Count */}
-      <span className="ml-auto text-xs font-semibold px-3 py-2 rounded-lg bg-gray-50 text-gray-700 border border-gray-200 tabular-nums">
-        {questionsCount} {questionsCount === 1 ? "conversa" : "conversas"}
-      </span>
+        {/* Count */}
+        <span className="ml-auto text-xs font-semibold px-3 py-2 rounded-lg bg-gray-50 text-gray-700 border border-gray-200 tabular-nums whitespace-nowrap">
+          {questionsCount} {questionsCount === 1 ? "conversa" : "conversas"}
+        </span>
+      </div>
     </div>
   );
 }

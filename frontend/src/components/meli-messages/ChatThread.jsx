@@ -182,7 +182,7 @@ export function ChatThread({
   );
 
   return (
-    <section className="bg-white rounded-lg border border-gray-200 lg:col-span-3 flex flex-col overflow-hidden shadow-sm">
+    <section className="bg-white rounded-lg border border-gray-200 lg:col-span-3 flex flex-col overflow-hidden shadow-sm min-h-[400px] lg:flex-1 lg:min-h-0">
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-200 flex items-center gap-3.5 shrink-0">
         <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold shrink-0 select-none border border-brand-200">
@@ -311,7 +311,7 @@ export function ChatThread({
       </div>
 
       {/* Reply form */}
-      <div className="border-t border-gray-200 px-5 py-4 space-y-3 shrink-0">
+      <div className="border-t border-gray-200 px-3 py-3 sm:px-5 sm:py-4 space-y-3 shrink-0">
         {allAnswered ? (
           <div className="flex items-center gap-2.5 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 shadow-sm">
             <CheckCircle2 size={16} className="shrink-0" />

@@ -26,7 +26,7 @@ export function ConversationList({
   setSortOrder,
 }) {
   return (
-    <section className="bg-white rounded-lg border border-gray-200 lg:col-span-2 flex flex-col overflow-hidden shadow-sm">
+    <section className="bg-white rounded-lg border border-gray-200 lg:col-span-2 flex flex-col overflow-hidden shadow-sm h-56 shrink-0 lg:h-auto lg:shrink">
       <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
         <div>
           <h2 className="font-bold text-gray-900 text-base">Conversas</h2>
