@@ -90,7 +90,7 @@ function ItemContextCard({ itemId, itemTitle, itemStatus, listingProductsMap, on
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-800 line-clamp-1 leading-tight">{title}</p>
+          <p className="text-xs font-semibold text-gray-800  leading-tight">{title}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {status && (
               <span className={cn(

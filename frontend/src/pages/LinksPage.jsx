@@ -494,7 +494,7 @@ export default function LinksPage() {
                               rel="noopener noreferrer"
                               className="font-medium text-gray-900 hover:text-brand-600 hover:underline flex items-center gap-1 break-words"
                               title={link.name || "Sem título"}>
-                              <span className="line-clamp-2 max-w-[220px]">{link.name || "Sem título"}</span>
+                              <span className="line-clamp-3 max-w-[220px]">{link.name || "Sem título"}</span>
                               <ExternalLink size={11} className="flex-shrink-0 text-gray-300" />
                             </a>
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">

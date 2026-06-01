@@ -128,7 +128,7 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
                             <Package size={12} className="text-gray-400" />
                           </div>
                         )}
-                        <span className="truncate max-w-[200px] font-medium">{p.title}</span>
+                        <span className="max-w-[200px] font-medium">{p.title}</span>
                       </div>
                     </td>
                     <td className="py-2.5 pr-4 text-gray-400 font-mono text-xs">{p.SKU || "—"}</td>

@@ -42,7 +42,7 @@ export function OrdersTab({ orders, loading }) {
                 </td>
                 <td className="py-2.5 pr-4 font-mono text-xs text-gray-400">{o.order_id}</td>
                 <td className="py-2.5 pr-4 max-w-[200px]">
-                  <span className="truncate block font-medium">{o.order_items?.[0]?.title || "—"}</span>
+                  <span className="block font-medium">{o.order_items?.[0]?.title || "—"}</span>
                   {o.order_items?.length > 1 && (
                     <span className="text-xs text-gray-400">+{o.order_items.length - 1} item(s)</span>
                   )}
