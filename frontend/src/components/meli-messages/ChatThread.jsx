@@ -54,7 +54,7 @@ const STATUS_LABEL = {
 function ItemContextCard({ itemId, itemTitle, itemStatus, listingProductsMap, onOpenListing }) {
   const product = listingProductsMap?.get(itemId);
   const title = product?.title || itemTitle || itemId;
-  const price = product?.price ?? null;
+  const price = product?.sale_price ?? product?.price ?? null;
   const status = product?.status || itemStatus || null;
   const thumbnail = product?.thumbnail || null;
   const permalink = product?.permalink || null;

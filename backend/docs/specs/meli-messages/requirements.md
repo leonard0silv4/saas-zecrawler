@@ -85,3 +85,4 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 - **P3**: Resposta com mais de 2000 caracteres deve retornar HTTP 400.
 - **P4**: `unreadCount` deve retornar apenas perguntas `UNANSWERED` aplicando os mesmos filtros da listagem.
 - **P5**: Template com nome duplicado para o mesmo owner deve retornar HTTP 409.
+- **P6**: O preço exibido para o anúncio deve refletir o preço efetivo de venda — quando houver promoção ativa (`sale_price`), esse valor deve ser capturado no sync e retornado pelo endpoint `/meli/items/:itemId/details`.

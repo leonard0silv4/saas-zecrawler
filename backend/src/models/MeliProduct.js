@@ -14,6 +14,7 @@ const meliProductSchema = new mongoose.Schema(
     title: String,
     image: String,
     price: Number,
+    sale_price: { type: Number, default: null },
     available_quantity: Number,
     sold_quantity: Number,
     thumbnail: String,

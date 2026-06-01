@@ -21,7 +21,7 @@ O estado completo permanece em `MeliMessagesPage` — os componentes filhos rece
 
 **Listing products:** `listingProductsMap` (Map\<itemId, product\>) substituiu o antigo `listingProduct` (único). A cada mudança em `buyerThread`, todos os `item_id` únicos são buscados via `GET /meli/items/:itemId/details` e adicionados ao map (sem re-fetch se já presente). O map é limpo ao trocar de conversa.
 
-**ItemContextCard:** renderizado inline no `buyerThread.map()` toda vez que o `item_id` muda em relação ao item anterior (`let prevItemId = null`). Exibe thumbnail, badge de status colorido, preço e botão de link externo. Centralizado na thread, visualmente subordinado às bolhas — contexto, não conteúdo.
+**ItemContextCard:** renderizado inline no `buyerThread.map()` toda vez que o `item_id` muda em relação ao item anterior (`let prevItemId = null`). Exibe thumbnail, badge de status colorido, preço e botão de link externo. Centralizado na thread, visualmente subordinado às bolhas — contexto, não conteúdo. O preço exibido usa `sale_price ?? price` para refletir o preço efetivo de venda (quando há promoção ativa, `sale_price` < `price`; `price` é o preço de tabela/riscado no ML).
 
 **Chat bubbles:** `buyerThread` renderizado com bolhas à esquerda (comprador, `bg-gray-100`) e à direita (vendedor, `bg-brand-600`). Auto-scroll para o fim via `useRef + useEffect`.
 

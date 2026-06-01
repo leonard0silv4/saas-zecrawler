@@ -166,6 +166,7 @@ function mapItemToProductDoc(item, { ownerObjectId, conta }) {
     thumbnail: item.thumbnail || null,
     image: item.pictures?.[0]?.url || item.thumbnail || null,
     price: item.price || 0,
+    sale_price: item.sale_price?.amount ?? null,
     available_quantity: availableQty,
     sold_quantity: soldQty,
     status: item.status || null,
@@ -636,7 +637,7 @@ export default {
       const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
       const product = await findCachedProduct(
         ownerObjectId, itemId,
-        "id title thumbnail price available_quantity status permalink SKU"
+        "id title thumbnail price sale_price available_quantity status permalink SKU"
       );
       if (!product) return res.status(404).json({ error: "Anúncio não encontrado no cache" });
       return res.json(product);

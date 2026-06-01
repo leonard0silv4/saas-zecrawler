@@ -16,8 +16,13 @@ GET    /meli/messages/unread-count                     →  requireModule("meliM
 
 GET    /meli/items/:itemId/details                     →  requireModule("meli") → getItemDetails
   → MeliProduct.findOne({ ownerId, id: itemId })
-  → retorna { id, title, thumbnail, price, available_quantity, status, permalink, SKU }
+  → retorna { id, title, thumbnail, price, sale_price, available_quantity, status, permalink, SKU }
   → 404 se não encontrado no cache local
+
+  Preços retornados:
+  - `price`      = preço base/catálogo (campo `item.price` do ML — exibido riscado quando há promoção)
+  - `sale_price` = preço promocional efetivo (campo `item.sale_price.amount` do ML); `null` quando sem promoção ativa
+  - Preço a exibir ao usuário: `sale_price ?? price`
 ```
 
 ## Fluxo de Resposta

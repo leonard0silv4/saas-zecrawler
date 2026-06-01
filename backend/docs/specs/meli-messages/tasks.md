@@ -8,6 +8,10 @@
 - [ ] 4. Teste para `unreadCount` — aplica os mesmos filtros da listagem
 - [ ] 5. Teste para template com nome duplicado — retorna 409
 
+## Correções
+
+- [x] 6. Capturar `sale_price` do ML API no sync — corrigir preço exibido quando há desconto ativo (`item.sale_price?.amount` em `mapItemToProductDoc`; campo `sale_price` adicionado ao schema `MeliProduct`)
+
 ## Melhorias Identificadas
 
 - [ ]* 6. Adicionar suporte a respostas automáticas baseadas em palavras-chave
