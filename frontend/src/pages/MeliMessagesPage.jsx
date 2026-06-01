@@ -450,7 +450,7 @@ export default function MeliMessagesPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full gap-4">
+    <div className="flex flex-col lg:h-full gap-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 shrink-0">
         <div>
@@ -493,7 +493,7 @@ export default function MeliMessagesPage() {
       />
 
       {/* Chat grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-1 min-h-0">
+      <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 lg:flex-1 lg:min-h-0">
         <ConversationList
           conversations={conversations}
           selectedConversationFromId={selectedConversationFromId}
