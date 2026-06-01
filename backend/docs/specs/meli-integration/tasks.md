@@ -7,6 +7,10 @@
 - [ ] 3. Teste para `disconnectAccount` — remove Conta, MeliProducts e MeliQuestions do user_id
 - [ ] 4. Teste para `autocompleteProducts` — retorna apenas itens ativos com estoque
 
+## Manutenção
+
+- [x] 8. Limpeza de produtos órfãos após sync — `deleteMany({ id: { $nin: allIds } })` ao final de `syncProductsForConta`
+
 ## Melhorias Identificadas
 
 - [ ]* 5. Adicionar webhook ML para receber notificações de mudanças em anúncios em tempo real
