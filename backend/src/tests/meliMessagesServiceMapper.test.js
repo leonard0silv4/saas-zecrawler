@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mapQuestionPayload, resolveAnswerFieldsAfterPost } from "../services/meliMessagesService.js";
+import { mapQuestionPayload, parseItemIdFromResource, parseQuestionIdFromResource, resolveAnswerFieldsAfterPost } from "../services/meliMessagesService.js";
 
 test("mapQuestionPayload mapeia pergunta sem resposta como UNANSWERED", () => {
   const payload = mapQuestionPayload(
@@ -70,4 +70,16 @@ test("resolveAnswerFieldsAfterPost ignora text raiz igual à pergunta e usa norm
     "Mesma pergunta?"
   );
   assert.equal(answerText, "Nossa resposta aqui.");
+});
+
+test("parseQuestionIdFromResource extrai id de resource do webhook", () => {
+  assert.equal(parseQuestionIdFromResource("/questions/3957150025"), 3957150025);
+  assert.equal(parseQuestionIdFromResource("questions/123"), 123);
+  assert.equal(parseQuestionIdFromResource("/messages/123"), null);
+});
+
+test("parseItemIdFromResource extrai id de resource de item", () => {
+  assert.equal(parseItemIdFromResource("/items/MLB3593422263"), "MLB3593422263");
+  assert.equal(parseItemIdFromResource("items/mlb123"), "MLB123");
+  assert.equal(parseItemIdFromResource("/questions/123"), null);
 });

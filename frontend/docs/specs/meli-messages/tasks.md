@@ -18,4 +18,4 @@
 - [x] Ordenação de conversas por data (`sortOrder: desc | asc`).
 - [x] Update otimista ao enviar resposta.
 - [ ] Adicionar teste para autocomplete de templates.
-- [ ] Validar refresh com `NotificationContext`.
+- [x] Validar refresh com `NotificationContext` via evento SSE `meli:question`.

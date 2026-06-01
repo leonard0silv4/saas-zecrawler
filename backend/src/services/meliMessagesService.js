@@ -2,6 +2,7 @@ import axios from "axios";
 import mongoose from "mongoose";
 import Conta from "../models/Conta.js";
 import MeliQuestion from "../models/MeliQuestion.js";
+import MeliProduct from "../models/MeliProduct.js";
 import { renewToken } from "../utils/meliToken.js";
 
 const ML_API_BASE = "https://api.mercadolibre.com";
@@ -77,6 +78,23 @@ function toObjectId(value) {
   return new mongoose.Types.ObjectId(String(value));
 }
 
+export function parseQuestionIdFromResource(resource) {
+  const normalized = String(resource || "").trim();
+  const match = /^\/?questions\/(\d+)$/.exec(normalized);
+  return match ? Number(match[1]) : null;
+}
+
+export function parseItemIdFromResource(resource) {
+  const normalized = String(resource || "").trim();
+  const match = /^\/?items\/(ML[A-Z]\d+)$/i.exec(normalized);
+  return match ? match[1].toUpperCase() : null;
+}
+
+function normalizeQuestionResource(resource) {
+  const questionId = parseQuestionIdFromResource(resource);
+  return questionId ? "/questions/" + questionId : null;
+}
+
 async function getActiveContas(ownerId) {
   return Conta.find({
     ownerId: toObjectId(ownerId),
@@ -137,7 +155,7 @@ export function mapQuestionPayload(question, ownerId, contaUserId, itemStatus = 
   };
 }
 
-async function syncQuestionsForConta(ownerId, conta) {
+export async function syncQuestionsForConta(ownerId, conta) {
   const token = await renewToken(conta);
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -224,6 +242,119 @@ export async function syncQuestionsForOwner(ownerId) {
   }
 
   return { ownerId: String(ownerId), accounts: contas.length, syncedCount, results };
+}
+
+export async function syncQuestionsForContaUserId(userId) {
+  const uid = Number(userId);
+  if (!Number.isFinite(uid)) return { ok: true, ignored: true, reason: "invalid_user_id" };
+
+  const conta = await Conta.findOne({
+    user_id: uid,
+    access_token: { $exists: true },
+    disabled: { $ne: true },
+  });
+
+  if (!conta) return { ok: true, ignored: true, reason: "account_not_found", user_id: uid };
+
+  const result = await syncQuestionsForConta(conta.ownerId, conta);
+  return { ok: true, ownerId: String(conta.ownerId), ...result };
+}
+
+export async function syncQuestionsForItemResource(resource) {
+  const itemId = parseItemIdFromResource(resource);
+  if (!itemId) return { ok: true, ignored: true, reason: "invalid_item_resource" };
+
+  const product = await MeliProduct.findOne({ id: itemId }).select("ownerId user_id contaId id").lean();
+  if (!product) return { ok: true, ignored: true, reason: "item_not_found", item_id: itemId };
+
+  const conta = await Conta.findOne({
+    _id: product.contaId,
+    ownerId: product.ownerId,
+    access_token: { $exists: true },
+    disabled: { $ne: true },
+  });
+
+  if (!conta) return { ok: true, ignored: true, reason: "item_account_not_found", item_id: itemId };
+
+  const result = await syncQuestionsForConta(conta.ownerId, conta);
+  return { ok: true, ownerId: String(conta.ownerId), item_id: itemId, ...result };
+}
+
+export async function syncQuestionsForAllActiveContas() {
+  const ownerIds = await Conta.distinct("ownerId", {
+    access_token: { $exists: true },
+    disabled: { $ne: true },
+  });
+
+  const results = [];
+  let syncedCount = 0;
+  for (const ownerId of ownerIds) {
+    const result = await syncQuestionsForOwner(ownerId);
+    results.push(result);
+    syncedCount += result.syncedCount || 0;
+  }
+
+  return { ok: true, ownerId: null, accounts: results.reduce((sum, row) => sum + (row.accounts || 0), 0), syncedCount, results };
+}
+
+export async function syncQuestionFromWebhook({ userId, resource }) {
+  const uid = Number(userId);
+  const normalizedResource = normalizeQuestionResource(resource);
+  const questionId = parseQuestionIdFromResource(resource);
+
+  if (!Number.isFinite(uid) || !normalizedResource || !questionId) {
+    return { ok: true, ignored: true, reason: "invalid_payload" };
+  }
+
+  const conta = await Conta.findOne({
+    user_id: uid,
+    access_token: { $exists: true },
+    disabled: { $ne: true },
+  });
+
+  if (!conta) {
+    return { ok: true, ignored: true, reason: "account_not_found", user_id: uid, question_id: questionId };
+  }
+
+  const ownerId = conta.ownerId;
+  const token = await renewToken(conta);
+  const headers = { Authorization: `Bearer ${token}` };
+  const { data: question } = await axios.get(`${ML_API_BASE}${normalizedResource}`, { headers });
+
+  if (!question?.id) {
+    return {
+      ok: true,
+      ignored: true,
+      reason: "question_not_found",
+      user_id: uid,
+      question_id: questionId,
+      ownerId: String(ownerId),
+    };
+  }
+
+  const [itemStatuses, buyerNicknames] = await Promise.all([
+    question.item_id ? fetchItemStatuses(headers, [question.item_id]) : {},
+    question.from?.id ? fetchBuyerNicknames(headers, [question.from.id]) : {},
+  ]);
+  const itemStatus = question.item_id ? (itemStatuses[question.item_id] ?? null) : null;
+  const mapped = mapQuestionPayload(question, ownerId, conta.user_id, itemStatus, buyerNicknames);
+
+  const result = await MeliQuestion.updateOne(
+    { ownerId: toObjectId(ownerId), question_id: Number(question.id) },
+    { $set: mapped },
+    { upsert: true }
+  );
+
+  return {
+    ok: true,
+    ownerId: String(ownerId),
+    user_id: conta.user_id,
+    question_id: Number(question.id),
+    from_id: mapped.from_id,
+    status: mapped.status,
+    inserted: result.upsertedCount > 0,
+    updated: result.modifiedCount > 0,
+  };
 }
 
 export async function answerQuestion({ ownerId, questionId, text, answeredBy = "manual", answeredByUserId = null }) {

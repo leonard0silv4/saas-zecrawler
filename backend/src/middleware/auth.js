@@ -7,7 +7,8 @@ import { computeAccess, loadTeamPermissions } from "../utils/access.js";
  * Attaches user to req.user.
  */
 export async function authenticate(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1];
+  const queryToken = req.path === "/events" ? req.query?.token : null;
+  const token = req.headers.authorization?.split(" ")[1] || queryToken;
   if (!token) return res.status(401).json({ error: "Token não fornecido" });
 
   try {

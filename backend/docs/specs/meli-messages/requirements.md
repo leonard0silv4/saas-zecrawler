@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualmente ou via templates pré-definidos. Sincroniza perguntas automaticamente via cron a cada 5 minutos.
+Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualmente ou via templates pré-definidos. Recebe novas perguntas por webhook do Mercado Livre e mantém sincronização por cron a cada 5 minutos como fallback.
 
 ---
 
@@ -44,9 +44,17 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 - `lastUsedAt` atualizado automaticamente ao usar o template.
 
 ### RF-08 Sincronização Automática (Cron)
-- A cada 5 minutos, sincroniza perguntas de todos os owners com contas ML ativas.
+- A cada 5 minutos, sincroniza perguntas de todos os owners com contas ML ativas como fallback do webhook.
 - Usa lock por owner para evitar sincronizações paralelas do mesmo owner.
-- Busca apenas perguntas `UNANSWERED` mais recentes que a última sincronização.
+- Busca perguntas mais recentes que a última sincronização.
+
+### RF-09 Webhook de Perguntas ML
+- `POST /hookmessages` recebe notificações públicas do Mercado Livre.
+- Processa `topic: "questions"` diretamente. Como fallback local, quando chega `topic: "items"`, tenta sincronizar pela conta do `user_id`, depois pelo `item_id` em `MeliProduct` e, se ainda não houver mapeamento, antecipa a sincronização de todas as contas ativas com cooldown global de 60 segundos. Demais tópicos retornam HTTP 200 com `ignored: true`.
+- Extrai o ID de `resource` (`/questions/:id`), localiza a `Conta` por `user_id`, busca a pergunta no ML e faz upsert em `MeliQuestion`.
+- Quando `ML_APPLICATION_ID` estiver configurado, ignora notificações de outra aplicação.
+- Após salvar a pergunta, emite SSE `meli:question` para o owner da conta.
+- Retorna HTTP 200 mesmo quando o processamento falha, registrando erro para evitar retentativas excessivas do ML.
 
 ---
 
@@ -55,6 +63,7 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 - Módulo exclusivo do plano Business (`requireModule("meliMessages")`).
 - Perguntas são armazenadas localmente para performance (cache do ML).
 - `raw_payload` armazena o payload original do ML para diagnóstico.
+- Webhook de mensagens deve ser público e idempotente; autenticação ocorre pela correspondência `user_id` -> `Conta` e, opcionalmente, por `ML_APPLICATION_ID`. Logs de eventos ignorados/processados ficam desativados por padrão e só aparecem com `ML_WEBHOOK_DEBUG=true`.
 
 ---
 

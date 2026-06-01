@@ -29,7 +29,9 @@ O estado completo permanece em `MeliMessagesPage` — os componentes filhos rece
 
 **Refresh do thread:** `buyerThreadRefreshKey` (incrementado pós-envio/exclusão) força recarregamento sem trocar a conversa selecionada.
 
-**Polling:** `QUESTIONS_POLL_MS = 5min`, pausa se `document.hidden`.
+**Polling:** `QUESTIONS_POLL_MS = 5min`, pausa se `document.hidden`. Mantido como fallback ao webhook.
+
+**Tempo real:** `NotificationContext` expõe `lastMeliQuestionEvent` recebido por SSE (`meli:question`). Quando o evento pertence à conta selecionada, ou quando vem sem `user_id` por fallback global, `MeliMessagesPage` executa `loadQuestions({ silent: true })`; se o `from_id` é a conversa aberta, incrementa `buyerThreadRefreshKey` para recarregar a thread.
 
 **Hashtag autocomplete:** regex `/(^|\s)#(\w*)$/` sobre o texto antes do cursor; seleção por teclado (ArrowUp/Down, Enter/Tab, Escape).
 

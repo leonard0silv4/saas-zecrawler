@@ -22,7 +22,7 @@ function getGreeting() {
 }
 
 export default function MeliMessagesPage() {
-  const { hasDotForUserId, fetchUnread } = useNotifications();
+  const { hasDotForUserId, fetchUnread, lastMeliQuestionEvent } = useNotifications();
 
   // ─── State ───────────────────────────────────────────────────────────────────
   const [accounts, setAccounts] = useState([]);
@@ -209,6 +209,22 @@ export default function MeliMessagesPage() {
     }, QUESTIONS_POLL_MS);
     return () => clearInterval(id);
   }, [selectedUserId, statusFilter, loadQuestions]);
+
+  useEffect(() => {
+    if (!lastMeliQuestionEvent || !selectedUserId) return;
+    if (
+      lastMeliQuestionEvent.user_id &&
+      String(lastMeliQuestionEvent.user_id) !== String(selectedUserId)
+    ) return;
+
+    loadQuestions({ silent: true });
+    if (
+      selectedConversationFromId &&
+      String(lastMeliQuestionEvent.from_id) === String(selectedConversationFromId)
+    ) {
+      setBuyerThreadRefreshKey((k) => k + 1);
+    }
+  }, [lastMeliQuestionEvent, selectedUserId, selectedConversationFromId, loadQuestions]);
 
   // Product search debounce
   useEffect(() => {
