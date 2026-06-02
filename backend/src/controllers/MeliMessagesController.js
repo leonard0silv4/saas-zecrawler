@@ -396,6 +396,7 @@ export default {
             status: "UNANSWERED",
             "raw_payload.status": { $nin: ML_INVALID_STATUSES },
             item_status: { $nin: INACTIVE_ITEM_STATUSES },
+            answer_status: { $ne: "BANNED" },
           },
         },
         { $group: { _id: "$user_id", count: { $sum: 1 } } },
