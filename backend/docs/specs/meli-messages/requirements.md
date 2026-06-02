@@ -11,6 +11,7 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 ### RF-01 Listagem de Perguntas
 - Filtra automaticamente perguntas com status inválido no ML: `UNDER_REVIEW`, `CLOSED_BY_ML`, `DISABLED`, `DELETED`, `BANNED`.
 - Filtra perguntas de anúncios inativos: `paused`, `closed`, `under_review`, `inactive`.
+- Filtra perguntas cuja resposta foi banida por moderação do ML (`answer_status: "BANNED"`).
 - Filtros opcionais: `status` (UNANSWERED/ANSWERED), `user_id`, `search` (texto ou título do anúncio).
 - Paginação via `page` e `limit` (máximo 100 por página).
 - Retorna `{ items, page, limit, total }`.
@@ -91,6 +92,7 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 
 - **P1**: Perguntas com `raw_payload.status` em `[UNDER_REVIEW, CLOSED_BY_ML, DISABLED, DELETED, BANNED]` nunca devem aparecer na listagem.
 - **P2**: Perguntas com `item_status` em `[paused, closed, under_review, inactive]` nunca devem aparecer na listagem.
+- **P7**: Perguntas com `answer_status: "BANNED"` nunca devem aparecer na listagem nem ser (re)inseridas pelo sync.
 - **P3**: Resposta com mais de 2000 caracteres deve retornar HTTP 400.
 - **P4**: `unreadCount` deve retornar apenas perguntas `UNANSWERED` aplicando os mesmos filtros da listagem.
 - **P5**: Template com nome duplicado para o mesmo owner deve retornar HTTP 409.

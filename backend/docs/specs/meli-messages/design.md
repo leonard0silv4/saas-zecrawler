@@ -93,9 +93,13 @@ filter = {
   ownerId,
   "raw_payload.status": { $nin: ML_INVALID_STATUSES },
   item_status: { $nin: INACTIVE_ITEM_STATUSES },
+  answer_status: { $ne: "BANNED" }, // exclui respostas banidas por moderação (answer_banned_by_moderations)
   // + filtros opcionais: status, user_id, $or search
 }
 ```
+
+No sync (`syncQuestionsForConta`), além dos status inválidos da pergunta, perguntas com
+`answer.status === "BANNED"` também são ignoradas — não são inseridas nem atualizadas no banco.
 
 ## Índices MongoDB
 

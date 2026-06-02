@@ -174,6 +174,8 @@ export default {
         // Excluir perguntas de anúncios pausados/excluídos.
         // $nin com null: MongoDB retorna docs onde o campo é null ou ausente — correto para registros antigos sem item_status.
         item_status: { $nin: INACTIVE_ITEM_STATUSES },
+        // Excluir perguntas cuja resposta foi banida por moderação do ML (answer_banned_by_moderations)
+        answer_status: { $ne: "BANNED" },
       };
 
       if (req.query.status && ["UNANSWERED", "ANSWERED"].includes(req.query.status)) {

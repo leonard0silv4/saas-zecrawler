@@ -201,6 +201,8 @@ export async function syncQuestionsForConta(ownerId, conta) {
 
       // Ignorar perguntas com status inválido do ML (canceladas, sob revisão, etc.)
       if (ML_INVALID_STATUSES.has(String(q.status || "").toUpperCase())) continue;
+      // Ignorar perguntas cuja resposta foi banida por moderação do ML
+      if (String(q.answer?.status || "").toUpperCase() === "BANNED") continue;
 
       const itemStatus = q.item_id ? (itemStatuses[q.item_id] ?? null) : null;
 
