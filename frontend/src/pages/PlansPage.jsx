@@ -6,10 +6,7 @@ import api from "../services/api";
 import { notifySuccess, notifyError } from "../utils/notify.js";
 import { toast } from "sonner";
 import { Alert } from "../components/ui/Alert";
-
-const PLAN_ACCENT = ["border-gray-200", "border-blue-300", "border-violet-400", "border-amber-400"];
-const PLAN_TOP    = ["bg-gray-300",     "bg-blue-400",     "bg-violet-500",     "bg-amber-400"   ];
-const BADGES      = [null, null, "Mais popular", "Completo"];
+import { PLANS_META } from "../config/plansMeta";
 
 export default function PlansPage() {
   const { user, isOwner } = useAuth();
@@ -113,31 +110,47 @@ export default function PlansPage() {
       {subStatus?.subscription && (
         <div className="mb-8 max-w-md mx-auto bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-gray-900">Assinatura ativa</span>
+            <span className="text-sm font-semibold text-gray-900">
+              {subStatus.subscription.status === "trialing" ? "Período de teste" : "Assinatura ativa"}
+            </span>
             <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
               subStatus.subscription.status === "active"   ? "bg-emerald-50 text-emerald-700" :
+              subStatus.subscription.status === "trialing" ? "bg-blue-50 text-blue-700" :
               subStatus.subscription.status === "past_due" ? "bg-red-50 text-red-600" :
                                                              "bg-gray-100 text-gray-500"
             }`}>
               {subStatus.subscription.status === "active"   ? "Ativa" :
+               subStatus.subscription.status === "trialing" ? "Em teste" :
                subStatus.subscription.status === "past_due" ? "Pagamento pendente" :
                subStatus.subscription.status}
             </span>
           </div>
           <p className="text-sm text-gray-500">
-            Plano <strong className="text-gray-800">{subStatus.planConfig?.name}</strong> — renova em{" "}
-            {new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}
+            Plano <strong className="text-gray-800">{subStatus.planConfig?.name}</strong>{" "}
+            {subStatus.subscription.status === "trialing" ? (
+              <>— trial encerra em{" "}
+                <strong className="text-gray-800">
+                  {new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}
+                </strong>
+                . Após isso, a cobrança começa automaticamente.
+              </>
+            ) : (
+              <>— renova em{" "}
+                {new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}
+              </>
+            )}
           </p>
         </div>
       )}
 
       {/* Plan cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
-        {planList.map((plan, i) => {
+        {planList.map((plan) => {
           const isCurrent = (user?.effectivePlan || user?.plan) === plan.slug;
-          const badge     = BADGES[i];
-          const topColor  = PLAN_TOP[i]   ?? "bg-gray-300";
-          const accent    = PLAN_ACCENT[i] ?? "border-gray-200";
+          const meta      = PLANS_META[plan.slug] ?? PLANS_META.free;
+          const badge     = meta.badge;
+          const topColor  = meta.top;
+          const accent    = meta.accent;
 
           return (
             <div
@@ -165,13 +178,20 @@ export default function PlansPage() {
                   {plan.price === 0 ? (
                     <span className="text-3xl font-bold text-gray-900">Grátis</span>
                   ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-sm text-gray-400">R$</span>
-                      <span className="text-3xl font-bold text-gray-900">
-                        {plan.price.toFixed(2).replace(".", ",")}
-                      </span>
-                      <span className="text-sm text-gray-400">/mês</span>
-                    </div>
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-400">R$</span>
+                        <span className="text-3xl font-bold text-gray-900">
+                          {plan.price.toFixed(2).replace(".", ",")}
+                        </span>
+                        <span className="text-sm text-gray-400">/mês</span>
+                      </div>
+                      {plan.trialDays > 0 && (
+                        <p className="text-xs text-emerald-600 font-medium mt-1">
+                          {plan.trialDays} dias grátis para começar
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -230,7 +250,7 @@ export default function PlansPage() {
                     ) : (
                       <>
                         <Zap size={14} />
-                        Assinar agora
+                        {plan.trialDays > 0 ? `Começar ${plan.trialDays} dias grátis` : "Assinar agora"}
                       </>
                     )}
                   </button>

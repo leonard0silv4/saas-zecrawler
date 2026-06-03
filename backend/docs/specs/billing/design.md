@@ -89,6 +89,15 @@ computeAccess(user, owner, extraPermissions):
     allowedModules = planModules ∩ perms
 ```
 
+## Trial de Planos Pagos
+
+- Todos os planos pagos (starter, pro, business) incluem **10 dias de trial** antes da primeira cobrança
+- A constante `TRIAL_DAYS` em `backend/config/plans.js` controla esse valor em um único lugar
+- `StripeController.createCheckout` usa `TRIAL_DAYS` via `subscription_data.trial_period_days`
+- O campo `trialDays` é exposto em cada plano pago no endpoint `GET /plans`
+- Durante o trial, o status da subscription é `"trialing"` (tratado como `"active"` para acesso)
+- Para alterar o período de trial, basta mudar `TRIAL_DAYS` em `config/plans.js`
+
 ## Variáveis de Ambiente Necessárias
 
 | Variável | Descrição |

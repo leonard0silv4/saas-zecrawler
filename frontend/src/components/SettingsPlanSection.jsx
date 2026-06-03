@@ -49,7 +49,14 @@ export default function SettingsPlanSection() {
             <strong className="text-gray-900">{planConfig.maxSellerMonitors.toLocaleString("pt-BR")}</strong>
           </p>
         )}
-        {subStatus?.subscription?.currentPeriodEnd && (
+        {subStatus?.subscription?.status === "trialing" && subStatus.subscription.currentPeriodEnd && (
+          <p className="text-sm text-blue-700 bg-blue-50 rounded-lg px-3 py-2">
+            Em período de teste — encerra em{" "}
+            <strong>{new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}</strong>.
+            Após isso, a cobrança começa automaticamente.
+          </p>
+        )}
+        {subStatus?.subscription?.status !== "trialing" && subStatus?.subscription?.currentPeriodEnd && (
           <p className="text-sm text-gray-600">
             {subStatus.subscription.cancelAtPeriodEnd ? "Acesso até" : "Renova em"}{" "}
             <strong>{new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}</strong>

@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import User from "../models/User.js";
-import { PLANS, planSlugByPriceId } from "../../config/plans.js";
+import { PLANS, TRIAL_DAYS, planSlugByPriceId } from "../../config/plans.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -101,7 +101,7 @@ const StripeController = {
           planSlug,
         },
         subscription_data: {
-          trial_period_days: 10,
+          trial_period_days: TRIAL_DAYS,
           metadata: {
             userId: String(user._id),
             planSlug,

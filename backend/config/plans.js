@@ -1,6 +1,7 @@
-import dotenv from "dotenv";                                                                                                                                                                                     
+import dotenv from "dotenv";
 dotenv.config();
 
+export const TRIAL_DAYS = 10;
 
 export const PLANS = {
   free: {
@@ -18,6 +19,7 @@ export const PLANS = {
     name: "Starter",
     slug: "starter",
     price: 19.9,
+    trialDays: TRIAL_DAYS,
     maxLinks: 100,
     maxSellerMonitors: 3,
     maxTeamUsers: 5,
@@ -35,6 +37,7 @@ export const PLANS = {
     name: "Pro",
     slug: "pro",
     price: 29.9,
+    trialDays: TRIAL_DAYS,
     maxLinks: 500,
     maxSellerMonitors: 10,
     maxTeamUsers: 10,
@@ -50,6 +53,7 @@ export const PLANS = {
     name: "Business",
     slug: "business",
     price: 59.9,
+    trialDays: TRIAL_DAYS,
     maxLinks: 1000,
     maxSellerMonitors: 20,
     maxTeamUsers: 30,

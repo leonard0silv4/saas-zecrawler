@@ -4,6 +4,7 @@ import { Check, X, Minus, Zap, ArrowRight } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
 import api from "../services/api";
+import { PLANS_META } from "../config/plansMeta";
 
 // Matriz de features para a tabela comparativa
 const FEATURE_ROWS = [
@@ -30,12 +31,6 @@ const FEATURE_ROWS = [
   },
 ];
 
-const PLANS_CONFIG = [
-  { slug: "free",     label: "Gratuito",  price: 0,     badge: null,       accent: "border-gray-200",   bg: "bg-gray-50",    textColor: "text-gray-700" },
-  { slug: "starter",  label: "Starter",   price: 19.90, badge: null,       accent: "border-blue-200",   bg: "bg-blue-50",    textColor: "text-blue-700" },
-  { slug: "pro",      label: "Pro",       price: 29.90, badge: "Popular",  accent: "border-brand-400",  bg: "bg-brand-50",   textColor: "text-brand-700" },
-  { slug: "business", label: "Business",  price: 59.90, badge: "Completo", accent: "border-amber-400",  bg: "bg-amber-50",   textColor: "text-amber-700" },
-];
 
 function CellValue({ value }) {
   if (value === true)  return <Check size={18} className="text-emerald-500 mx-auto" />;
@@ -45,10 +40,10 @@ function CellValue({ value }) {
 }
 
 export default function PublicPricingPage() {
-  const [plans, setPlans] = useState({});
+  const [plans, setPlans] = useState([]);
 
   useEffect(() => {
-    api.get("/plans").then((r) => setPlans(r.data)).catch(() => {});
+    api.get("/plans").then((r) => setPlans(Object.values(r.data))).catch(() => {});
   }, []);
 
   return (
@@ -70,49 +65,56 @@ export default function PublicPricingPage() {
           </h1>
           <p className="text-gray-500 text-lg max-w-xl mx-auto">
             Comece gratuitamente e evolua conforme sua operação cresce.
-            Cancele quando quiser, sem multas.
+            Planos pagos incluem <strong className="text-gray-700">10 dias grátis</strong>. Cancele quando quiser, sem multas.
           </p>
         </div>
 
         {/* Cards resumo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
-          {PLANS_CONFIG.map((pc) => {
-            const plan = plans[pc.slug];
+          {plans.map((plan) => {
+            const meta = PLANS_META[plan.slug] ?? PLANS_META.free;
             return (
               <div
-                key={pc.slug}
-                className={`relative bg-white rounded-2xl border-2 ${pc.accent} p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow`}
+                key={plan.slug}
+                className={`relative bg-white rounded-2xl border-2 ${meta.accent} p-6 flex flex-col shadow-sm hover:shadow-md transition-shadow`}
               >
-                {pc.badge && (
+                {meta.publicBadge && (
                   <span className={`absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-1 rounded-full ${
-                    pc.slug === "pro" ? "bg-brand-600 text-white" : "bg-amber-500 text-white"
+                    plan.slug === "pro" ? "bg-brand-600 text-white" : "bg-amber-500 text-white"
                   }`}>
-                    {pc.badge}
+                    {meta.publicBadge}
                   </span>
                 )}
 
-                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-4 ${pc.bg}`}>
-                  <Zap size={20} className={pc.textColor} />
+                <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-4 ${meta.bg}`}>
+                  <Zap size={20} className={meta.textColor} />
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-900 mb-1">{pc.label}</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">{plan.name}</h3>
 
                 <div className="mb-5">
-                  {pc.price === 0 ? (
+                  {plan.price === 0 ? (
                     <span className="text-3xl font-bold text-gray-900">Grátis</span>
                   ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-sm text-gray-400">R$</span>
-                      <span className="text-3xl font-bold text-gray-900">
-                        {pc.price.toFixed(2).replace(".", ",")}
-                      </span>
-                      <span className="text-sm text-gray-400">/mês</span>
-                    </div>
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm text-gray-400">R$</span>
+                        <span className="text-3xl font-bold text-gray-900">
+                          {plan.price.toFixed(2).replace(".", ",")}
+                        </span>
+                        <span className="text-sm text-gray-400">/mês</span>
+                      </div>
+                      {plan.trialDays > 0 && (
+                        <p className="text-xs text-emerald-600 font-medium mt-1">
+                          {plan.trialDays} dias grátis para começar
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
                 <ul className="space-y-2 mb-6 flex-1 text-sm text-gray-600">
-                  {plan?.features?.map((f) => (
+                  {plan.features?.map((f) => (
                     <li key={f} className="flex items-start gap-2">
                       <Check size={14} className="text-emerald-500 mt-0.5 shrink-0" />
                       {f}
@@ -123,14 +125,14 @@ export default function PublicPricingPage() {
                 <Link
                   to="/register"
                   className={`w-full py-2.5 rounded-lg text-sm font-medium text-center transition-colors flex items-center justify-center gap-1.5 ${
-                    pc.slug === "pro"
+                    plan.slug === "pro"
                       ? "bg-brand-600 text-white hover:bg-brand-700"
-                      : pc.slug === "free"
+                      : plan.slug === "free"
                       ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       : "border border-gray-200 text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  Começar agora
+                  {plan.trialDays > 0 ? `Começar ${plan.trialDays} dias grátis` : "Começar agora"}
                   <ArrowRight size={14} />
                 </Link>
               </div>
@@ -150,14 +152,17 @@ export default function PublicPricingPage() {
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left px-6 py-4 text-sm font-medium text-gray-500 w-1/3">Recurso</th>
-                  {PLANS_CONFIG.map((pc) => (
-                    <th key={pc.slug} className="px-4 py-4 text-center w-1/6">
-                      <span className={`text-sm font-bold ${pc.textColor}`}>{pc.label}</span>
-                      <div className="text-xs text-gray-400 font-normal mt-0.5">
-                        {pc.price === 0 ? "Grátis" : `R$ ${pc.price.toFixed(2).replace(".", ",")}/mês`}
-                      </div>
-                    </th>
-                  ))}
+                  {plans.map((plan) => {
+                    const meta = PLANS_META[plan.slug] ?? PLANS_META.free;
+                    return (
+                      <th key={plan.slug} className="px-4 py-4 text-center w-1/6">
+                        <span className={`text-sm font-bold ${meta.textColor}`}>{plan.name}</span>
+                        <div className="text-xs text-gray-400 font-normal mt-0.5">
+                          {plan.price === 0 ? "Grátis" : `R$ ${plan.price.toFixed(2).replace(".", ",")}/mês`}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -197,7 +202,7 @@ export default function PublicPricingPage() {
             <Zap size={18} />
             Criar conta grátis
           </Link>
-          <p className="text-xs text-gray-400 mt-3">Sem cartão de crédito · Cancele quando quiser</p>
+          <p className="text-xs text-gray-400 mt-3">Sem cartão de crédito · 10 dias grátis nos planos pagos · Cancele quando quiser</p>
         </div>
       </div>
     </PublicLayout>
