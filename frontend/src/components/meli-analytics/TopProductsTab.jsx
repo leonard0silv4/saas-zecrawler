@@ -1,4 +1,4 @@
-import { Package, ExternalLink } from "lucide-react";
+import { Package, ExternalLink, DollarSign } from "lucide-react";
 import { formatBRL } from "./formatBRL";
 
 export function TopProductsTab({ topProducts, loading, topSort, setTopSort, topOnlyActive, setTopOnlyActive }) {
@@ -24,19 +24,23 @@ export function TopProductsTab({ topProducts, loading, topSort, setTopSort, topO
           </button>
           <div className="flex bg-gray-100 rounded-lg p-0.5 text-xs">
             {[
-              { value: "receita",  label: "💰 Receita" },
-              { value: "unidades", label: "📦 Unidades" },
-            ].map((s) => (
-              <button
-                key={s.value}
-                onClick={() => setTopSort(s.value)}
-                className={`px-3 py-1.5 rounded-md transition-all font-semibold ${
-                  topSort === s.value ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
+              { value: "receita",  label: "Receita",  icon: DollarSign },
+              { value: "unidades", label: "Unidades", icon: Package },
+            ].map((s) => {
+              const Icon = s.icon;
+              return (
+                <button
+                  key={s.value}
+                  onClick={() => setTopSort(s.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all font-semibold ${
+                    topSort === s.value ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Icon size={12} className="shrink-0" />
+                  {s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

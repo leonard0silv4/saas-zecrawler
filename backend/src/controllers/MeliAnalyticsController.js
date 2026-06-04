@@ -4,6 +4,7 @@ import { startOfDay, subDays, eachDayOfInterval, format } from "date-fns";
 import Conta from "../models/Conta.js";
 import MeliOrder from "../models/MeliOrder.js";
 import MeliProduct from "../models/MeliProduct.js";
+import MeliAiAnalysis from "../models/MeliAiAnalysis.js";
 import { renewToken } from "../utils/meliToken.js";
 import { getOwnerId } from "../middleware/auth.js";
 import { syncProductsForConta } from "./MeliController.js";
@@ -448,6 +449,7 @@ const MeliAnalyticsController = {
       if (filterType === "full") query.isFull = true;
       if (filterType === "normal") query.isFull = { $ne: true };
       if (filterType === "ruptura") query.alertRuptura = "RUPTURA";
+      if (filterType === "critico") query.alertRuptura = "CRÍTICO";
 
       // Sem sortBy → ordem natural (sem sort explícito)
       let sort = {};
@@ -468,6 +470,124 @@ const MeliAnalyticsController = {
     } catch (err) {
       console.error("analytics inventory error:", err);
       res.status(500).json({ error: "Erro ao listar inventário" });
+    }
+  },
+
+  async aiAnalysis(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const { user_id, period = "30d" } = req.query;
+      const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
+      const userIdNum = user_id ? Number(user_id) : null;
+
+      // Verifica cache do dia
+      const todayStart = startOfDay(new Date());
+      const cached = await MeliAiAnalysis.findOne({
+        ownerId: ownerObjectId,
+        user_id: userIdNum,
+        period,
+        generatedAt: { $gte: todayStart },
+      }).sort({ generatedAt: -1 }).lean();
+
+      if (cached) {
+        return res.json({ analysis: cached.analysis, generatedAt: cached.generatedAt, cached: true });
+      }
+
+      // Coleta dados em paralelo para montar o payload compacto
+      const { from, to } = periodToDates(period);
+      const orderFilter = {
+        ownerId: ownerObjectId,
+        status: "paid",
+        date_closed: { $gte: from, $lte: to },
+      };
+      if (userIdNum) orderFilter.user_id = userIdNum;
+
+      const productFilter = { ownerId: ownerObjectId };
+      if (userIdNum) productFilter.user_id = userIdNum;
+
+      const [summaryAgg, top5, alertCounts] = await Promise.all([
+        MeliOrder.aggregate([
+          { $match: orderFilter },
+          { $group: { _id: null, faturamento: { $sum: "$total_amount" }, taxa_ml: { $sum: "$ml_fee" }, pedidos: { $sum: 1 } } },
+        ]),
+        MeliOrder.aggregate([
+          { $match: orderFilter },
+          { $unwind: "$order_items" },
+          { $group: { _id: "$order_items.item_id", nome: { $first: "$order_items.title" }, unidades: { $sum: "$order_items.quantity" }, receita: { $sum: { $multiply: ["$order_items.quantity", "$order_items.unit_price"] } } } },
+          { $sort: { receita: -1 } },
+          { $limit: 5 },
+          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1 } },
+        ]),
+        MeliProduct.aggregate([
+          { $match: productFilter },
+          { $group: { _id: "$alertRuptura", count: { $sum: 1 } } },
+        ]),
+      ]);
+
+      const s = summaryAgg[0] || {};
+      const faturamento = s.faturamento || 0;
+      const taxa_ml = s.taxa_ml || 0;
+      const pedidos = s.pedidos || 0;
+      const liq = faturamento - taxa_ml;
+      const ticket_medio = pedidos > 0 ? faturamento / pedidos : 0;
+      const taxa_ml_pct = faturamento > 0 ? (taxa_ml / faturamento) * 100 : 0;
+
+      const alertMap = Object.fromEntries(alertCounts.map((a) => [a._id, a.count]));
+
+      const payload = {
+        periodo: period,
+        metricas: {
+          faturamento: Math.round(faturamento * 100) / 100,
+          liquido_marketplace: Math.round(liq * 100) / 100,
+          pedidos,
+          ticket_medio: Math.round(ticket_medio * 100) / 100,
+          taxa_ml_pct: Math.round(taxa_ml_pct * 10) / 10,
+        },
+        top5_produtos: top5.map((p) => ({
+          nome: p.nome,
+          receita: Math.round(p.receita * 100) / 100,
+          unidades: p.unidades,
+        })),
+        estoque: {
+          em_ruptura: alertMap["RUPTURA"] || 0,
+          nivel_critico: alertMap["CRÍTICO"] || 0,
+          nivel_baixo: alertMap["BAIXO"] || 0,
+        },
+      };
+
+      const systemPrompt = `Você é um analista de e-commerce especializado em Mercado Livre Brasil.
+Com base nos dados fornecidos, gere exatamente 3 insights objetivos e ações práticas para o vendedor.
+Responda em português do Brasil. Seja direto e específico. Não invente dados nem mencione valores que não estejam no input.
+Formato: use bullets (•). Máximo 4 linhas por insight. Não inclua título ou introdução.`;
+
+      const { data: openaiRes } = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-4o-mini",
+          max_tokens: 600,
+          temperature: 0.4,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: JSON.stringify(payload) },
+          ],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.API_GPT_IA}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const analysis = openaiRes.choices?.[0]?.message?.content?.trim() || "";
+      const generatedAt = new Date();
+
+      await MeliAiAnalysis.create({ ownerId: ownerObjectId, user_id: userIdNum, period, analysis, generatedAt });
+
+      res.json({ analysis, generatedAt, cached: false });
+    } catch (err) {
+      console.error("analytics ai-analysis error:", err.response?.data || err.message);
+      res.status(500).json({ error: "Erro ao gerar análise com IA" });
     }
   },
 };

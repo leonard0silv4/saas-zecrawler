@@ -1,14 +1,15 @@
 import { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Package, ArrowUp, ArrowDown } from "lucide-react";
+import { Package, ArrowUp, ArrowDown, AlertTriangle, AlertCircle } from "lucide-react";
 import { RupturaAlert } from "./RupturaAlert";
 import { formatBRL } from "./formatBRL";
 
 const INVENTORY_FILTERS = [
-  { label: "Todos",      value: "" },
-  { label: "Full",       value: "full" },
-  { label: "Normal",     value: "normal" },
-  { label: "⚠️ Ruptura", value: "ruptura" },
+  { label: "Todos",   value: "" },
+  { label: "Full",    value: "full" },
+  { label: "Normal",  value: "normal" },
+  { label: "Ruptura", value: "ruptura", icon: AlertTriangle, iconColor: "text-red-500" },
+  { label: "Crítico", value: "critico", icon: AlertCircle,   iconColor: "text-orange-500" },
 ];
 
 const SORT_OPTIONS = [
@@ -67,19 +68,28 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
             })}
           </div>
           <div className="flex gap-1">
-            {INVENTORY_FILTERS.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setInventoryFilter(f.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  inventoryFilter === f.value
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+            {INVENTORY_FILTERS.map((f) => {
+              const Icon = f.icon;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => setInventoryFilter(f.value)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    inventoryFilter === f.value
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {Icon && (
+                    <Icon
+                      size={12}
+                      className={inventoryFilter === f.value ? "text-white" : f.iconColor}
+                    />
+                  )}
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

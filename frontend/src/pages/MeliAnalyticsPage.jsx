@@ -3,7 +3,7 @@ import {
   ComposedChart, Area, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine,
 } from "recharts";
-import { BarChart2, RefreshCw, TrendingUp, ShoppingCart, DollarSign, Package } from "lucide-react";
+import { BarChart2, RefreshCw, TrendingUp, ShoppingCart, DollarSign, Package, Sparkles } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import api from "../services/api";
@@ -16,6 +16,7 @@ import { InventoryTab }  from "../components/meli-analytics/InventoryTab";
 import { TopProductsTab } from "../components/meli-analytics/TopProductsTab";
 import { OrdersTab }     from "../components/meli-analytics/OrdersTab";
 import { formatBRL }    from "../components/meli-analytics/formatBRL";
+import { AIInsightsSection } from "../components/meli-analytics/AIInsightsSection";
 
 const PERIODS = [
   { label: "7d",  value: "7d" },
@@ -27,7 +28,7 @@ const PERIODS = [
 export default function MeliAnalyticsPage() {
   const [accounts,        setAccounts]        = useState([]);
   const [selectedAccount, setSelectedAccount] = useState("");
-  const [unifiedView, setUnifiedView] = useState(false);
+  const [unifiedView, setUnifiedView] = useState(true);
   const [period,          setPeriod]          = useState("30d");
   const [activeTab,       setActiveTab]       = useState("estoque");
 
@@ -53,6 +54,11 @@ export default function MeliAnalyticsPage() {
   const [loadingInventory, setLoadingInventory] = useState(false);
   const [selectedProduct,  setSelectedProduct]  = useState(null);
 
+  const [aiAnalysis,        setAiAnalysis]        = useState(null);
+  const [aiGeneratedAt,     setAiGeneratedAt]     = useState(null);
+  const [aiAlreadyUsedToday, setAiAlreadyUsedToday] = useState(false);
+  const [loadingAI,         setLoadingAI]         = useState(false);
+
   useEffect(() => {
     api.get("/meli/accounts").then(({ data }) => {
       setAccounts(data);
@@ -70,6 +76,7 @@ export default function MeliAnalyticsPage() {
     if (!unifiedView && !selectedAccount) return;
     loadSummary();
     loadChart();
+    loadAiCache();
   }, [selectedAccount, period, unifiedView]);
 
   useEffect(() => {
@@ -96,6 +103,31 @@ export default function MeliAnalyticsPage() {
   useEffect(() => {
     if (activeTab === "top" && (unifiedView || selectedAccount)) loadTop();
   }, [topSort, topOnlyActive, activeTab, selectedAccount, unifiedView]);
+
+  async function loadAiCache() {
+    try {
+      const { data } = await api.get("/meli/analytics/ai-analysis", { params: params() });
+      if (data.cached) {
+        setAiAnalysis(data.analysis);
+        setAiGeneratedAt(data.generatedAt);
+        setAiAlreadyUsedToday(true);
+      }
+    } catch { /* sem cache, ignora */ }
+  }
+
+  async function generateAiAnalysis() {
+    setLoadingAI(true);
+    try {
+      const { data } = await api.post("/meli/analytics/ai-analysis", null, { params: params() });
+      setAiAnalysis(data.analysis);
+      setAiGeneratedAt(data.generatedAt);
+      setAiAlreadyUsedToday(true);
+    } catch (err) {
+      notifyError(err.response?.data?.error || "Erro ao gerar análise com IA");
+    } finally {
+      setLoadingAI(false);
+    }
+  }
 
   async function loadSummary() {
     setLoadingSummary(true);
@@ -215,6 +247,15 @@ export default function MeliAnalyticsPage() {
           >
             <RefreshCw size={13} /> Re-sync 90d
           </button>
+          <button
+            onClick={generateAiAnalysis}
+            disabled={loadingAI || loadingSummary || aiAlreadyUsedToday || (unifiedView ? accounts.length === 0 : !selectedAccount)}
+            title={aiAlreadyUsedToday ? "Análise gerada hoje · disponível amanhã" : "Gerar análise com IA"}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Sparkles size={13} className={loadingAI ? "animate-pulse" : ""} />
+            {loadingAI ? "Gerando…" : aiAlreadyUsedToday ? "IA usada hoje" : "Análise IA"}
+          </button>
         </div>
       </div>
 
@@ -225,6 +266,15 @@ export default function MeliAnalyticsPage() {
         <KpiCard icon={ShoppingCart} label="Pedidos"         value={loadingSummary ? "…" : (summary?.pedidos ?? "—")}            sub="Pedidos pagos"                       color="text-violet-700" accent="bg-violet-50" />
         <KpiCard icon={Package}    label="Ticket Médio"      value={loadingSummary ? "…" : formatBRL(summary?.ticket_medio)}                                               color="text-orange-700" accent="bg-orange-50" />
       </div>
+
+      {/* Painel de Análise IA */}
+      {aiAnalysis && (
+        <AIInsightsSection
+          aiAnalysis={aiAnalysis}
+          aiGeneratedAt={aiGeneratedAt}
+          onDismiss={() => setAiAnalysis(null)}
+        />
+      )}
 
       {/* Gráfico Receita & Pedidos */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
