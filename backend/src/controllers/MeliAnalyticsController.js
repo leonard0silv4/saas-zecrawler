@@ -493,6 +493,10 @@ const MeliAnalyticsController = {
         return res.json({ analysis: cached.analysis, generatedAt: cached.generatedAt, cached: true });
       }
 
+      if (req.method === "GET") {
+        return res.json({ analysis: null, cached: false });
+      }
+
       // Coleta dados em paralelo para montar o payload compacto
       const { from, to } = periodToDates(period);
       const orderFilter = {
