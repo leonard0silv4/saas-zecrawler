@@ -38,6 +38,12 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 - `GET /meli/messages/unread-count` retorna `{ perAccount: { [user_id]: count } }`.
 - Aplica os mesmos filtros de status inválido e anúncio inativo da listagem.
 
+### RF-10 Sugestões Rápidas Baseadas em Histórico
+- `GET /meli/messages/suggestions?q=<texto>&user_id=<loja>` retorna até 5 sugestões de resposta.
+- As sugestões são extraídas de perguntas já respondidas (`status: "ANSWERED"`) do mesmo owner, priorizando a loja selecionada.
+- Quando a API não retorna resultados (sem histórico ou sem match), o frontend exibe sugestões estáticas baseadas em keyword matching como fallback.
+- Sugestões duplicadas (mesmo texto normalizado) são removidas antes de retornar.
+
 ### RF-07 Templates de Resposta
 - CRUD completo: criar, listar, atualizar, deletar.
 - Nome único por owner.

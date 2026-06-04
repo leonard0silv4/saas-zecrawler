@@ -120,7 +120,7 @@ export default function MeliMessagesPage() {
     );
   }, [selectedConversation]);
 
-  const smartSuggestions = useSmartSuggestions(activeQuestion?.text);
+  const smartSuggestions = useSmartSuggestions(activeQuestion?.text, selectedUserId);
 
   const filteredProducts = useMemo(() => {
     const s = productSearch.trim().toLowerCase();

@@ -27,6 +27,42 @@ function parsePage(value, fallback) {
   return parsed;
 }
 
+const PT_STOPWORDS = new Set([
+  "o","a","os","as","um","uma","de","do","da","dos","das","em","no","na",
+  "nos","nas","por","para","com","que","e","é","se","ao","me","te","eu",
+  "tu","ele","ela","isso","este","esta","esse","essa","tem","ter","foi",
+  "ser","ou","mas","já","não","sim","qual","quais","quando","como","onde",
+  "porque","pois","mais","menos","bem","muito","vc","voce","vocês","ola",
+  "olá","bom","dia","boa","tarde","noite","tudo","certo","ok","seu","sua",
+  "seus","suas","meu","minha","meus","minhas","este","aquele","aquela",
+]);
+
+function extractKeywords(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\sáéíóúãõâêîôûàèìòùç]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !PT_STOPWORDS.has(w))
+    .slice(0, 6);
+}
+
+function rankAndDeduplicate(docs, preferredUserId) {
+  const seen = new Set();
+  return docs
+    .sort((a, b) => {
+      const aMatch = a.user_id === preferredUserId ? 0 : 1;
+      const bMatch = b.user_id === preferredUserId ? 0 : 1;
+      return aMatch - bMatch;
+    })
+    .filter((doc) => {
+      if (!doc.answer_text) return false;
+      const key = doc.answer_text.trim().toLowerCase().slice(0, 80);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 export default {
   async hookMessages(req, res) {
     const payload = req.body || {};
@@ -408,6 +444,50 @@ export default {
       return res.json({ perAccount });
     } catch (error) {
       return res.status(500).json({ error: "Erro ao consultar mensagens não respondidas" });
+    }
+  },
+
+  async getSuggestions(req, res) {
+    try {
+      const ownerId = toObjectId(getOwnerId(req));
+      const rawText = String(req.query.q || "").trim();
+      if (!rawText) return res.json({ suggestions: [] });
+
+      const preferredUserId =
+        req.query.user_id && /^\d+$/.test(String(req.query.user_id))
+          ? Number(req.query.user_id)
+          : null;
+
+      const keywords = extractKeywords(rawText);
+      if (keywords.length === 0) return res.json({ suggestions: [] });
+
+      const regexClauses = keywords.map((kw) => ({
+        text: { $regex: kw, $options: "i" },
+      }));
+
+      const rawResults = await MeliQuestion.find({
+        ownerId,
+        status: "ANSWERED",
+        answer_text: { $exists: true, $ne: "" },
+        $or: regexClauses,
+      })
+        .sort({ date_created: -1 })
+        .limit(30)
+        .select("user_id text answer_text item_title date_created")
+        .lean();
+
+      const ranked = rankAndDeduplicate(rawResults, preferredUserId);
+
+      const suggestions = ranked.slice(0, 5).map((doc) => ({
+        text: doc.answer_text,
+        sourceQuestion: doc.text,
+        itemTitle: doc.item_title || null,
+        sameStore: preferredUserId ? doc.user_id === preferredUserId : false,
+      }));
+
+      return res.json({ suggestions });
+    } catch (error) {
+      return res.status(500).json({ error: "Erro ao buscar sugestões" });
     }
   },
 };

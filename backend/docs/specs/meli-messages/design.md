@@ -13,6 +13,7 @@ PUT    /meli/messages/templates/:id                    →  requireModule("meliM
 DELETE /meli/messages/templates/:id                    →  requireModule("meliMessages") → deleteTemplate
 POST   /meli/messages/sync                             →  requireModule("meliMessages") → sync
 GET    /meli/messages/unread-count                     →  requireModule("meliMessages") → unreadCount
+GET    /meli/messages/suggestions                      →  requireModule("meliMessages") → getSuggestions
 POST   /hookmessages                                  →  público → hookMessages (webhook ML questions)
 
 GET    /meli/items/:itemId/details                     →  requireModule("meli") → getItemDetails
@@ -100,6 +101,35 @@ filter = {
 
 No sync (`syncQuestionsForConta`), além dos status inválidos da pergunta, perguntas com
 `answer.status === "BANNED"` também são ignoradas — não são inseridas nem atualizadas no banco.
+
+## Fluxo de Sugestões Rápidas
+
+```
+GET /meli/messages/suggestions?q=<texto>&user_id=<loja>
+  → extractKeywords(q): remove stopwords PT, tokens >= 3 chars, até 6 keywords
+  → se keywords vazio → { suggestions: [] }
+  → MeliQuestion.find({
+      ownerId,
+      status: "ANSWERED",
+      answer_text: { $exists: true, $ne: "" },
+      $or: [{ text: /kw1/i }, { text: /kw2/i }, ...]
+    }).sort({ date_created: -1 }).limit(30)
+  → rankAndDeduplicate(results, preferredUserId):
+      - ordena: same-store primeiro
+      - remove duplicatas por answer_text (primeiros 80 chars normalizados)
+  → retorna top 5: { text, sourceQuestion, itemTitle, sameStore }
+
+Frontend (useSmartSuggestions):
+  → chama API quando activeQuestion.text muda
+  → se API retorna resultados: usa answer_text das perguntas históricas
+  → se API retorna vazio: fallback para SMART_SUGGESTIONS_RULES (keyword matching estático)
+
+UI (ChatThread):
+  → botão "Sugestões" (âmbar, FlaskConical icon) aparece no action row junto com Templates e Anúncios
+  → botão só é renderizado quando smartSuggestions.length > 0
+  → ao clicar abre Modal com badge "Experimental" + descrição + lista de sugestões clicáveis
+  → clicar numa sugestão: insere no textarea via applySuggestion() e fecha a modal
+```
 
 ## Índices MongoDB
 

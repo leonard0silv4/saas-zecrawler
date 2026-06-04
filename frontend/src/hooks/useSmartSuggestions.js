@@ -1,14 +1,6 @@
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
-/**
- * Regras de sugestão rápida genéricas para qualquer loja no Mercado Livre.
- * Cada regra tem:
- *   - keywords: strings a detectar na pergunta (case-insensitive, busca parcial)
- *   - suggestions: respostas rápidas sugeridas (máx 2 por categoria)
- *
- * Edite este arquivo para ajustar sugestões sem tocar na lógica principal.
- * Ordem importa: categorias mais frequentes primeiro.
- */
 const SMART_SUGGESTIONS_RULES = [
   {
     keywords: ["frete", "entrega", "envio", "prazo", "demora", "chegada", "despacho"],
@@ -83,13 +75,32 @@ function getSmartSuggestions(questionText) {
   return results.slice(0, 3);
 }
 
-/**
- * Retorna sugestões de resposta rápida baseadas no texto da pergunta do comprador.
- * Recalcula automaticamente quando a pergunta muda.
- *
- * @param {string} questionText - Texto da pergunta do comprador
- * @returns {string[]} Array com até 3 sugestões de resposta
- */
-export function useSmartSuggestions(questionText) {
-  return useMemo(() => getSmartSuggestions(questionText ?? ""), [questionText]);
+export function useSmartSuggestions(questionText, selectedUserId) {
+  const [apiSuggestions, setApiSuggestions] = useState([]);
+
+  useEffect(() => {
+    if (!questionText) {
+      setApiSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get("/meli/messages/suggestions", {
+        params: { q: questionText, user_id: selectedUserId || "" },
+      })
+      .then(({ data }) => {
+        if (!cancelled && Array.isArray(data?.suggestions)) {
+          setApiSuggestions(data.suggestions);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setApiSuggestions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [questionText, selectedUserId]);
+
+  if (apiSuggestions.length > 0) return apiSuggestions.map((s) => s.text);
+  return getSmartSuggestions(questionText ?? "");
 }

@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowDown,
   ArrowUp,
   Check,
   CheckCircle2,
   ExternalLink,
+  FlaskConical,
   Hash,
   Loader2,
   MessageSquare,
@@ -12,9 +13,9 @@ import {
   Send,
   ShoppingBag,
   Trash2,
-  Zap,
 } from "lucide-react";
 import { getInitials } from "./utils";
+import { Modal } from "../ui/Modal";
 
 function cn(...c) { return c.filter(Boolean).join(" "); }
 
@@ -154,6 +155,7 @@ export function ChatThread({
   setThreadSortOrder,
 }) {
   const chatContainerRef = useRef(null);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   useEffect(() => {
     const el = chatContainerRef.current;
@@ -182,6 +184,7 @@ export function ChatThread({
   );
 
   return (
+    <>
     <section className="bg-white rounded-lg border border-gray-200 lg:col-span-3 flex flex-col overflow-hidden shadow-sm min-h-[400px] lg:flex-1 lg:min-h-0">
       {/* Header */}
       <div className="px-5 py-4 border-b border-gray-200 flex items-center gap-3.5 shrink-0">
@@ -319,27 +322,6 @@ export function ChatThread({
           </div>
         ) : (
           <>
-            {/* Smart suggestions */}
-            {smartSuggestions.length > 0 && (
-              <div>
-                <p className="text-xs text-gray-600 mb-2.5 flex items-center gap-2 font-semibold">
-                  <Zap size={14} /> Sugestões rápidas
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {smartSuggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => applySuggestion(s)}
-                      className="text-xs px-3.5 py-2 rounded-lg border border-brand-300 text-brand-700 bg-brand-50 hover:bg-brand-100 font-medium transition-colors duration-200"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Textarea with hashtag autocomplete */}
             <div className="relative" ref={hashAnchorRef}>
               <textarea
@@ -397,6 +379,18 @@ export function ChatThread({
                 <ShoppingBag size={13} /> Anúncios
               </button>
 
+              {/* Suggestions button */}
+              {smartSuggestions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSuggestionsOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-200 text-amber-600 bg-amber-50 text-xs font-semibold hover:bg-amber-100 hover:border-amber-300 transition-all duration-200"
+                  title="Ver sugestões de resposta"
+                >
+                  <FlaskConical size={13} /> Sugestões
+                </button>
+              )}
+
               {/* Send button */}
               <button
                 type="button"
@@ -416,5 +410,38 @@ export function ChatThread({
         )}
       </div>
     </section>
+
+    <Modal
+      isOpen={suggestionsOpen}
+      onClose={() => setSuggestionsOpen(false)}
+      title="Sugestões Rápidas"
+      size="md"
+    >
+      <div className="flex items-start gap-3 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+        <FlaskConical size={16} className="text-amber-600 shrink-0 mt-0.5" />
+        <div>
+          <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Experimental</span>
+          <p className="text-xs text-amber-600 mt-0.5">
+            Sugestões geradas com base nas respostas anteriores da sua loja. Os resultados podem variar.
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2">
+        {smartSuggestions.map((s, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => {
+              applySuggestion(s);
+              setSuggestionsOpen(false);
+            }}
+            className="text-left text-sm px-4 py-3 rounded-xl border border-gray-200 text-gray-700 bg-gray-50 hover:bg-brand-50 hover:border-brand-300 hover:text-brand-700 font-medium transition-colors duration-200 leading-relaxed"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </Modal>
+    </>
   );
 }

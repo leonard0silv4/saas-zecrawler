@@ -96,6 +96,7 @@ r.get("/meli/products/autocomplete", requireModule("meli"), MeliController.autoc
 r.get("/meli/items/:itemId/permalink", requireModule("meli"), MeliController.getItemPermalink);
 r.get("/meli/items/:itemId/details", requireModule("meli"), MeliController.getItemDetails);
 r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShipment);
+r.get("/meli/messages/suggestions", requireModule("meliMessages"), MeliMessagesController.getSuggestions);
 r.get("/meli/messages/questions", requireModule("meliMessages"), MeliMessagesController.listQuestions);
 r.get("/meli/messages/questions/buyer-thread", requireModule("meliMessages"), MeliMessagesController.buyerThread);
 r.post("/meli/messages/questions/:questionId/reply", requireModule("meliMessages"), MeliMessagesController.replyQuestion);
