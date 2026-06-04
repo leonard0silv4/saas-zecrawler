@@ -1,22 +1,13 @@
 import superagent from "superagent";
 import * as cheerio from "cheerio";
-import Cookie from "../models/Cookie.js";
-
-/**
- * Loads cookies for a specific owner from MongoDB.
- */
-async function loadCookies(ownerId) {
-  const cookies = await Cookie.find({ ownerId }).lean();
-  if (!cookies.length) return "";
-  return cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-}
+import { loadCookiesWithFallback } from "./cookieLoader.js";
 
 /**
  * Scrapes product data from a Mercado Livre URL.
  * Retries up to maxRetries times on failure.
  */
 export async function scrapeProductData(url, ownerId, maxRetries = 3) {
-  const cookieString = await loadCookies(ownerId);
+  const { cookieString } = await loadCookiesWithFallback(ownerId);
   let attempt = 0;
 
   while (attempt < maxRetries) {
@@ -108,7 +99,7 @@ export async function scrapeProductData(url, ownerId, maxRetries = 3) {
  */
 export async function extractLinks(url, ownerId) {
   try {
-    const cookieString = await loadCookies(ownerId);
+    const { cookieString } = await loadCookiesWithFallback(ownerId);
     const request = superagent.get(url).timeout({ response: 5000, deadline: 10000 });
     if (cookieString) request.set("Cookie", cookieString);
 

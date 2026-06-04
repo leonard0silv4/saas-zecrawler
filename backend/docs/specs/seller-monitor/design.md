@@ -55,3 +55,7 @@ resetStaleByTimeout(minutes):
 sellerPageSchema.index({ ownerId: 1, url: 1 }, { unique: true });
 sellerProductSchema.index({ sellerId: 1, url: 1 }, { unique: true });
 ```
+
+## Cookies e Fallback
+
+`extractProductsFromPage` usa `loadCookiesWithFallback` (`src/utils/cookieLoader.js`). Se o owner não tiver cookies configurados, o sistema usa automaticamente cookies de outro usuário como fallback para manter o scraping funcional.

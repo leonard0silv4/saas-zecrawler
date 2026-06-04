@@ -1,7 +1,6 @@
 import superagent from "superagent";
 import * as cheerio from "cheerio";
-import mongoose from "mongoose";
-import Cookie from "../models/Cookie.js";
+import { loadCookiesWithFallback } from "../utils/cookieLoader.js";
 
 const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
@@ -17,11 +16,10 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function loadCookieString(ownerId) {
-  const oid = new mongoose.Types.ObjectId(String(ownerId));
-  const cookies = await Cookie.find({ ownerId: oid }).lean();
-  const fromDb = cookies.length ? cookies.map((c) => `${c.name}=${c.value}`).join("; ") : "";
+async function resolveCookieString(ownerId) {
+  const { cookieString: fromDb } = await loadCookiesWithFallback(ownerId);
   const fromEnv = (process.env.ML_COOKIE_STRING || "").trim();
+  if (!fromDb && !fromEnv) return "";
   if (!fromDb) return fromEnv;
   if (!fromEnv) return fromDb;
   return `${fromDb}; ${fromEnv}`;
@@ -192,7 +190,7 @@ function applyMlBrowserHeaders(req, targetUrl, referer) {
  * @param {{ referer?: string }} [options] - Referer explícito (ex.: PDP sem /s ao buscar /s)
  */
 export async function fetchMlHtml(url, ownerId, options = {}) {
-  const cookieString = await loadCookieString(ownerId);
+  const cookieString = await resolveCookieString(ownerId);
   const referer = options.referer != null ? options.referer : refererForMlUrl(url);
   const req = superagent.get(url).timeout({ response: 25000, deadline: 40000 });
   applyMlBrowserHeaders(req, url, referer);
@@ -687,7 +685,7 @@ async function scrapeCatalogFlow(catalogUrl, urlOriginal, ownerId) {
   const grupo = extractCatalogGrupo(catalogUrl) || extractMlbFromUrl(catalogUrl);
   const baseUrl = catalogStripS(catalogUrl);
 
-  const cookieString = await loadCookieString(ownerId);
+  const cookieString = await resolveCookieString(ownerId);
   if (!cookieString) {
     console.warn(
       "[mlPriceAnalyze] Sem cookies ML (banco ou ML_COOKIE_STRING). A página /s pode retornar 401 sem sessão."

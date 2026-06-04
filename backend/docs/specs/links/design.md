@@ -85,3 +85,7 @@ linkSchema.index({ ownerId: 1, storeName: 1 });
 linkSchema.index({ ownerId: 1, sku: 1 });
 // + índices simples em sku e storeName
 ```
+
+## Cookies e Fallback
+
+`scrapeProductData` e `extractLinks` usam `loadCookiesWithFallback` (`src/utils/cookieLoader.js`). Se o usuário não tiver cookies, o sistema usa automaticamente o conjunto de cookies de outro usuário como fallback, evitando bloqueios de scraping.

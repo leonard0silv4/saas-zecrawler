@@ -5,15 +5,7 @@ import { format } from "date-fns";
 import SellerPage from "../models/SellerPage.js";
 import SellerProduct from "../models/SellerProduct.js";
 import SellerAlert from "../models/SellerAlert.js";
-import Cookie from "../models/Cookie.js";
-import mongoose from "mongoose";
-
-async function loadCookieString(ownerId) {
-  const oid = new mongoose.Types.ObjectId(String(ownerId));
-  const cookies = await Cookie.find({ ownerId: oid }).lean();
-  if (!cookies.length) return "";
-  return cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-}
+import { loadCookiesWithFallback } from "../utils/cookieLoader.js";
 
 function extractSkuFromUrl(url) {
   const match = url.match(/MLB-?(\d+)/i);
@@ -65,7 +57,7 @@ function parseTotalCount($) {
 }
 
 async function extractProductsFromPage(url, ownerId) {
-  const cookieString = await loadCookieString(ownerId);
+  const { cookieString } = await loadCookiesWithFallback(ownerId);
   const request = superagent.get(url).timeout({ response: 10000, deadline: 15000 });
   if (cookieString) request.set("Cookie", cookieString);
 

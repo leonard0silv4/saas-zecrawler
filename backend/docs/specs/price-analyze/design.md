@@ -51,4 +51,4 @@ GET /price-analyze { storeName? }
 
 ## Configuração de Cookies
 
-O scraping usa os cookies ML armazenados para o owner (via `Cookie` model), permitindo acesso a preços e dados que requerem autenticação no ML.
+O scraping usa `loadCookiesWithFallback` (`src/utils/cookieLoader.js`) para resolver os cookies ML do owner. Se o owner não tiver cookies cadastrados, o sistema usa automaticamente cookies de outro usuário como fallback. O `mlPriceAnalyzeScraper` ainda mescla o resultado com `ML_COOKIE_STRING` (env var) quando disponível.
