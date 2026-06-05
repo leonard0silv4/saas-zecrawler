@@ -79,6 +79,13 @@ export default function MeliAnalyticsPage() {
     loadAiCache();
   }, [selectedAccount, period, unifiedView]);
 
+  // Re-verifica cache ao voltar para a aba (cobre o cenário de aba aberta overnight)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === "visible") loadAiCache(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [selectedAccount, period, unifiedView]);
+
   useEffect(() => {
     if (!unifiedView && !selectedAccount) return;
     if (
@@ -111,6 +118,8 @@ export default function MeliAnalyticsPage() {
         setAiAnalysis(data.analysis);
         setAiGeneratedAt(data.generatedAt);
         setAiAlreadyUsedToday(true);
+      } else {
+        setAiAlreadyUsedToday(false);
       }
     } catch { /* sem cache, ignora */ }
   }
