@@ -12,11 +12,12 @@ const FEATURE_ROWS = [
     category: "Recursos",
     features: [
       { label: "Acompanhamento de Links", free: true, starter: true, pro: true, business: true },
-      { label: "Análise de Preços (XML)", free: true, starter: true, pro: true, business: true },
+      { label: "Análise de Preços", free: true, starter: true, pro: true, business: true },
       { label: "Dashboard", free: "Básico", starter: "Completo", pro: "Completo", business: "Completo" },
       { label: "Contas Mercado Livre", free: false, starter: "1 conta", pro: "Até 3", business: "Até 10" },
       { label: "Catálogo de Produtos", free: false, starter: false, pro: true, business: true },
       { label: "Analytics & Vendas ML", free: false, starter: false, pro: true, business: true },
+      { label: "Insights por IA", free: false, starter: false, pro: true, business: true },
       { label: "Mensagens Mercado Livre", free: false, starter: false, pro: false, business: true },
     ],
   },

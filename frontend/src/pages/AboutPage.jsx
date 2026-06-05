@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {
-  BarChart2, ShieldCheck, Zap, Users, TrendingUp, Globe, ArrowRight
+  BarChart2, ShieldCheck, Zap, Users, TrendingUp, Globe, Sparkles, LineChart, ArrowRight
 } from "lucide-react";
 import PublicLayout from "../components/PublicLayout";
 import SEO from "../components/SEO";
@@ -24,7 +24,7 @@ const DIFFERENTIALS = [
     icon: Zap,
     title: "Automação inteligente",
     description:
-      "Scraping automatizado com cron configurável, geração de XMLs de análise de preço, catálogo integrado e respostas automáticas de perguntas.",
+      "Scraping automatizado com cron configurável, análise de preços da concorrência organizada automaticamente, catálogo integrado e respostas automáticas de perguntas.",
     color: "bg-amber-50 text-amber-600",
   },
   {
@@ -47,6 +47,20 @@ const DIFFERENTIALS = [
     description:
       "Conecte múltiplas contas do ML em um único painel. Ideal para operações com várias lojas ou marcas distintas.",
     color: "bg-indigo-50 text-indigo-600",
+  },
+  {
+    icon: LineChart,
+    title: "Analytics & Vendas ML",
+    description:
+      "Visualize métricas de vendas, faturamento e reputação das suas contas ML em um único painel. Acompanhe os top produtos, histórico de pedidos e alertas de estoque em tempo real.",
+    color: "bg-sky-50 text-sky-600",
+  },
+  {
+    icon: Sparkles,
+    title: "Insights por IA",
+    description:
+      "Com um clique, a IA analisa os dados de vendas do período e retorna recomendações priorizadas: oportunidades de crescimento, sugestões de campanha e alertas críticos de estoque. Disponível nos planos Pro e Business.",
+    color: "bg-violet-50 text-violet-600",
   },
 ];
 

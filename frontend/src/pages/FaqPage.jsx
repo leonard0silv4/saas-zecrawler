@@ -27,15 +27,15 @@ const FAQ_GROUPS = [
     items: [
       {
         q: "Como funciona o monitoramento de links?",
-        a: "Você cadastra os links dos produtos que deseja acompanhar — seus próprios anúncios ou os dos concorrentes. O sistema verifica automaticamente e exibe histórico de preço, posição e estoque.",
+        a: "Você cadastra os links dos produtos que deseja acompanhar — seus próprios anúncios ou os dos concorrentes. O sistema verifica automaticamente e exibe histórico de preço.",
       },
       {
         q: "O que é o Monitor de Sellers?",
         a: "É uma funcionalidade que acompanha todos os produtos de um vendedor específico no Mercado Livre. Quando um novo produto aparece ou o preço de um existente muda, você recebe um alerta. Ideal para ficar de olho nos concorrentes estratégicos.",
       },
       {
-        q: "Como funciona a Análise de Preços (XML)?",
-        a: "O sistema gera um arquivo XML compatível com ferramentas de precificação como o Bling, Tiny e outros ERPs. Você importa o XML e tem os preços da concorrência já organizados para tomar decisões de reprecificação.",
+        q: "Como funciona a Análise de Preços?",
+        a: "O sistema coleta os preços dos links monitorados e os organiza automaticamente numa tabela de análise. Você visualiza as comparações direto na plataforma e pode baixar o XML gerado para usar em ferramentas de precificação como Bling, Tiny e outros ERPs.",
       },
       {
         q: "Posso conectar mais de uma conta do Mercado Livre?",
@@ -45,6 +45,14 @@ const FAQ_GROUPS = [
         q: "Como funciona a gestão de perguntas do Mercado Livre?",
         a: "No plano Business, o sistema sincroniza as perguntas dos compradores das suas contas ML conectadas. Você responde diretamente pela plataforma, pode criar templates de respostas e acompanhar o histórico por comprador.",
       },
+      {
+        q: "O que é o módulo Analytics & Vendas ML?",
+        a: "É um painel com métricas de vendas, faturamento, histórico de pedidos, reputação e alertas de estoque das suas contas do Mercado Livre conectadas. Disponível a partir do plano Pro.",
+      },
+      {
+        q: "Como funcionam os Insights por IA?",
+        a: "Nos planos Pro e Business, você pode acionar a análise de IA com um clique no módulo Analytics. O sistema processa os dados do período e gera recomendações categorizadas — oportunidades de crescimento, sugestões de promoção e alertas de estoque crítico — cada uma com nível de prioridade. O resultado fica disponível durante o dia e é recuperado automaticamente ao reabrir a tela.",
+      },
     ],
   },
   {
@@ -52,7 +60,7 @@ const FAQ_GROUPS = [
     items: [
       {
         q: "O plano gratuito tem limite de tempo?",
-        a: "Não. O plano Gratuito é permanente e não expira. Você pode usar com até 10 links monitorados e 1 seller monitorado sem pagar nada.",
+        a: "Não. O plano Gratuito é permanente e não expira. Você pode usar com até 5 links monitorados e 1 seller monitorado sem pagar nada.",
       },
       {
         q: "Posso mudar de plano a qualquer momento?",
