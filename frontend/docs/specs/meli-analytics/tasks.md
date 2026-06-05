@@ -13,5 +13,7 @@
 - [x] Criar model MeliAiAnalysis para persistência e cache da análise no MongoDB.
 - [x] Endpoint GET|POST /meli/analytics/ai-analysis com cache diário e integração OpenAI gpt-4o-mini.
 - [x] Painel de recomendações IA no frontend com recuperação automática de cache ao carregar a tela.
+- [x] Enriquecer payload com tendência vs período anterior, perguntas, saúde dos anúncios e alertas de concorrentes.
+- [x] Melhorar system prompt para 5 insights estruturados por eixo (Financeiro, Produtos, Operacional, Atendimento, Competitivo).
 - [ ] Adicionar testes de cache por aba.
 - [ ] Padronizar exibição de erro 403.

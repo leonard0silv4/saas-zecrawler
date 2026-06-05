@@ -5,6 +5,9 @@ import Conta from "../models/Conta.js";
 import MeliOrder from "../models/MeliOrder.js";
 import MeliProduct from "../models/MeliProduct.js";
 import MeliAiAnalysis from "../models/MeliAiAnalysis.js";
+import MeliQuestion from "../models/MeliQuestion.js";
+import SellerAlert from "../models/SellerAlert.js";
+import SellerPage from "../models/SellerPage.js";
 import { renewToken } from "../utils/meliToken.js";
 import { getOwnerId } from "../middleware/auth.js";
 import { syncProductsForConta } from "./MeliController.js";
@@ -497,8 +500,12 @@ const MeliAnalyticsController = {
         return res.json({ analysis: null, cached: false });
       }
 
-      // Coleta dados em paralelo para montar o payload compacto
+      // Datas do período atual e anterior
+      const days = parseInt(period) || 30;
       const { from, to } = periodToDates(period);
+      const prevFrom = subDays(from, days);
+      const prevTo   = subDays(to, days);
+
       const orderFilter = {
         ownerId: ownerObjectId,
         status: "paid",
@@ -506,14 +513,35 @@ const MeliAnalyticsController = {
       };
       if (userIdNum) orderFilter.user_id = userIdNum;
 
+      const prevOrderFilter = {
+        ownerId: ownerObjectId,
+        status: "paid",
+        date_closed: { $gte: prevFrom, $lte: prevTo },
+      };
+      if (userIdNum) prevOrderFilter.user_id = userIdNum;
+
       const productFilter = { ownerId: ownerObjectId };
       if (userIdNum) productFilter.user_id = userIdNum;
 
-      const [summaryAgg, top5, alertCounts] = await Promise.all([
+      const questionFilter = { ownerId: ownerObjectId, date_created: { $gte: from } };
+      if (userIdNum) questionFilter.user_id = userIdNum;
+
+      // Busca lojas monitoradas para filtrar alertas de concorrentes
+      const monitoredSellers = await SellerPage.find({ ownerId, active: true }, { _id: 1 }).lean();
+      const sellerIds = monitoredSellers.map((s) => s._id);
+
+      const [summaryAgg, prevSummaryAgg, top5, stockAlerts, adHealth, questionStats, topQuestioned, competitorAlerts] = await Promise.all([
+        // KPIs período atual
         MeliOrder.aggregate([
           { $match: orderFilter },
           { $group: { _id: null, faturamento: { $sum: "$total_amount" }, taxa_ml: { $sum: "$ml_fee" }, pedidos: { $sum: 1 } } },
         ]),
+        // KPIs período anterior (para tendência)
+        MeliOrder.aggregate([
+          { $match: prevOrderFilter },
+          { $group: { _id: null, faturamento: { $sum: "$total_amount" }, pedidos: { $sum: 1 } } },
+        ]),
+        // Top 5 produtos por receita
         MeliOrder.aggregate([
           { $match: orderFilter },
           { $unwind: "$order_items" },
@@ -522,22 +550,60 @@ const MeliAnalyticsController = {
           { $limit: 5 },
           { $project: { _id: 0, nome: 1, receita: 1, unidades: 1 } },
         ]),
+        // Alertas de estoque
         MeliProduct.aggregate([
           { $match: productFilter },
           { $group: { _id: "$alertRuptura", count: { $sum: 1 } } },
         ]),
+        // Saúde dos anúncios por status
+        MeliProduct.aggregate([
+          { $match: productFilter },
+          { $group: { _id: "$status", count: { $sum: 1 } } },
+        ]),
+        // Total e não respondidas de perguntas
+        MeliQuestion.aggregate([
+          { $match: questionFilter },
+          { $group: { _id: null, total: { $sum: 1 }, sem_resposta: { $sum: { $cond: [{ $eq: ["$status", "UNANSWERED"] }, 1, 0] } } } },
+        ]),
+        // Top 2 produtos com mais perguntas
+        MeliQuestion.aggregate([
+          { $match: questionFilter },
+          { $group: { _id: "$item_id", nome: { $first: "$item_title" }, total: { $sum: 1 } } },
+          { $sort: { total: -1 } },
+          { $limit: 2 },
+          { $project: { _id: 0, nome: 1, total: 1 } },
+        ]),
+        // Alertas de concorrentes nos últimos 7 dias
+        sellerIds.length > 0
+          ? SellerAlert.aggregate([
+              { $match: { sellerId: { $in: sellerIds }, createdAt: { $gte: subDays(new Date(), 7) } } },
+              { $group: { _id: "$type", count: { $sum: 1 } } },
+            ])
+          : Promise.resolve([]),
       ]);
 
+      // Calcula métricas financeiras
       const s = summaryAgg[0] || {};
       const faturamento = s.faturamento || 0;
-      const taxa_ml = s.taxa_ml || 0;
-      const pedidos = s.pedidos || 0;
-      const liq = faturamento - taxa_ml;
+      const taxa_ml     = s.taxa_ml || 0;
+      const pedidos     = s.pedidos || 0;
+      const liq         = faturamento - taxa_ml;
       const ticket_medio = pedidos > 0 ? faturamento / pedidos : 0;
-      const taxa_ml_pct = faturamento > 0 ? (taxa_ml / faturamento) * 100 : 0;
+      const taxa_ml_pct  = faturamento > 0 ? (taxa_ml / faturamento) * 100 : 0;
 
-      const alertMap = Object.fromEntries(alertCounts.map((a) => [a._id, a.count]));
+      const prev = prevSummaryAgg[0] || {};
+      const fatPct = prev.faturamento > 0 ? ((faturamento - prev.faturamento) / prev.faturamento) * 100 : null;
+      const pedPct = prev.pedidos    > 0 ? ((pedidos    - prev.pedidos)    / prev.pedidos)    * 100 : null;
 
+      const alertMap = Object.fromEntries(stockAlerts.map((a) => [a._id, a.count]));
+      const adMap    = Object.fromEntries(adHealth.map((a) => [a._id, a.count]));
+
+      const q = questionStats[0] || { total: 0, sem_resposta: 0 };
+      const taxaResposta = q.total > 0 ? ((q.total - q.sem_resposta) / q.total) * 100 : 100;
+
+      const competitorMap = Object.fromEntries(competitorAlerts.map((a) => [a._id, a.count]));
+
+      // Monta payload compacto
       const payload = {
         periodo: period,
         metricas: {
@@ -546,6 +612,10 @@ const MeliAnalyticsController = {
           pedidos,
           ticket_medio: Math.round(ticket_medio * 100) / 100,
           taxa_ml_pct: Math.round(taxa_ml_pct * 10) / 10,
+          ...(fatPct !== null && { vs_periodo_anterior: {
+            faturamento_pct: Math.round(fatPct * 10) / 10,
+            pedidos_pct: pedPct !== null ? Math.round(pedPct * 10) / 10 : null,
+          }}),
         },
         top5_produtos: top5.map((p) => ({
           nome: p.nome,
@@ -557,18 +627,50 @@ const MeliAnalyticsController = {
           nivel_critico: alertMap["CRÍTICO"] || 0,
           nivel_baixo: alertMap["BAIXO"] || 0,
         },
+        anuncios: {
+          ativos: adMap["active"] || 0,
+          pausados: adMap["paused"] || 0,
+          encerrados: adMap["closed"] || 0,
+        },
+        ...(q.total > 0 && {
+          perguntas: {
+            total: q.total,
+            sem_resposta: q.sem_resposta,
+            taxa_resposta_pct: Math.round(taxaResposta * 10) / 10,
+            mais_perguntados: topQuestioned.map((p) => ({ produto: p.nome, perguntas: p.total })),
+          },
+        }),
+        ...(sellerIds.length > 0 && {
+          concorrentes: {
+            lojas_monitoradas: sellerIds.length,
+            alertas_7d: {
+              mudancas_preco: competitorMap["price_change"] || 0,
+              novos_produtos: competitorMap["new_product"] || 0,
+            },
+          },
+        }),
       };
 
-      const systemPrompt = `Você é um analista de e-commerce especializado em Mercado Livre Brasil.
-Com base nos dados fornecidos, gere exatamente 3 insights objetivos e ações práticas para o vendedor.
-Responda em português do Brasil. Seja direto e específico. Não invente dados nem mencione valores que não estejam no input.
-Formato: use bullets (•). Máximo 4 linhas por insight. Não inclua título ou introdução.`;
+      const systemPrompt = `Você é um analista sênior de e-commerce especializado em Mercado Livre Brasil.
+Analise os dados abaixo e gere exatamente 5 insights — um de cada eixo:
+1) Financeiro (receita, margem, tendência vs período anterior)
+2) Produtos (top sellers, concentração de receita, oportunidades)
+3) Operacional (estoque, anúncios pausados/encerrados)
+4) Atendimento (perguntas sem resposta, produtos mais questionados)
+5) Competitivo (alertas de concorrentes se disponível; caso ausente, use oportunidade de crescimento)
+
+Regras:
+- Cite valores exatos do input. Não invente dados.
+- Cada insight: 1 frase de diagnóstico + 1 ação concreta. Máximo 3 linhas por insight.
+- Formato: "• [Eixo] diagnóstico → ação"
+- Sempre gere os 5 eixos mesmo que algum dado esteja ausente.
+- Responda em português do Brasil.`;
 
       const { data: openaiRes } = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
           model: "gpt-4o-mini",
-          max_tokens: 600,
+          max_tokens: 900,
           temperature: 0.4,
           messages: [
             { role: "system", content: systemPrompt },

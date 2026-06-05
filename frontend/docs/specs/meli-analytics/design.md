@@ -41,7 +41,10 @@ Cache de abas via `tabLoadedRef` (Set) — ao trocar conta, período ou modo uni
 - `GET` → retorna análise em cache do dia (`cached: true`) ou `{}` sem cache
 - `POST` → verifica cache, se não existir chama OpenAI `gpt-4o-mini`, salva no Mongo, retorna `{ analysis, generatedAt, cached: false }`
 - Limite: 1 chamada real à OpenAI por `(ownerId, user_id, period)` por dia (janela: `startOfDay`)
-- Payload enviado à IA: metricas do período, top 5 produtos, contagem de alertas de estoque (compacto para economizar tokens)
+- Payload enviado à IA: métricas + tendência vs período anterior, top 5 produtos, saúde dos anúncios, perguntas (total/sem resposta/mais perguntados), alertas de concorrentes 7d — ~520 tokens input
+- Perguntas e concorrentes são omitidos do payload se não houver dados (sem chave vazia)
+- 5 insights estruturados por eixo: Financeiro, Produtos, Operacional, Atendimento, Competitivo
+- `max_tokens: 900`, `temperature: 0.4`
 - API key: `process.env.API_GPT_IA`
 
 **Frontend:**
