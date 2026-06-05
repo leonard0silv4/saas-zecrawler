@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
       catalog: ["pro", "business"],
       meli: ["starter", "pro", "business"],
       meliMessages: ["business"],
-      meliAnalytics: ["business"],
+      meliAnalytics: ["pro", "business"],
       sellerMonitor: ["free", "starter", "pro", "business"],
     };
     return moduleMap[module]?.includes(plan) || false;
@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
       catalog: ["pro", "business"],
       meli: ["starter", "pro", "business"],
       meliMessages: ["business"],
-      meliAnalytics: ["business"],
+      meliAnalytics: ["pro", "business"],
       sellerMonitor: ["free", "starter", "pro", "business"],
     };
     return !(moduleMap[module]?.includes(plan) || false);

@@ -59,12 +59,12 @@ FRONTEND_URL=http://localhost:5173
 
 ## Planos de Assinatura
 
-| Plano    | Preço    | Links | Módulos                                 |
-| -------- | -------- | ----- | --------------------------------------- |
-| Gratuito | R$ 0     | 10    | Links                                   |
-| Starter  | R$ 19,90 | 100   | Links, Mercado Livre                    |
-| Pro      | R$ 29,90 | 500   | Links, ML, monitor sellers, Catálogo    |
-| Business | R$ 59,90 | 1.000 | Tudo + API access + Suporte prioritário |
+| Plano    | Preço      | Links | Sellers | Usuários | Contas ML | Módulos                                      |
+| -------- | ---------- | ----- | ------- | -------- | --------- | -------------------------------------------- |
+| Gratuito | R$ 0       | 5     | 1       | 1        | —         | Links, Análise de Preços, Seller Monitor      |
+| Starter  | R$ 99,90   | 30    | 5       | 2        | 1         | + Mercado Livre                              |
+| Pro      | R$ 139,90  | 50    | 10      | 6        | 3         | + Catálogo, Analytics & Vendas ML            |
+| Business | R$ 199,90  | 200   | 20      | 20       | 10        | + Mensagens ML, Central de Perguntas         |
 
 Configurados em `backend/config/plans.js`.
 

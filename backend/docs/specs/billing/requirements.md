@@ -8,12 +8,12 @@ Gerencia planos de assinatura (Free, Starter, Pro, Business), integração com S
 
 ## Planos Disponíveis
 
-| Plano | Módulos | Limites |
-|---|---|---|
-| **Free** | links, priceAnalyze | maxLinks: configurável, maxSellerMonitors: 0, maxTeamUsers: 0, maxTeams: 0 |
-| **Starter** | links, priceAnalyze, meli, sellerMonitor | limites intermediários |
-| **Pro** | + catalog | limites maiores |
-| **Business** | + meliMessages, meliAnalytics | limites máximos |
+| Plano    | Preço      | Links | Sellers | Usuários Time | Times | Contas ML | Módulos Adicionais          |
+|----------|-----------|-------|---------|---------------|-------|-----------|-----------------------------|
+| Free     | R$ 0      | 5     | 1       | 1             | 1     | 0         | links, priceAnalyze, sellerMonitor |
+| Starter  | R$ 99,90  | 30    | 5       | 2             | 1     | 1         | + meli                      |
+| Pro      | R$ 139,90 | 50    | 10      | 6             | 3     | 3         | + catalog, meliAnalytics    |
+| Business | R$ 199,90 | 200   | 20      | 20            | 10    | 10        | + meliMessages              |
 
 ---
 
@@ -44,7 +44,14 @@ Gerencia planos de assinatura (Free, Starter, Pro, Business), integração com S
 
 ### RF-06 Controle de Acesso por Módulo
 - Middleware `requireModule(moduleName)` bloqueia acesso (HTTP 403) se o módulo não está em `allowedModules` do usuário.
-- Middlewares de limite (`checkLinkLimit`, `checkSellerMonitorLimit`, `checkTeamUserLimit`, `checkTeamLimit`) bloqueiam criação quando o limite do plano é atingido.
+- Middlewares de limite (`checkLinkLimit`, `checkSellerMonitorLimit`, `checkTeamUserLimit`, `checkTeamLimit`, `checkMeliAccountLimit`) bloqueiam criação quando o limite do plano é atingido.
+- `checkMeliAccountLimit` é verificado dentro de `MeliController.authCallback` (rota pública de OAuth). Reconexões de contas já existentes contornam a checagem de limite.
+
+### RF-07 Migração de Assinantes Existentes
+- Script `src/scripts/migrateExistingSubscriptions.js` migra assinantes ativos para os novos price IDs.
+- Usa `proration_behavior: 'create_prorations'` — nenhum cliente é cobrado imediatamente; o ajuste é proporcional na próxima fatura.
+- Requer `OLD_STRIPE_PRICE_*` no `.env` (os price IDs antigos) e `STRIPE_PRICE_*` (os novos).
+- Deve ser rodado após deploy com `DRY_RUN=true` primeiro para validação.
 
 ---
 

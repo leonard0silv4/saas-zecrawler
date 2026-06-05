@@ -72,6 +72,11 @@ checkTeamUserLimit:
 
 checkTeamLimit:
   → Team.countDocuments({ ownerId }) >= planConfig.maxTeams ? 403 : next()
+
+checkMeliAccountLimit (exportada de plan.js, chamada dentro de MeliController.authCallback):
+  → planConfig.maxMeliAccounts === 0 ? 403 : next()
+  → Conta.exists({ user_id, ownerId }) → é reconexão? → skip check
+  → Conta.countDocuments({ ownerId, disabled: {$ne:true} }) >= planConfig.maxMeliAccounts ? 403 HTML : prossegue
 ```
 
 ## Mapeamento de Módulos por Plano
@@ -98,13 +103,28 @@ computeAccess(user, owner, extraPermissions):
 - Durante o trial, o status da subscription é `"trialing"` (tratado como `"active"` para acesso)
 - Para alterar o período de trial, basta mudar `TRIAL_DAYS` em `config/plans.js`
 
+## Script de Migração de Assinantes
+
+`src/scripts/migrateExistingSubscriptions.js` — execução única pós-deploy:
+
+```
+DRY_RUN=true node src/scripts/migrateExistingSubscriptions.js  # validar
+node src/scripts/migrateExistingSubscriptions.js               # aplicar
+```
+
+Requer `OLD_STRIPE_PRICE_STARTER/PRO/BUSINESS` no `.env` (os IDs antigos).
+Usa `proration_behavior: 'create_prorations'` — ajuste proporcional na próxima fatura.
+
 ## Variáveis de Ambiente Necessárias
 
 | Variável | Descrição |
 |---|---|
 | `STRIPE_SECRET_KEY` | Chave secreta da API Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secret para validar assinatura do webhook |
-| `STRIPE_PRICE_STARTER` | Price ID do plano Starter |
-| `STRIPE_PRICE_PRO` | Price ID do plano Pro |
-| `STRIPE_PRICE_BUSINESS` | Price ID do plano Business |
+| `STRIPE_PRICE_STARTER` | Price ID novo do plano Starter (R$ 99,90) |
+| `STRIPE_PRICE_PRO` | Price ID novo do plano Pro (R$ 139,90) |
+| `STRIPE_PRICE_BUSINESS` | Price ID novo do plano Business (R$ 199,90) |
+| `OLD_STRIPE_PRICE_STARTER` | Price ID antigo do Starter (migração) |
+| `OLD_STRIPE_PRICE_PRO` | Price ID antigo do Pro (migração) |
+| `OLD_STRIPE_PRICE_BUSINESS` | Price ID antigo do Business (migração) |
 | `FRONTEND_URL` | URL base para redirect após checkout |

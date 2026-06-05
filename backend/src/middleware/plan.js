@@ -3,6 +3,7 @@ import Link from "../models/Link.js";
 import SellerPage from "../models/SellerPage.js";
 import User from "../models/User.js";
 import Team from "../models/Team.js";
+import Conta from "../models/Conta.js";
 
 /**
  * Checks if user's plan allows access to a specific module.
@@ -82,6 +83,45 @@ export async function checkSellerMonitorLimit(req, res, next) {
     next();
   } catch (err) {
     return res.status(500).json({ error: "Erro ao verificar limite" });
+  }
+}
+
+/**
+ * Checks if owner can connect more ML accounts based on plan limits.
+ * Free plan (maxMeliAccounts=0) is always blocked.
+ * Pass isReconnect=true to skip the check when updating an existing account.
+ */
+export async function checkMeliAccountLimit(req, res, next) {
+  try {
+    const effectivePlan = req.user.effectivePlan || req.user.plan || "free";
+    const planConfig = PLANS[effectivePlan];
+    if (!planConfig) return res.status(400).json({ error: "Plano inválido" });
+
+    const maxMeliAccounts = planConfig.maxMeliAccounts ?? 0;
+    if (maxMeliAccounts === 0) {
+      return res.status(403).json({
+        error: "Conexão de contas ML não disponível no seu plano",
+        plan: effectivePlan,
+        requiredPlans: ["starter", "pro", "business"],
+      });
+    }
+
+    const ownerId = String(req.user.role === "owner" ? req.user.id : req.user.ownerId);
+    const currentCount = await Conta.countDocuments({ ownerId, disabled: { $ne: true } });
+
+    if (currentCount >= maxMeliAccounts) {
+      return res.status(403).json({
+        error: "Limite de contas ML atingido",
+        current: currentCount,
+        max: maxMeliAccounts,
+        plan: effectivePlan,
+      });
+    }
+
+    req.meliAccountLimit = { current: currentCount, max: maxMeliAccounts };
+    next();
+  } catch (err) {
+    return res.status(500).json({ error: "Erro ao verificar limite de contas ML" });
   }
 }
 

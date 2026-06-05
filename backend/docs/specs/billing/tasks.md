@@ -14,6 +14,16 @@
 - [x] Botão de upgrade mostra "Começar X dias grátis" em vez de "Assinar agora"
 - [x] SettingsPlanSection exibe status "Em período de teste" com data de encerramento
 - [x] Metadata de UI de planos centralizada em `frontend/src/config/plansMeta.js`
+- [x] Refatoração de planos e preços (jun/2026): novos preços R$99,90/139,90/199,90, novos limites, campo `maxMeliAccounts` adicionado
+- [x] `meliAnalytics` aberto para plano Pro (era exclusivo Business)
+- [x] `checkMeliAccountLimit` implementado em `middleware/plan.js`; checagem de reconexão em `MeliController.authCallback`
+- [x] Script `migrateExistingSubscriptions.js` criado para migrar assinantes com proration
+
+## Pendente — Pós-Deploy
+
+- [ ] Rodar `seedStripeProducts.js` com novas chaves Stripe para gerar os novos price IDs
+- [ ] Atualizar `.env` com `STRIPE_PRICE_*` (novos) e `OLD_STRIPE_PRICE_*` (antigos)
+- [ ] Rodar `migrateExistingSubscriptions.js` com `DRY_RUN=true`, revisar log, depois aplicar
 
 ## Melhorias Identificadas
 

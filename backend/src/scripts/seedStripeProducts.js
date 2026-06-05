@@ -18,9 +18,9 @@ console.log(process.env.STRIPE_SECRET_KEY)
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PAID_PLANS = [
-  { slug: "starter", name: "ML SmartHub Starter", price: 1990, description: "100 links, dashboard completo" },
-  { slug: "pro", name: "ML SmartHub Pro", price: 2990, description: "500 links, monitor sellers, catálogo" },
-  { slug: "business", name: "ML SmartHub Business", price: 5990, description: "1000 links, tudo incluso" },
+  { slug: "starter", name: "ML SmartHub Starter", price: 9990, description: "30 links, 5 sellers, 1 conta ML" },
+  { slug: "pro", name: "ML SmartHub Pro", price: 13990, description: "50 links, 10 sellers, 3 contas ML, analytics" },
+  { slug: "business", name: "ML SmartHub Business", price: 19990, description: "200 links, 20 sellers, 10 contas ML, tudo incluso" },
 ];
 
 async function run() {

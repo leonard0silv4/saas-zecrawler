@@ -11,9 +11,22 @@ Gerencia a autenticação OAuth 2.0 com o Mercado Livre, sincronização de prod
 ### RF-01 Autenticação OAuth 2.0
 - `GET /meli/auth` redireciona o usuário para o fluxo de autorização do ML com scopes `offline_access read write orders:read`.
 - `GET /meli/callback` recebe o `code` e troca pelo `access_token` + `refresh_token`.
+- Antes de salvar uma nova conta, verifica o limite de contas ML do plano (`planConfig.maxMeliAccounts`).
+  - Reconexão de conta já existente (mesmo `user_id`) **não** é bloqueada pelo limite.
+  - Limite excedido → página HTML de erro com link para `/plans`.
+  - Free plan (`maxMeliAccounts=0`) → sempre bloqueado (o módulo `meli` já é negado via `requireModule`, esta é uma segunda camada de segurança).
 - Salva a conta ML (`Conta`) com upsert por `user_id`.
 - Exibe página HTML de confirmação com redirect automático para `/meli` após 3 segundos.
 - Limpa `authError` ao reconectar uma conta.
+
+**Limites de contas ML por plano:**
+
+| Plano    | Max. Contas ML |
+|----------|---------------|
+| Free     | 0 (bloqueado) |
+| Starter  | 1             |
+| Pro      | 3             |
+| Business | 10            |
 
 ### RF-02 Listagem de Contas Conectadas
 - Retorna todas as contas ML ativas do owner (com `access_token` e não desabilitadas).

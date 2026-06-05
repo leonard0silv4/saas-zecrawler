@@ -7,6 +7,7 @@ import MeliQuestion from "../models/MeliQuestion.js";
 import User from "../models/User.js";
 import { renewToken } from "../utils/meliToken.js";
 import { getOwnerId } from "../middleware/auth.js";
+import { PLANS } from "../../config/plans.js";
 
 const { ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI } = process.env;
 
@@ -328,6 +329,18 @@ export default {
       const { data: userInfo } = await axios.get("https://api.mercadolibre.com/users/me", {
         headers: { Authorization: `Bearer ${data.access_token}` },
       });
+
+      // Check ML account limit before creating a new connection (skip if reconnecting same account)
+      const isReconnecting = await Conta.exists({ user_id: data.user_id, ownerId: uid });
+      if (!isReconnecting) {
+        const owner = await User.findById(uid).select("plan").lean();
+        const planConfig = PLANS[owner?.plan || "free"];
+        const maxMeliAccounts = planConfig?.maxMeliAccounts ?? 0;
+        const currentCount = await Conta.countDocuments({ ownerId: uid, disabled: { $ne: true } });
+        if (currentCount >= maxMeliAccounts) {
+          return res.status(403).send(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Limite atingido</title></head><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>Limite de contas ML atingido</h2><p>Seu plano permite até <strong>${maxMeliAccounts}</strong> conta(s) conectada(s). Faça upgrade para conectar mais contas.</p><a href="${process.env.FRONTEND_URL || "https://app.mlsmarthub.com.br"}/plans">Ver planos</a></body></html>`);
+        }
+      }
 
       await Conta.findOneAndUpdate(
         { user_id: data.user_id },
