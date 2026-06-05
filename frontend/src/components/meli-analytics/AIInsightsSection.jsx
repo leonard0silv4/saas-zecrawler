@@ -109,12 +109,12 @@ export function AIInsightsSection({ aiAnalysis, aiGeneratedAt, onDismiss }) {
                   Ao vivo
                 </span>
               </div>
-              {formattedTime && (
+              {/* {formattedTime && (
                 <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
                   <Clock size={11} />
                   Gerado em {formattedTime}
                 </p>
-              )}
+              )} */}
             </div>
           </div>
 
