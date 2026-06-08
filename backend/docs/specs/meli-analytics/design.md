@@ -92,6 +92,57 @@ data = days.map(d => ({
 | `*/15 * * * *` | Sync de pedidos para owners Business com subscription ativa |
 | `0 1 * * *` | Sync completo de produtos ML para owners Business |
 
+## Análise de IA (`aiAnalysis`)
+
+Endpoints:
+```
+GET  /meli/analytics/ai-analysis  →  retorna análise em cache do dia (se existir)
+POST /meli/analytics/ai-analysis  →  gera nova análise via GPT-4o-mini
+```
+
+O cache é por `(ownerId, user_id, period)` com TTL de 1 dia (`generatedAt >= startOfDay`).
+
+### Payload enviado ao GPT
+
+```json
+{
+  "periodo": "30d",
+  "metricas": { "faturamento", "liquido_marketplace", "pedidos", "ticket_medio", "taxa_ml_pct", "vs_periodo_anterior" },
+  "top5_produtos": [...],
+  "estoque": { "em_ruptura", "nivel_critico", "nivel_baixo" },
+  "anuncios": { "ativos", "pausados", "encerrados" },
+  "perguntas": { "total", "sem_resposta", "taxa_resposta_pct", "mais_perguntados" },
+  "concorrentes": { "lojas_monitoradas", "alertas_7d" },
+  "horarios": {
+    "vendas": { "dias_pico": ["Seg", "Ter", "Qua"], "horas_pico": ["14h", "15h", "10h"] },
+    "perguntas": { "dias_pico": ["Sáb", "Dom"], "horas_pico": ["11h", "20h"] }
+  }
+}
+```
+
+### Filtros de perguntas
+
+O `questionFilter` exclui mensagens banidas usando os mesmos critérios do `MeliMessagesController`:
+
+```javascript
+{
+  "raw_payload.status": { $nin: ["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"] },
+  answer_status: { $ne: "BANNED" }
+}
+```
+
+### Eixos de insight (system prompt)
+
+A análise gera 6 insights — um por eixo:
+1. Financeiro
+2. Produtos
+3. Operacional
+4. Atendimento
+5. Competitivo
+6. Horários (dias e horas de pico de vendas e perguntas)
+
+As agregações de horários usam timezone `"America/Sao_Paulo"` via `$dayOfWeek`/`$hour` do MongoDB para refletir horário de Brasília.
+
 ## Índices MongoDB
 
 ```javascript

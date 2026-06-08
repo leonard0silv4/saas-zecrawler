@@ -523,14 +523,24 @@ const MeliAnalyticsController = {
       const productFilter = { ownerId: ownerObjectId };
       if (userIdNum) productFilter.user_id = userIdNum;
 
-      const questionFilter = { ownerId: ownerObjectId, date_created: { $gte: from } };
+      const QUESTION_INVALID_STATUSES = ["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"];
+      const questionFilter = {
+        ownerId: ownerObjectId,
+        date_created: { $gte: from },
+        "raw_payload.status": { $nin: QUESTION_INVALID_STATUSES },
+        answer_status: { $ne: "BANNED" },
+      };
       if (userIdNum) questionFilter.user_id = userIdNum;
 
       // Busca lojas monitoradas para filtrar alertas de concorrentes
       const monitoredSellers = await SellerPage.find({ ownerId, active: true }, { _id: 1 }).lean();
       const sellerIds = monitoredSellers.map((s) => s._id);
 
-      const [summaryAgg, prevSummaryAgg, top5, stockAlerts, adHealth, questionStats, topQuestioned, competitorAlerts] = await Promise.all([
+      const [
+        summaryAgg, prevSummaryAgg, top5, stockAlerts, adHealth,
+        questionStats, topQuestioned, competitorAlerts,
+        salesByDayOfWeek, salesByHour, questionsByDayOfWeek, questionsByHour,
+      ] = await Promise.all([
         // KPIs período atual
         MeliOrder.aggregate([
           { $match: orderFilter },
@@ -580,6 +590,32 @@ const MeliAnalyticsController = {
               { $group: { _id: "$type", count: { $sum: 1 } } },
             ])
           : Promise.resolve([]),
+        // Vendas por dia da semana (horário de Brasília)
+        MeliOrder.aggregate([
+          { $match: orderFilter },
+          { $group: { _id: { $dayOfWeek: { date: "$date_closed", timezone: "America/Sao_Paulo" } }, vendas: { $sum: 1 } } },
+          { $sort: { vendas: -1 } },
+        ]),
+        // Top 3 horas de pico de vendas (horário de Brasília)
+        MeliOrder.aggregate([
+          { $match: orderFilter },
+          { $group: { _id: { $hour: { date: "$date_closed", timezone: "America/Sao_Paulo" } }, vendas: { $sum: 1 } } },
+          { $sort: { vendas: -1 } },
+          { $limit: 3 },
+        ]),
+        // Perguntas por dia da semana (horário de Brasília)
+        MeliQuestion.aggregate([
+          { $match: questionFilter },
+          { $group: { _id: { $dayOfWeek: { date: "$date_created", timezone: "America/Sao_Paulo" } }, perguntas: { $sum: 1 } } },
+          { $sort: { perguntas: -1 } },
+        ]),
+        // Top 3 horas de pico de perguntas (horário de Brasília)
+        MeliQuestion.aggregate([
+          { $match: questionFilter },
+          { $group: { _id: { $hour: { date: "$date_created", timezone: "America/Sao_Paulo" } }, perguntas: { $sum: 1 } } },
+          { $sort: { perguntas: -1 } },
+          { $limit: 3 },
+        ]),
       ]);
 
       // Calcula métricas financeiras
@@ -602,6 +638,14 @@ const MeliAnalyticsController = {
       const taxaResposta = q.total > 0 ? ((q.total - q.sem_resposta) / q.total) * 100 : 100;
 
       const competitorMap = Object.fromEntries(competitorAlerts.map((a) => [a._id, a.count]));
+
+      // Processa horários de pico (1=Dom, 2=Seg, ..., 7=Sáb)
+      const DAY_NAMES = ["", "Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+      const topSalesDays = salesByDayOfWeek.slice(0, 3).map((d) => DAY_NAMES[d._id]).filter(Boolean);
+      const topSalesHours = salesByHour.map((d) => `${d._id}h`);
+      const topQDays = questionsByDayOfWeek.slice(0, 3).map((d) => DAY_NAMES[d._id]).filter(Boolean);
+      const topQHours = questionsByHour.map((d) => `${d._id}h`);
+      const hasHorarios = topSalesDays.length > 0 || topQDays.length > 0;
 
       // Monta payload compacto
       const payload = {
@@ -649,28 +693,35 @@ const MeliAnalyticsController = {
             },
           },
         }),
+        ...(hasHorarios && {
+          horarios: {
+            vendas: { dias_pico: topSalesDays, horas_pico: topSalesHours },
+            perguntas: { dias_pico: topQDays, horas_pico: topQHours },
+          },
+        }),
       };
 
       const systemPrompt = `Você é um analista sênior de e-commerce especializado em Mercado Livre Brasil.
-Analise os dados abaixo e gere exatamente 5 insights — um de cada eixo:
+Analise os dados abaixo e gere exatamente 6 insights — um de cada eixo:
 1) Financeiro (receita, margem, tendência vs período anterior)
 2) Produtos (top sellers, concentração de receita, oportunidades)
 3) Operacional (estoque, anúncios pausados/encerrados)
 4) Atendimento (perguntas sem resposta, produtos mais questionados)
 5) Competitivo (alertas de concorrentes se disponível; caso ausente, use oportunidade de crescimento)
+6) Horários (dias e horas de pico de vendas e perguntas; recomende quando o vendedor deve estar disponível para atender)
 
 Regras:
 - Cite valores exatos do input. Não invente dados.
 - Cada insight: 1 frase de diagnóstico + 1 ação concreta. Máximo 3 linhas por insight.
 - Formato: "• [Eixo] diagnóstico → ação"
-- Sempre gere os 5 eixos mesmo que algum dado esteja ausente.
+- Sempre gere os 6 eixos mesmo que algum dado esteja ausente.
 - Responda em português do Brasil.`;
 
       const { data: openaiRes } = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
           model: "gpt-4o-mini",
-          max_tokens: 900,
+          max_tokens: 1100,
           temperature: 0.4,
           messages: [
             { role: "system", content: systemPrompt },
