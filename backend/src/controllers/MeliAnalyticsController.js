@@ -551,14 +551,20 @@ const MeliAnalyticsController = {
           { $match: prevOrderFilter },
           { $group: { _id: null, faturamento: { $sum: "$total_amount" }, pedidos: { $sum: 1 } } },
         ]),
-        // Top 5 produtos por receita
+        // Top 5 produtos por receita (com estoque atual para dias restantes)
         MeliOrder.aggregate([
           { $match: orderFilter },
           { $unwind: "$order_items" },
           { $group: { _id: "$order_items.item_id", nome: { $first: "$order_items.title" }, unidades: { $sum: "$order_items.quantity" }, receita: { $sum: { $multiply: ["$order_items.quantity", "$order_items.unit_price"] } } } },
           { $sort: { receita: -1 } },
           { $limit: 5 },
-          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1 } },
+          { $lookup: {
+            from: "meliproducts",
+            let: { itemId: "$_id" },
+            pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$id", "$$itemId"] }, { $eq: ["$ownerId", ownerObjectId] }] } } }],
+            as: "product",
+          }},
+          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" } } },
         ]),
         // Alertas de estoque
         MeliProduct.aggregate([
@@ -661,11 +667,18 @@ const MeliAnalyticsController = {
             pedidos_pct: pedPct !== null ? Math.round(pedPct * 10) / 10 : null,
           }}),
         },
-        top5_produtos: top5.map((p) => ({
-          nome: p.nome,
-          receita: Math.round(p.receita * 100) / 100,
-          unidades: p.unidades,
-        })),
+        top5_produtos: top5.map((p) => {
+          const velocidade = p.unidades / days;
+          const diasEstoque = p.estoque != null && p.estoque >= 0 && velocidade > 0
+            ? Math.round(p.estoque / velocidade)
+            : null;
+          return {
+            nome: p.nome,
+            receita: Math.round(p.receita * 100) / 100,
+            unidades: p.unidades,
+            ...(diasEstoque !== null && { dias_estoque: diasEstoque }),
+          };
+        }),
         estoque: {
           em_ruptura: alertMap["RUPTURA"] || 0,
           nivel_critico: alertMap["CRÍTICO"] || 0,
@@ -706,7 +719,7 @@ Analise os dados abaixo e gere exatamente 6 insights — um de cada eixo:
 1) Financeiro (receita, margem, tendência vs período anterior)
 2) Produtos (top sellers, concentração de receita, oportunidades)
 3) Operacional (estoque, anúncios pausados/encerrados)
-4) Atendimento (perguntas sem resposta, produtos mais questionados)
+4) Atendimento (perguntas sem resposta, taxa de resposta, produtos mais questionados)
 5) Competitivo (alertas de concorrentes se disponível; caso ausente, use oportunidade de crescimento)
 6) Horários (dias e horas de pico de vendas e perguntas; recomende quando o vendedor deve estar disponível para atender)
 
@@ -715,7 +728,9 @@ Regras:
 - Cada insight: 1 frase de diagnóstico + 1 ação concreta. Máximo 3 linhas por insight.
 - Formato: "• [Eixo] diagnóstico → ação"
 - Sempre gere os 6 eixos mesmo que algum dado esteja ausente.
-- Responda em português do Brasil.`;
+- Responda em português do Brasil.
+- A plataforma já possui sistema integrado de monitoramento e resposta automática de perguntas via templates; NÃO recomende implementar ou criar sistema de atendimento/monitoramento.
+- Cada produto em top5_produtos pode ter o campo "dias_estoque" (dias de estoque restante com base na velocidade de vendas). Use esse dado ao recomendar ações: se dias_estoque > 30, o estoque está confortável; se < 15, alertar reposição urgente; se ausente, não faça afirmações sobre o nível de estoque desse produto.`;
 
       const { data: openaiRes } = await axios.post(
         "https://api.openai.com/v1/chat/completions",
