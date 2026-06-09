@@ -31,6 +31,55 @@ function isSignificantPriceChangeForAlert(oldPrice, newPrice) {
 }
 
 const ML_PAGE_SIZE = 48;
+const ML_API_PAGE_SIZE = 50;
+
+function extractSellerIdFromUrl(url) {
+  const match = url.match(/_CustId_(\d+)/i);
+  return match ? match[1] : null;
+}
+
+async function fetchSellerProductsViaApi(sellerId) {
+  const allProducts = [];
+  const seen = new Set();
+  let offset = 0;
+  let total = null;
+
+  do {
+    const apiUrl = `https://api.mercadolibre.com/sites/MLB/search?seller_id=${sellerId}&limit=${ML_API_PAGE_SIZE}&offset=${offset}`;
+    let response;
+    try {
+      response = await superagent.get(apiUrl).timeout({ response: 10000, deadline: 15000 });
+    } catch (err) {
+      console.error(`[SellerScraper] Erro na API ML (offset=${offset}):`, err.message);
+      break;
+    }
+
+    const data = response.body;
+    const results = data.results || [];
+    if (total === null) total = data.paging?.total ?? 0;
+
+    for (const item of results) {
+      const url = cleanUrl(item.permalink);
+      if (!url || seen.has(url)) continue;
+      const sku = item.id || extractSkuFromUrl(url);
+      if (!sku) continue;
+      seen.add(url);
+      allProducts.push({
+        url,
+        name: item.title,
+        image: item.thumbnail || "",
+        price: item.price || 0,
+        sku,
+      });
+    }
+
+    offset += results.length;
+    if (results.length === 0) break;
+    if (offset < total) await new Promise((r) => setTimeout(r, 300));
+  } while (offset < total);
+
+  return allProducts;
+}
 
 function buildPageUrl(baseUrl, pageNumber) {
   if (pageNumber <= 1) return baseUrl;
@@ -104,6 +153,11 @@ async function extractProductsFromPage(url, ownerId) {
 }
 
 async function scrapeAllPages(baseUrl, ownerId) {
+  const sellerId = extractSellerIdFromUrl(baseUrl);
+  if (sellerId) {
+    return await fetchSellerProductsViaApi(sellerId);
+  }
+
   const allProducts = [];
   const globalSeen = new Set();
   const MAX_PAGES = 200;

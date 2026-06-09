@@ -60,10 +60,29 @@ sellerProductSchema.index({ sellerId: 1, url: 1 }, { unique: true });
 
 `extractProductsFromPage` usa `loadCookiesWithFallback` (`src/utils/cookieLoader.js`). Se o owner não tiver cookies configurados, o sistema usa automaticamente cookies de outro usuário como fallback para manter o scraping funcional.
 
-## Filtragem de Produtos
+## Dual-path: API pública vs. HTML scraping
 
-Dois critérios obrigatórios para um item scraped ser aceito como produto:
+`scrapeAllPages` detecta o tipo de URL e escolhe o caminho de coleta:
 
-1. **Seletor raiz**: apenas `.ui-search-layout__item` — o elemento específico da grade de resultados do ML. O seletor `.andes-card` foi removido por ser genérico demais (usado em cards de info de vendedor, verificação de identidade, destaques, etc.) e causar capturas espúrias.
+```
+scrapeAllPages(baseUrl, ownerId)
+  → _CustId_ na URL?  SIM → fetchSellerProductsViaApi(sellerId)
+                      NÃO → HTML scraping com Cheerio (fallback)
+```
 
-2. **URL com identificador MLB**: `extractSkuFromUrl` deve retornar um SKU não-vazio. URLs sem `MLB` no path são descartadas — isso filtra links de seções "relacionados", patrocinados de outros vendedores, e elementos que não são produtos reais do ML.
+### Caminho API (URLs com `_CustId_XXXXXXX`)
+
+Usa a API pública de busca do ML sem autenticação:
+```
+GET https://api.mercadolibre.com/sites/MLB/search?seller_id={id}&limit=50&offset={n}
+```
+- Retorna **apenas** produtos do seller específico (sem patrocinados de outros sellers)
+- Paginação via `paging.total` + `offset`
+- Delay de 300ms entre páginas
+- Não usa cookies
+
+### Caminho HTML (outros formatos de URL)
+
+Scraping com `superagent` + Cheerio. Critérios de validação:
+1. **Seletor raiz**: apenas `.ui-search-layout__item`
+2. **URL com identificador MLB**: URLs sem `MLB` no path são descartadas via `extractSkuFromUrl`
