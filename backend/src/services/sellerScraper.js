@@ -8,8 +8,12 @@ import SellerAlert from "../models/SellerAlert.js";
 import { loadCookiesWithFallback } from "../utils/cookieLoader.js";
 
 function extractSkuFromUrl(url) {
-  const match = url.match(/MLB-?(\d+)/i);
-  return match ? `MLB${match[1]}` : "";
+  // Universal listing: /up/MLBU123456789 or /up/MLBP...
+  const upMatch = url.match(/\/up\/(MLB[A-Z0-9]+)/i);
+  if (upMatch) return upMatch[1].toUpperCase();
+  // Standard item: MLB-123456789 or MLB123456789 in path
+  const stdMatch = url.match(/MLB-?(\d+)/i);
+  return stdMatch ? `MLB${stdMatch[1]}` : "";
 }
 
 function cleanUrl(url) {
@@ -31,65 +35,21 @@ function isSignificantPriceChangeForAlert(oldPrice, newPrice) {
 }
 
 const ML_PAGE_SIZE = 48;
-const ML_API_PAGE_SIZE = 50;
-
-function extractSellerIdFromUrl(url) {
-  const match = url.match(/_CustId_(\d+)/i);
-  return match ? match[1] : null;
-}
-
-async function fetchSellerProductsViaApi(sellerId) {
-  const allProducts = [];
-  const seen = new Set();
-  let offset = 0;
-  let total = null;
-
-  do {
-    const apiUrl = `https://api.mercadolibre.com/sites/MLB/search?seller_id=${sellerId}&limit=${ML_API_PAGE_SIZE}&offset=${offset}`;
-    let response;
-    try {
-      response = await superagent.get(apiUrl).timeout({ response: 10000, deadline: 15000 });
-    } catch (err) {
-      console.error(`[SellerScraper] Erro na API ML (offset=${offset}):`, err.message);
-      break;
-    }
-
-    const data = response.body;
-    const results = data.results || [];
-    if (total === null) total = data.paging?.total ?? 0;
-
-    for (const item of results) {
-      const url = cleanUrl(item.permalink);
-      if (!url || seen.has(url)) continue;
-      const sku = item.id || extractSkuFromUrl(url);
-      if (!sku) continue;
-      seen.add(url);
-      allProducts.push({
-        url,
-        name: item.title,
-        image: item.thumbnail || "",
-        price: item.price || 0,
-        sku,
-      });
-    }
-
-    offset += results.length;
-    if (results.length === 0) break;
-    if (offset < total) await new Promise((r) => setTimeout(r, 300));
-  } while (offset < total);
-
-  return allProducts;
-}
 
 function buildPageUrl(baseUrl, pageNumber) {
   if (pageNumber <= 1) return baseUrl;
   const offset = 1 + (pageNumber - 1) * ML_PAGE_SIZE;
-  const cleanBase = baseUrl.replace(/_Desde_\d+_/g, "_").replace(/_Desde_\d+$/g, "");
-  if (cleanBase.includes("_NoIndex_True")) {
-    return cleanBase.replace("_NoIndex_True", `_Desde_${offset}_NoIndex_True`);
-  }
-  const sep = cleanBase.endsWith("/") ? "" : "/";
-  return `${cleanBase}${sep}_Desde_${offset}`;
+  // Strip any existing _Desde_ and _NoIndex_True before rebuilding
+  const cleanBase = baseUrl
+    .replace(/_Desde_\d+_NoIndex_True/gi, "")
+    .replace(/_Desde_\d+/gi, "")
+    .replace(/\/_NoIndex_True/gi, "")
+    .replace(/\/$/, "");
+  // ML URLs whose last path segment starts with "_" (e.g. _CustId_, _OrderId_) use
+  // underscore-concatenated params — no slash before _Desde_.
+  const lastSegment = cleanBase.split("/").pop() || "";
+  const sep = lastSegment.startsWith("_") ? "" : "/";
+  return `${cleanBase}${sep}_Desde_${offset}_NoIndex_True`;
 }
 
 function parseTotalCount($) {
@@ -116,6 +76,7 @@ async function extractProductsFromPage(url, ownerId) {
   const seen = new Set();
 
   $(".ui-search-layout__item").each((_, el) => {
+    if ($(el).find('[class*="ads-promotions"], [class*="pub-label"], [class*="ads-label"]').length > 0) return;
     const linkEl = $(el)
       .find(
         "a.poly-component__title, .poly-component__title a, .ui-search-item__group__element, .ui-search-result__wrapper a"
@@ -153,11 +114,6 @@ async function extractProductsFromPage(url, ownerId) {
 }
 
 async function scrapeAllPages(baseUrl, ownerId) {
-  const sellerId = extractSellerIdFromUrl(baseUrl);
-  if (sellerId) {
-    return await fetchSellerProductsViaApi(sellerId);
-  }
-
   const allProducts = [];
   const globalSeen = new Set();
   const MAX_PAGES = 200;
