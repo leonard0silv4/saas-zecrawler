@@ -66,7 +66,7 @@ async function extractProductsFromPage(url, ownerId) {
   const products = [];
   const seen = new Set();
 
-  $(".ui-search-layout__item, .andes-card").each((_, el) => {
+  $(".ui-search-layout__item").each((_, el) => {
     const linkEl = $(el)
       .find(
         "a.poly-component__title, .poly-component__title a, .ui-search-item__group__element, .ui-search-result__wrapper a"
@@ -76,8 +76,9 @@ async function extractProductsFromPage(url, ownerId) {
     if (!href || href === "#") return;
     const productUrl = cleanUrl(href);
     if (!productUrl || seen.has(productUrl)) return;
-    seen.add(productUrl);
     const sku = extractSkuFromUrl(productUrl);
+    if (!sku) return;
+    seen.add(productUrl);
     const name = $(el).find(".poly-component__title, .ui-search-item__title").first().text().trim();
     const imgEl = $(el).find("img").first();
     const image =

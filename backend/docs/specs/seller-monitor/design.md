@@ -59,3 +59,11 @@ sellerProductSchema.index({ sellerId: 1, url: 1 }, { unique: true });
 ## Cookies e Fallback
 
 `extractProductsFromPage` usa `loadCookiesWithFallback` (`src/utils/cookieLoader.js`). Se o owner não tiver cookies configurados, o sistema usa automaticamente cookies de outro usuário como fallback para manter o scraping funcional.
+
+## Filtragem de Produtos
+
+Dois critérios obrigatórios para um item scraped ser aceito como produto:
+
+1. **Seletor raiz**: apenas `.ui-search-layout__item` — o elemento específico da grade de resultados do ML. O seletor `.andes-card` foi removido por ser genérico demais (usado em cards de info de vendedor, verificação de identidade, destaques, etc.) e causar capturas espúrias.
+
+2. **URL com identificador MLB**: `extractSkuFromUrl` deve retornar um SKU não-vazio. URLs sem `MLB` no path são descartadas — isso filtra links de seções "relacionados", patrocinados de outros vendedores, e elementos que não são produtos reais do ML.
