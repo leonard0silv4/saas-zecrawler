@@ -233,46 +233,53 @@ export default function MeliMessagesPage() {
     return () => clearTimeout(handle);
   }, [selectedUserId, productSearch, accounts.length]);
 
-  // Buyer thread
+  // Buyer thread + product details — unified so both appear together
   useEffect(() => {
-    if (!selectedConversationFromId) { setBuyerThread([]); return; }
+    if (!selectedConversationFromId) {
+      setBuyerThread([]);
+      setListingProductsMap(new Map());
+      return;
+    }
     let cancelled = false;
     setLoadingBuyerThread(true);
-    api
-      .get("/meli/messages/questions/buyer-thread", {
-        params: { from_id: selectedConversationFromId, user_id: selectedUserId },
-      })
-      .then(({ data }) => { if (!cancelled) setBuyerThread(Array.isArray(data?.items) ? data.items : []); })
-      .catch(() => { if (!cancelled) setBuyerThread([]); })
-      .finally(() => { if (!cancelled) setLoadingBuyerThread(false); });
+    setListingProductsMap(new Map());
+
+    async function load() {
+      try {
+        const { data } = await api.get("/meli/messages/questions/buyer-thread", {
+          params: { from_id: selectedConversationFromId, user_id: selectedUserId },
+        });
+        if (cancelled) return;
+        const thread = Array.isArray(data?.items) ? data.items : [];
+        const uniqueItemIds = [...new Set(thread.map((q) => q.item_id).filter(Boolean))];
+        const productResults = await Promise.all(
+          uniqueItemIds.map((itemId) =>
+            api
+              .get(`/meli/items/${itemId}/details`)
+              .then(({ data: prod }) => ({ itemId, prod }))
+              .catch(() => ({ itemId, prod: null }))
+          )
+        );
+        if (cancelled) return;
+        const map = new Map();
+        productResults.forEach(({ itemId, prod }) => {
+          if (prod) map.set(itemId, prod);
+        });
+        setBuyerThread(thread);
+        setListingProductsMap(map);
+      } catch {
+        if (!cancelled) {
+          setBuyerThread([]);
+          setListingProductsMap(new Map());
+        }
+      } finally {
+        if (!cancelled) setLoadingBuyerThread(false);
+      }
+    }
+
+    load();
     return () => { cancelled = true; };
   }, [selectedConversationFromId, selectedUserId, buyerThreadRefreshKey]);
-
-  // Fetch listing details for all unique item_ids in buyerThread
-  useEffect(() => {
-    if (buyerThread.length === 0) return;
-    const uniqueItemIds = [...new Set(buyerThread.map((q) => q.item_id).filter(Boolean))];
-    uniqueItemIds.forEach((itemId) => {
-      if (listingProductsMap.has(itemId)) return; // already fetched
-      api
-        .get(`/meli/items/${itemId}/details`)
-        .then(({ data }) => {
-          if (data) {
-            setListingProductsMap((prev) => {
-              const next = new Map(prev);
-              next.set(itemId, data);
-              return next;
-            });
-          }
-        })
-        .catch(() => {});
-    });
-  }, [buyerThread]);
-
-  // Clear listing map when conversation changes
-  useEffect(() => {
-    setListingProductsMap(new Map());
-  }, [selectedConversationFromId]);
 
   // Hashtag dropdown: close on outside click
   useEffect(() => {
