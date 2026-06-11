@@ -41,7 +41,8 @@ export default function MeliAnalyticsPage() {
   const [topProducts,     setTopProducts]     = useState([]);
   const [orders,          setOrders]          = useState([]);
   const [inventory,       setInventory]       = useState([]);
-  const [inventoryFilter, setInventoryFilter] = useState("");
+  const [inventoryType,   setInventoryType]   = useState("");
+  const [inventoryAlert,  setInventoryAlert]  = useState("");
   const [inventorySort,   setInventorySort]   = useState({ field: "sold", dir: "desc" });
   const [topSort,         setTopSort]         = useState("receita");
   const [topOnlyActive,   setTopOnlyActive]   = useState(false);
@@ -105,7 +106,7 @@ export default function MeliAnalyticsPage() {
 
   useEffect(() => {
     if (activeTab === "estoque" && (unifiedView || selectedAccount)) loadInventory();
-  }, [inventoryFilter, inventorySort, activeTab, selectedAccount, unifiedView]);
+  }, [inventoryType, inventoryAlert, inventorySort, activeTab, selectedAccount, unifiedView]);
 
   useEffect(() => {
     if (activeTab === "top" && (unifiedView || selectedAccount)) loadTop();
@@ -168,7 +169,8 @@ export default function MeliAnalyticsPage() {
     setLoadingInventory(true);
     try {
       const p = { ...params() };
-      if (inventoryFilter) p.filter = inventoryFilter;
+      if (inventoryType)  p.filter = inventoryType;
+      if (inventoryAlert) p.alert  = inventoryAlert;
       if (inventorySort.field) { p.sortBy = inventorySort.field; p.sortDir = inventorySort.dir; }
       const { data } = await api.get("/meli/analytics/inventory", { params: p });
       setInventory(data);
@@ -368,8 +370,10 @@ export default function MeliAnalyticsPage() {
             <InventoryTab
               inventory={inventory}
               loading={loadingInventory}
-              inventoryFilter={inventoryFilter}
-              setInventoryFilter={setInventoryFilter}
+              inventoryType={inventoryType}
+              setInventoryType={setInventoryType}
+              inventoryAlert={inventoryAlert}
+              setInventoryAlert={setInventoryAlert}
               inventorySort={inventorySort}
               setInventorySort={setInventorySort}
               rupturaCount={rupturaCount}

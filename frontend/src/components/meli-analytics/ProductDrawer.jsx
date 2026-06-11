@@ -72,6 +72,7 @@ export function ProductDrawer({ product, onClose }) {
           )}
           <dl className="space-y-2">
             {product.SKU && <Row label="SKU" value={product.SKU} />}
+            {product.nickname && <Row label="Loja" value={product.nickname} />}
             <Row label="Preço atual" value={formatBRL(product.price)} />
             <Row label="Tipo" value={product.isFull ? "Full" : "Normal/Clássico"} badge={product.isFull ? "full" : "normal"} />
             <Row label="Estoque disponível" value={product.available_quantity ?? "—"} />

@@ -15,6 +15,17 @@ GET  /meli/analytics/inventory    →  requireModule("meliAnalytics") → invent
 
 Todos os endpoints de leitura aceitam `user_id` opcional. Quando presente, filtram uma loja; quando ausente, agregam todas as lojas do owner. O sync segue a mesma regra e retorna `accounts` com a quantidade de contas processadas.
 
+## Filtros de Inventário
+
+O endpoint `GET /meli/analytics/inventory` aceita dois filtros independentes:
+
+| Param | Valores | Comportamento |
+|---|---|---|
+| `filter` | `full`, `normal` | Filtra por tipo de logística (isFull) |
+| `alert` | `ruptura`, `critico` | Filtra por nível de alerta de estoque |
+
+Os dois parâmetros podem ser combinados (ex: `filter=full&alert=ruptura` = produtos Full em ruptura). Cada um é opcional e independente do outro. O campo `nickname` (nome da loja no ML) já está no documento `MeliProduct` e é retornado junto com os demais campos pelo `.lean()`.
+
 ## Fluxo de Sincronização de Pedidos
 
 ```
@@ -101,6 +112,17 @@ POST /meli/analytics/ai-analysis  →  gera nova análise via GPT-4o-mini
 ```
 
 O cache é por `(ownerId, user_id, period)` com TTL de 1 dia (`generatedAt >= startOfDay`).
+
+### Cálculo de Dias de Estoque Restante
+
+O campo `dias_estoque` enviado à IA em `top5_produtos` usa o valor **`daysRestStock` já calculado e persistido no documento `MeliProduct`**, que é o mesmo exibido no drawer de produto na aba Estoque. A fórmula é:
+
+```
+daysRestStock = Math.floor(available_quantity / averageSellDay)
+averageSellDay = sold_quantity / daysSinceListingStart
+```
+
+Isso garante consistência entre o que a IA reporta e o que o usuário vê no sidesheet. Anteriormente a IA recalculava `dias_estoque` com velocidade do período selecionado e `Math.round`, causando divergência.
 
 ### Payload enviado ao GPT
 

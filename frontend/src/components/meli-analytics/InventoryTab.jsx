@@ -1,13 +1,16 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Package, ArrowUp, ArrowDown, AlertTriangle, AlertCircle } from "lucide-react";
+import { Package, ArrowUp, ArrowDown, AlertTriangle, AlertCircle, Search } from "lucide-react";
 import { RupturaAlert } from "./RupturaAlert";
 import { formatBRL } from "./formatBRL";
 
-const INVENTORY_FILTERS = [
-  { label: "Todos",   value: "" },
-  { label: "Full",    value: "full" },
-  { label: "Normal",  value: "normal" },
+const TYPE_FILTERS = [
+  { label: "Todos",  value: "" },
+  { label: "Full",   value: "full" },
+  { label: "Normal", value: "normal" },
+];
+
+const ALERT_FILTERS = [
   { label: "Ruptura", value: "ruptura", icon: AlertTriangle, iconColor: "text-red-500" },
   { label: "Crítico", value: "critico", icon: AlertCircle,   iconColor: "text-orange-500" },
 ];
@@ -19,10 +22,29 @@ const SORT_OPTIONS = [
   { value: "price",    label: "Preço" },
 ];
 
-export function InventoryTab({ inventory, loading, inventoryFilter, setInventoryFilter, inventorySort, setInventorySort, rupturaCount, onProductSelect }) {
+export function InventoryTab({ inventory, loading, inventoryType, setInventoryType, inventoryAlert, setInventoryAlert, inventorySort, setInventorySort, rupturaCount, onProductSelect }) {
   const parentRef = useRef(null);
+  const debounceRef = useRef(null);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  function handleSearch(value) {
+    setSearchInput(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+  }
+
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  const filteredInventory = debouncedSearch
+    ? inventory.filter((p) => {
+        const q = debouncedSearch.toLowerCase();
+        return p.title?.toLowerCase().includes(q) || p.SKU?.toLowerCase().includes(q);
+      })
+    : inventory;
+
   const virtualizer = useVirtualizer({
-    count: inventory.length,
+    count: filteredInventory.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 50,
     overscan: 10,
@@ -45,6 +67,16 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
 
   return (
     <div className="space-y-4">
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Buscar por nome ou SKU..."
+          className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+        />
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         <RupturaAlert count={rupturaCount} />
         <div className="flex flex-wrap gap-2 ml-auto items-center">
@@ -68,24 +100,35 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
             })}
           </div>
           <div className="flex gap-1">
-            {INVENTORY_FILTERS.map((f) => {
+            {TYPE_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setInventoryType(f.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  inventoryType === f.value
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            {ALERT_FILTERS.map((f) => {
               const Icon = f.icon;
+              const isActive = inventoryAlert === f.value;
               return (
                 <button
                   key={f.value}
-                  onClick={() => setInventoryFilter(f.value)}
+                  onClick={() => setInventoryAlert(isActive ? "" : f.value)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    inventoryFilter === f.value
+                    isActive
                       ? "bg-green-600 text-white"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  {Icon && (
-                    <Icon
-                      size={12}
-                      className={inventoryFilter === f.value ? "text-white" : f.iconColor}
-                    />
-                  )}
+                  <Icon size={12} className={isActive ? "text-white" : f.iconColor} />
                   {f.label}
                 </button>
               );
@@ -98,6 +141,8 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
         <p className="text-sm text-gray-400">Carregando…</p>
       ) : inventory.length === 0 ? (
         <p className="text-sm text-gray-400">Nenhum produto encontrado. Clique em Sincronizar para importar seus anúncios.</p>
+      ) : filteredInventory.length === 0 ? (
+        <p className="text-sm text-gray-400">Nenhum produto encontrado para "{debouncedSearch}".</p>
       ) : (
         <div
           ref={parentRef}
@@ -109,6 +154,7 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
               <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
                 <th className="text-left py-2 pr-4 font-semibold">Produto</th>
                 <th className="text-left py-2 pr-4 font-semibold">SKU</th>
+                <th className="text-left py-2 pr-4 font-semibold">Loja</th>
                 <th className="text-right py-2 pr-4 font-semibold">Preço</th>
                 <th className="text-right py-2 pr-4 font-semibold">Total Vendido</th>
                 <th className="text-right py-2 pr-4 font-semibold">un/dia</th>
@@ -119,10 +165,10 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
             </thead>
             <tbody className="divide-y divide-gray-50">
               {virtualizer.getVirtualItems()[0]?.start > 0 && (
-                <tr><td colSpan={8} style={{ height: virtualizer.getVirtualItems()[0].start }} /></tr>
+                <tr><td colSpan={9} style={{ height: virtualizer.getVirtualItems()[0].start }} /></tr>
               )}
               {virtualizer.getVirtualItems().map((vRow) => {
-                const p = inventory[vRow.index];
+                const p = filteredInventory[vRow.index];
                 return (
                   <tr
                     key={p._id || p.id}
@@ -142,6 +188,7 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
                       </div>
                     </td>
                     <td className="py-2.5 pr-4 text-gray-400 font-mono text-xs">{p.SKU || "—"}</td>
+                    <td className="py-2.5 pr-4 text-xs text-gray-500 max-w-[120px] truncate">{p.nickname || "—"}</td>
                     <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(p.price)}</td>
                     <td className="py-2.5 pr-4 text-right font-semibold text-gray-700">{p.sold_quantity ?? "—"}</td>
                     <td className="py-2.5 pr-4 text-right text-xs text-gray-500">
@@ -184,7 +231,7 @@ export function InventoryTab({ inventory, loading, inventoryFilter, setInventory
                 const last = items[items.length - 1];
                 if (!last) return null;
                 const padBottom = virtualizer.getTotalSize() - last.end;
-                return padBottom > 0 ? <tr><td colSpan={8} style={{ height: padBottom }} /></tr> : null;
+                return padBottom > 0 ? <tr><td colSpan={9} style={{ height: padBottom }} /></tr> : null;
               })()}
             </tbody>
           </table>

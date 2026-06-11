@@ -445,14 +445,14 @@ const MeliAnalyticsController = {
   async inventory(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, filter: filterType, sortBy, sortDir = "desc", limit = 1000 } = req.query;
+      const { user_id, filter: filterType, alert: alertFilter, sortBy, sortDir = "desc", limit = 1000 } = req.query;
 
       const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
       if (user_id) query.user_id = Number(user_id);
-      if (filterType === "full") query.isFull = true;
+      if (filterType === "full")   query.isFull = true;
       if (filterType === "normal") query.isFull = { $ne: true };
-      if (filterType === "ruptura") query.alertRuptura = "RUPTURA";
-      if (filterType === "critico") query.alertRuptura = "CRÍTICO";
+      if (alertFilter === "ruptura") query.alertRuptura = "RUPTURA";
+      if (alertFilter === "critico") query.alertRuptura = "CRÍTICO";
 
       // Sem sortBy → ordem natural (sem sort explícito)
       let sort = {};
@@ -564,7 +564,7 @@ const MeliAnalyticsController = {
             pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$id", "$$itemId"] }, { $eq: ["$ownerId", ownerObjectId] }] } } }],
             as: "product",
           }},
-          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" } } },
+          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" }, daysRestStock: { $first: "$product.daysRestStock" } } },
         ]),
         // Alertas de estoque
         MeliProduct.aggregate([
@@ -667,18 +667,12 @@ const MeliAnalyticsController = {
             pedidos_pct: pedPct !== null ? Math.round(pedPct * 10) / 10 : null,
           }}),
         },
-        top5_produtos: top5.map((p) => {
-          const velocidade = p.unidades / days;
-          const diasEstoque = p.estoque != null && p.estoque >= 0 && velocidade > 0
-            ? Math.round(p.estoque / velocidade)
-            : null;
-          return {
-            nome: p.nome,
-            receita: Math.round(p.receita * 100) / 100,
-            unidades: p.unidades,
-            ...(diasEstoque !== null && { dias_estoque: diasEstoque }),
-          };
-        }),
+        top5_produtos: top5.map((p) => ({
+          nome: p.nome,
+          receita: Math.round(p.receita * 100) / 100,
+          unidades: p.unidades,
+          ...(p.daysRestStock != null && { dias_estoque: p.daysRestStock }),
+        })),
         estoque: {
           em_ruptura: alertMap["RUPTURA"] || 0,
           nivel_critico: alertMap["CRÍTICO"] || 0,
