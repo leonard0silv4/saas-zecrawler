@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle, RefreshCcw } from "lucide-react";
 import api from "../services/api";
 import { apiErrorMessage, notifyError, notifyWarning } from "../utils/notify.js";
@@ -12,7 +13,14 @@ import { TemplateModal } from "../components/meli-messages/TemplateModal";
 import { ProductSearchModal } from "../components/meli-messages/ProductSearchModal";
 import { ConfirmReplyModal } from "../components/meli-messages/ConfirmReplyModal";
 
-const QUESTIONS_POLL_MS = 5 * 60 * 1000;
+// ─── Query keys ───────────────────────────────────────────────────────────────
+const QK = {
+  accounts:      ()             => ["meli-accounts"],
+  templates:     ()             => ["meli-templates"],
+  questions:     (userId, status) => ["questions", userId, status],
+  buyerThread:   (fromId, userId) => ["buyer-thread", fromId, userId],
+  productDetail: (itemId)       => ["product-detail", itemId],
+};
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -23,25 +31,21 @@ function getGreeting() {
 
 export default function MeliMessagesPage() {
   const { hasDotForUserId, fetchUnread, lastMeliQuestionEvent } = useNotifications();
+  const queryClient = useQueryClient();
 
-  // ─── State ───────────────────────────────────────────────────────────────────
-  const [accounts, setAccounts] = useState([]);
+  // ─── UI state ────────────────────────────────────────────────────────────────
   const [selectedUserId, setSelectedUserId] = useState("");
   const [statusFilter, setStatusFilter] = useState("UNANSWERED");
   const [sortOrder, setSortOrder] = useState("desc");
   const [threadSortOrder, setThreadSortOrder] = useState("asc");
-  const [questions, setQuestions] = useState([]);
-  const [loadingQuestions, setLoadingQuestions] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const [templates, setTemplates] = useState([]);
   const [products, setProducts] = useState([]);
   const [productSearch, setProductSearch] = useState("");
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   const [selectedConversationFromId, setSelectedConversationFromId] = useState(null);
   const [replyText, setReplyText] = useState("");
-  const [sendingReply, setSendingReply] = useState(false);
 
   // Template CRUD state
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -59,20 +63,116 @@ export default function MeliMessagesPage() {
   const [confirmReplyModal, setConfirmReplyModal] = useState(false);
   const [deletingQuestion, setDeletingQuestion] = useState(false);
 
-  // Buyer thread
-  const [buyerThread, setBuyerThread] = useState([]);
-  const [loadingBuyerThread, setLoadingBuyerThread] = useState(false);
-  const [buyerThreadRefreshKey, setBuyerThreadRefreshKey] = useState(0);
-
-  // listing products per item_id (Map<itemId, product>)
-  const [listingProductsMap, setListingProductsMap] = useState(new Map());
-
   // Hashtag autocomplete
   const replyTextareaRef = useRef(null);
   const hashAnchorRef    = useRef(null);
   const [hashQuery, setHashQuery] = useState("");
   const [hashDropdownOpen, setHashDropdownOpen] = useState(false);
   const [hashDropdownIndex, setHashDropdownIndex] = useState(0);
+
+  // ─── Server state (React Query) ───────────────────────────────────────────────
+
+  const { data: accounts = [] } = useQuery({
+    queryKey: QK.accounts(),
+    queryFn: () => api.get("/meli/accounts").then(r => r.data),
+    staleTime: 5 * 60_000,
+    onSuccess: (data) => {
+      if (!selectedUserId && data.length > 0) setSelectedUserId(String(data[0].user_id));
+    },
+  });
+
+  // Auto-select first account on first load
+  useEffect(() => {
+    if (!selectedUserId && accounts.length > 0) setSelectedUserId(String(accounts[0].user_id));
+  }, [accounts, selectedUserId]);
+
+  const { data: templates = [] } = useQuery({
+    queryKey: QK.templates(),
+    queryFn: () => api.get("/meli/messages/templates").then(r => Array.isArray(r.data) ? r.data : []),
+    staleTime: 5 * 60_000,
+  });
+
+  const { data: questions = [], isLoading: loadingQuestions } = useQuery({
+    queryKey: QK.questions(selectedUserId, statusFilter),
+    queryFn: () =>
+      api.get("/meli/messages/questions", {
+        params: { user_id: selectedUserId, status: statusFilter, page: 1, limit: 50 },
+      }).then(r => r.data?.items ?? []),
+    enabled: !!selectedUserId,
+    staleTime: 30_000,
+    refetchInterval: 5 * 60_000,
+  });
+
+  const { data: buyerThread = [], isLoading: loadingBuyerThread } = useQuery({
+    queryKey: QK.buyerThread(selectedConversationFromId, selectedUserId),
+    queryFn: () =>
+      api.get("/meli/messages/questions/buyer-thread", {
+        params: { from_id: selectedConversationFromId, user_id: selectedUserId },
+      }).then(r => r.data?.items ?? []),
+    enabled: !!selectedConversationFromId && !!selectedUserId,
+    staleTime: 10_000,
+  });
+
+  // Product details — one cache entry per itemId, shared across conversations
+  const uniqueItemIds = useMemo(
+    () => [...new Set(buyerThread.map(q => q.item_id).filter(Boolean))],
+    [buyerThread]
+  );
+
+  const productQueries = useQueries({
+    queries: uniqueItemIds.map(itemId => ({
+      queryKey: QK.productDetail(itemId),
+      queryFn: () =>
+        api.get(`/meli/items/${itemId}/details`).then(r => r.data).catch(() => null),
+      staleTime: 5 * 60_000,
+      enabled: !!itemId,
+    })),
+  });
+
+  const listingProductsMap = useMemo(() => {
+    const map = new Map();
+    productQueries.forEach((q, i) => { if (q.data) map.set(uniqueItemIds[i], q.data); });
+    return map;
+  }, [productQueries, uniqueItemIds]);
+
+  // Send reply mutation with optimistic update
+  const replyMutation = useMutation({
+    mutationFn: ({ questionId, text }) =>
+      api.post(`/meli/messages/questions/${questionId}/reply`, { text }),
+
+    onMutate: async ({ questionId, text }) => {
+      const threadKey = QK.buyerThread(selectedConversationFromId, selectedUserId);
+      const questionsKey = QK.questions(selectedUserId, statusFilter);
+      await queryClient.cancelQueries({ queryKey: threadKey });
+      const prevThread = queryClient.getQueryData(threadKey);
+      queryClient.setQueryData(threadKey, (old = []) =>
+        old.map(q =>
+          q.question_id === questionId
+            ? { ...q, status: "ANSWERED", answer_text: text, answer_date_created: new Date().toISOString(), answered_by: "manual" }
+            : q
+        )
+      );
+      queryClient.setQueryData(questionsKey, (old = []) =>
+        old.map(q =>
+          q.question_id === questionId
+            ? { ...q, status: "ANSWERED", answer_text: text }
+            : q
+        )
+      );
+      return { prevThread, threadKey };
+    },
+
+    onError: (err, _vars, ctx) => {
+      if (ctx?.prevThread) queryClient.setQueryData(ctx.threadKey, ctx.prevThread);
+      notifyError(apiErrorMessage(err, "Erro ao enviar resposta manual"));
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) });
+      queryClient.invalidateQueries({ queryKey: QK.buyerThread(selectedConversationFromId, selectedUserId) });
+      fetchUnread();
+    },
+  });
 
   // ─── Derived values ───────────────────────────────────────────────────────────
   const conversations = useMemo(() => {
@@ -135,34 +235,57 @@ export default function MeliMessagesPage() {
 
   const selectedAccount = accounts.find((a) => String(a.user_id) === selectedUserId);
 
-  // ─── Data fetching ────────────────────────────────────────────────────────────
-  async function loadAccounts() {
-    const { data } = await api.get("/meli/accounts");
-    setAccounts(data);
-    if (!selectedUserId && data.length > 0) setSelectedUserId(String(data[0].user_id));
-  }
+  // ─── Effects ─────────────────────────────────────────────────────────────────
 
-  async function loadTemplates() {
-    const { data } = await api.get("/meli/messages/templates");
-    setTemplates(Array.isArray(data) ? data : []);
-  }
-
-  const loadQuestions = useCallback(async ({ silent = false } = {}) => {
+  // Reset conversation selection when account/filter changes
+  useEffect(() => {
     if (!selectedUserId) return;
-    if (!silent) setLoadingQuestions(true);
-    try {
-      const { data } = await api.get("/meli/messages/questions", {
-        params: { user_id: selectedUserId, status: statusFilter, page: 1, limit: 50 },
-      });
-      const items = Array.isArray(data?.items) ? data.items : [];
-      setQuestions(items);
-    } catch (error) {
-      if (!silent) notifyError(error.response?.data?.error || "Erro ao carregar perguntas");
-    } finally {
-      if (!silent) setLoadingQuestions(false);
-    }
+    setSelectedConversationFromId(null);
+    setReplyText("");
+    loadProducts("");
   }, [selectedUserId, statusFilter]);
 
+  // Auto-select first conversation
+  useEffect(() => {
+    if (conversations.length === 0) { setSelectedConversationFromId(null); return; }
+    setSelectedConversationFromId((prev) => {
+      if (prev != null && conversations.some((c) => String(c.from_id) === String(prev))) return prev;
+      return conversations[0]?.from_id ?? null;
+    });
+  }, [conversations]);
+
+  // SSE → invalidate queries instead of manual state updates
+  useEffect(() => {
+    if (!lastMeliQuestionEvent || !selectedUserId) return;
+    if (
+      lastMeliQuestionEvent.user_id &&
+      String(lastMeliQuestionEvent.user_id) !== String(selectedUserId)
+    ) return;
+
+    queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) });
+    if (selectedConversationFromId && String(lastMeliQuestionEvent.from_id) === String(selectedConversationFromId)) {
+      queryClient.invalidateQueries({ queryKey: QK.buyerThread(selectedConversationFromId, selectedUserId) });
+    }
+  }, [lastMeliQuestionEvent, selectedUserId, statusFilter, selectedConversationFromId, queryClient]);
+
+  // Product search debounce
+  useEffect(() => {
+    if (!selectedUserId || !accounts.length) return;
+    const handle = setTimeout(() => loadProducts(productSearch), 300);
+    return () => clearTimeout(handle);
+  }, [selectedUserId, productSearch, accounts.length]);
+
+  // Hashtag dropdown: close on outside click
+  useEffect(() => {
+    if (!hashDropdownOpen) return;
+    function close(e) {
+      if (hashAnchorRef.current && !hashAnchorRef.current.contains(e.target)) setHashDropdownOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [hashDropdownOpen]);
+
+  // ─── Data fetching helpers (non-cached, local UI) ─────────────────────────────
   async function loadProducts(query = "") {
     if (!accounts.length) { setProducts([]); return; }
     setLoadingProducts(true);
@@ -175,126 +298,6 @@ export default function MeliMessagesPage() {
       setLoadingProducts(false);
     }
   }
-
-  // ─── Effects ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    (async () => {
-      try { await Promise.all([loadAccounts(), loadTemplates()]); }
-      catch { notifyError("Erro ao carregar dados iniciais de Mensagens ML"); }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedUserId) return;
-    setSelectedConversationFromId(null);
-    setReplyText("");
-    loadQuestions();
-    loadProducts("");
-  }, [selectedUserId, statusFilter, loadQuestions]);
-
-  // Auto-select first conversation
-  useEffect(() => {
-    if (conversations.length === 0) { setSelectedConversationFromId(null); return; }
-    setSelectedConversationFromId((prev) => {
-      if (prev != null && conversations.some((c) => String(c.from_id) === String(prev))) return prev;
-      return conversations[0]?.from_id ?? null;
-    });
-  }, [conversations]);
-
-  // Polling
-  useEffect(() => {
-    if (!selectedUserId) return;
-    const id = setInterval(() => {
-      if (!document.hidden) loadQuestions({ silent: true });
-    }, QUESTIONS_POLL_MS);
-    return () => clearInterval(id);
-  }, [selectedUserId, statusFilter, loadQuestions]);
-
-  useEffect(() => {
-    if (!lastMeliQuestionEvent || !selectedUserId) return;
-    if (
-      lastMeliQuestionEvent.user_id &&
-      String(lastMeliQuestionEvent.user_id) !== String(selectedUserId)
-    ) return;
-
-    loadQuestions({ silent: true });
-    if (
-      selectedConversationFromId &&
-      String(lastMeliQuestionEvent.from_id) === String(selectedConversationFromId)
-    ) {
-      setBuyerThreadRefreshKey((k) => k + 1);
-    }
-  }, [lastMeliQuestionEvent, selectedUserId, selectedConversationFromId, loadQuestions]);
-
-  // Product search debounce
-  useEffect(() => {
-    if (!selectedUserId || !accounts.length) return;
-    const handle = setTimeout(() => loadProducts(productSearch), 300);
-    return () => clearTimeout(handle);
-  }, [selectedUserId, productSearch, accounts.length]);
-
-  // Buyer thread + product details — thread aparece imediatamente, produtos carregam em background
-  useEffect(() => {
-    if (!selectedConversationFromId) {
-      setBuyerThread([]);
-      setListingProductsMap(new Map());
-      return;
-    }
-    let cancelled = false;
-    setLoadingBuyerThread(true);
-    setListingProductsMap(new Map());
-
-    async function load() {
-      // Fase 1: busca a thread e exibe as mensagens imediatamente
-      let thread = [];
-      try {
-        const { data } = await api.get("/meli/messages/questions/buyer-thread", {
-          params: { from_id: selectedConversationFromId, user_id: selectedUserId },
-        });
-        if (cancelled) return;
-        thread = Array.isArray(data?.items) ? data.items : [];
-        setBuyerThread(thread);
-      } catch {
-        if (!cancelled) setBuyerThread([]);
-      } finally {
-        if (!cancelled) setLoadingBuyerThread(false);
-      }
-
-      // Fase 2: busca detalhes dos produtos em background (não bloqueia a thread)
-      if (cancelled || thread.length === 0) return;
-      const uniqueItemIds = [...new Set(thread.map((q) => q.item_id).filter(Boolean))];
-      if (uniqueItemIds.length === 0) return;
-
-      const productResults = await Promise.all(
-        uniqueItemIds.map((itemId) =>
-          api
-            .get(`/meli/items/${itemId}/details`)
-            .then(({ data: prod }) => ({ itemId, prod }))
-            .catch(() => ({ itemId, prod: null }))
-        )
-      );
-      if (cancelled) return;
-
-      const map = new Map();
-      productResults.forEach(({ itemId, prod }) => {
-        if (prod) map.set(itemId, prod);
-      });
-      setListingProductsMap(map);
-    }
-
-    load();
-    return () => { cancelled = true; };
-  }, [selectedConversationFromId, selectedUserId, buyerThreadRefreshKey]);
-
-  // Hashtag dropdown: close on outside click
-  useEffect(() => {
-    if (!hashDropdownOpen) return;
-    function close(e) {
-      if (hashAnchorRef.current && !hashAnchorRef.current.contains(e.target)) setHashDropdownOpen(false);
-    }
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [hashDropdownOpen]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────────
   function handleSelectConversation(fromId) {
@@ -372,41 +375,12 @@ export default function MeliMessagesPage() {
     setConfirmReplyModal(true);
   }
 
-  async function sendManualReply() {
+  function sendManualReply() {
     if (!activeQuestion) return;
     const text = replyText.trim();
     if (!text) { notifyWarning("Digite uma resposta antes de enviar"); return; }
-    setSendingReply(true);
-    try {
-      await api.post(`/meli/messages/questions/${activeQuestion.question_id}/reply`, { text });
-      setReplyText("");
-
-      // Update otimista imediato
-      setBuyerThread((prev) =>
-        prev.map((q) =>
-          q.question_id === activeQuestion.question_id
-            ? { ...q, status: "ANSWERED", answer_text: text, answer_date_created: new Date().toISOString(), answered_by: "manual" }
-            : q
-        )
-      );
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.question_id === activeQuestion.question_id
-            ? { ...q, status: "ANSWERED", answer_text: text }
-            : q
-        )
-      );
-
-      // Botão libera imediatamente — update otimista já reflete o envio
-      setSendingReply(false);
-
-      // Sincroniza estado real em background (fire-and-forget)
-      loadQuestions({ silent: true });
-      fetchUnread();
-    } catch (error) {
-      notifyError(apiErrorMessage(error, "Erro ao enviar resposta manual"));
-      setSendingReply(false);
-    }
+    setReplyText("");
+    replyMutation.mutate({ questionId: activeQuestion.question_id, text });
   }
 
   async function openSelectedQuestionListing() {
@@ -425,9 +399,15 @@ export default function MeliMessagesPage() {
 
   async function syncNow() {
     setSyncing(true);
-    try { await api.post("/meli/messages/sync"); await loadQuestions(); fetchUnread(); }
-    catch (error) { notifyError(error.response?.data?.error || "Erro ao sincronizar perguntas"); }
-    finally { setSyncing(false); }
+    try {
+      await api.post("/meli/messages/sync");
+      queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) });
+      fetchUnread();
+    } catch (error) {
+      notifyError(error.response?.data?.error || "Erro ao sincronizar perguntas");
+    } finally {
+      setSyncing(false);
+    }
   }
 
   async function createTemplate() {
@@ -437,7 +417,7 @@ export default function MeliMessagesPage() {
     try {
       await api.post("/meli/messages/templates", { name, content, isActive: true });
       setNewTemplateName(""); setNewTemplateContent("");
-      await loadTemplates();
+      queryClient.invalidateQueries({ queryKey: QK.templates() });
     } catch (error) { notifyError(error.response?.data?.error || "Erro ao criar template"); }
     finally { setSavingTemplate(false); }
   }
@@ -449,7 +429,7 @@ export default function MeliMessagesPage() {
     try {
       await api.put(`/meli/messages/templates/${editingTemplateId}`, { name, content });
       setEditingTemplateId(null); setEditingTemplateName(""); setEditingTemplateContent("");
-      await loadTemplates();
+      queryClient.invalidateQueries({ queryKey: QK.templates() });
     } catch (error) { notifyError(error.response?.data?.error || "Erro ao atualizar template"); }
     finally { setSavingTemplate(false); }
   }
@@ -462,8 +442,10 @@ export default function MeliMessagesPage() {
 
   async function deleteTemplate(id) {
     setDeletingTemplateId(id);
-    try { await api.delete(`/meli/messages/templates/${id}`); await loadTemplates(); }
-    catch (error) { notifyError(error.response?.data?.error || "Erro ao excluir template"); }
+    try {
+      await api.delete(`/meli/messages/templates/${id}`);
+      queryClient.invalidateQueries({ queryKey: QK.templates() });
+    } catch (error) { notifyError(error.response?.data?.error || "Erro ao excluir template"); }
     finally { setDeletingTemplateId(null); }
   }
 
@@ -473,7 +455,7 @@ export default function MeliMessagesPage() {
     try {
       await api.delete(`/meli/messages/questions/${deleteQuestionModal.question_id}`);
       setDeleteQuestionModal(null);
-      await loadQuestions();
+      queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) });
     } catch (error) {
       notifyError(error.response?.data?.error || "Erro ao excluir pergunta");
     } finally { setDeletingQuestion(false); }
@@ -494,7 +476,7 @@ export default function MeliMessagesPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={loadQuestions}
+            onClick={() => queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) })}
             disabled={loadingQuestions || !selectedUserId}
             className="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200"
           >
@@ -548,7 +530,7 @@ export default function MeliMessagesPage() {
           hashSuggestions={hashSuggestions}
           hashDropdownIndex={hashDropdownIndex}
           smartSuggestions={smartSuggestions}
-          sendingReply={sendingReply}
+          sendingReply={replyMutation.isPending}
           handleReplyChange={handleReplyChange}
           handleReplyKeyDown={handleReplyKeyDown}
           applySuggestion={applySuggestion}
@@ -593,10 +575,10 @@ export default function MeliMessagesPage() {
       <ConfirmReplyModal
         open={confirmReplyModal}
         onClose={() => setConfirmReplyModal(false)}
-        onConfirm={async () => { await sendManualReply(); setConfirmReplyModal(false); }}
+        onConfirm={async () => { sendManualReply(); setConfirmReplyModal(false); }}
         question={activeQuestion}
         replyText={replyText}
-        sending={sendingReply}
+        sending={replyMutation.isPending}
       />
 
       <ConfirmDialog
