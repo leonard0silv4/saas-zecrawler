@@ -233,7 +233,7 @@ export default function MeliMessagesPage() {
     return () => clearTimeout(handle);
   }, [selectedUserId, productSearch, accounts.length]);
 
-  // Buyer thread + product details — unified so both appear together
+  // Buyer thread + product details — thread aparece imediatamente, produtos carregam em background
   useEffect(() => {
     if (!selectedConversationFromId) {
       setBuyerThread([]);
@@ -245,36 +245,41 @@ export default function MeliMessagesPage() {
     setListingProductsMap(new Map());
 
     async function load() {
+      // Fase 1: busca a thread e exibe as mensagens imediatamente
+      let thread = [];
       try {
         const { data } = await api.get("/meli/messages/questions/buyer-thread", {
           params: { from_id: selectedConversationFromId, user_id: selectedUserId },
         });
         if (cancelled) return;
-        const thread = Array.isArray(data?.items) ? data.items : [];
-        const uniqueItemIds = [...new Set(thread.map((q) => q.item_id).filter(Boolean))];
-        const productResults = await Promise.all(
-          uniqueItemIds.map((itemId) =>
-            api
-              .get(`/meli/items/${itemId}/details`)
-              .then(({ data: prod }) => ({ itemId, prod }))
-              .catch(() => ({ itemId, prod: null }))
-          )
-        );
-        if (cancelled) return;
-        const map = new Map();
-        productResults.forEach(({ itemId, prod }) => {
-          if (prod) map.set(itemId, prod);
-        });
+        thread = Array.isArray(data?.items) ? data.items : [];
         setBuyerThread(thread);
-        setListingProductsMap(map);
       } catch {
-        if (!cancelled) {
-          setBuyerThread([]);
-          setListingProductsMap(new Map());
-        }
+        if (!cancelled) setBuyerThread([]);
       } finally {
         if (!cancelled) setLoadingBuyerThread(false);
       }
+
+      // Fase 2: busca detalhes dos produtos em background (não bloqueia a thread)
+      if (cancelled || thread.length === 0) return;
+      const uniqueItemIds = [...new Set(thread.map((q) => q.item_id).filter(Boolean))];
+      if (uniqueItemIds.length === 0) return;
+
+      const productResults = await Promise.all(
+        uniqueItemIds.map((itemId) =>
+          api
+            .get(`/meli/items/${itemId}/details`)
+            .then(({ data: prod }) => ({ itemId, prod }))
+            .catch(() => ({ itemId, prod: null }))
+        )
+      );
+      if (cancelled) return;
+
+      const map = new Map();
+      productResults.forEach(({ itemId, prod }) => {
+        if (prod) map.set(itemId, prod);
+      });
+      setListingProductsMap(map);
     }
 
     load();
@@ -392,13 +397,16 @@ export default function MeliMessagesPage() {
         )
       );
 
-      // Sincroniza estado real em background
-      await loadQuestions();
+      // Botão libera imediatamente — update otimista já reflete o envio
+      setSendingReply(false);
+
+      // Sincroniza estado real em background (fire-and-forget)
+      loadQuestions({ silent: true });
       fetchUnread();
-      setBuyerThreadRefreshKey((k) => k + 1);
     } catch (error) {
       notifyError(apiErrorMessage(error, "Erro ao enviar resposta manual"));
-    } finally { setSendingReply(false); }
+      setSendingReply(false);
+    }
   }
 
   async function openSelectedQuestionListing() {
