@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ComposedChart, Area, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine,
@@ -25,113 +26,99 @@ const PERIODS = [
   { label: "90d", value: "90d" },
 ];
 
+const QK = {
+  accounts: () => ["meli-analytics-accounts"],
+  summary: (userId, period) => ["analytics-summary", userId, period],
+  chart: (userId, period) => ["analytics-chart", userId, period],
+  top: (userId, period, sortBy, onlyActive) => ["analytics-top", userId, period, sortBy, onlyActive],
+  orders: (userId, period) => ["analytics-orders", userId, period],
+  inventory: (userId, period, filter, alert, sort) => ["analytics-inventory", userId, period, filter, alert, sort],
+  ai: (userId, period) => ["analytics-ai", userId, period],
+};
+
 export default function MeliAnalyticsPage() {
-  const [accounts,        setAccounts]        = useState([]);
+  const queryClient = useQueryClient();
   const [selectedAccount, setSelectedAccount] = useState("");
   const [unifiedView, setUnifiedView] = useState(true);
   const [period,          setPeriod]          = useState("30d");
   const [activeTab,       setActiveTab]       = useState("estoque");
-
-  const tabLoadedRef   = useRef(new Set());
-  const prevContextRef = useRef({ account: null, period: null, unifiedView: null });
   const tabSectionRef  = useRef(null);
 
-  const [summary,         setSummary]         = useState(null);
-  const [chartData,       setChartData]       = useState([]);
-  const [topProducts,     setTopProducts]     = useState([]);
-  const [orders,          setOrders]          = useState([]);
-  const [inventory,       setInventory]       = useState([]);
   const [inventoryType,   setInventoryType]   = useState("");
   const [inventoryAlert,  setInventoryAlert]  = useState("");
   const [inventorySort,   setInventorySort]   = useState({ field: "sold", dir: "desc" });
   const [topSort,         setTopSort]         = useState("receita");
   const [topOnlyActive,   setTopOnlyActive]   = useState(false);
 
-  const [syncing,          setSyncing]          = useState(false);
-  const [loadingSummary,   setLoadingSummary]   = useState(false);
-  const [loadingChart,     setLoadingChart]     = useState(false);
-  const [loadingTop,       setLoadingTop]       = useState(false);
-  const [loadingOrders,    setLoadingOrders]    = useState(false);
-  const [loadingInventory, setLoadingInventory] = useState(false);
-  const [selectedProduct,  setSelectedProduct]  = useState(null);
+  const [syncing,         setSyncing]         = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [loadingAI,       setLoadingAI]       = useState(false);
+  const [aiDismissed,     setAiDismissed]     = useState(false);
 
-  const [aiAnalysis,        setAiAnalysis]        = useState(null);
-  const [aiGeneratedAt,     setAiGeneratedAt]     = useState(null);
-  const [aiAlreadyUsedToday, setAiAlreadyUsedToday] = useState(false);
-  const [loadingAI,         setLoadingAI]         = useState(false);
+  const userId = !unifiedView && selectedAccount ? selectedAccount : null;
 
-  useEffect(() => {
-    api.get("/meli/accounts").then(({ data }) => {
-      setAccounts(data);
-      if (data.length) setSelectedAccount(String(data[0].user_id));
-    }).catch(() => {});
-  }, []);
-
-  const params = useCallback(() => {
-    const p = { period };
-    if (!unifiedView && selectedAccount) p.user_id = selectedAccount;
-    return p;
-  }, [period, selectedAccount, unifiedView]);
+  const { data: accounts = [] } = useQuery({
+    queryKey: QK.accounts(),
+    queryFn: () => api.get("/meli/accounts").then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
-    if (!unifiedView && !selectedAccount) return;
-    loadSummary();
-    loadChart();
-    loadAiCache();
-  }, [selectedAccount, period, unifiedView]);
+    if (accounts.length && !selectedAccount) setSelectedAccount(String(accounts[0].user_id));
+  }, [accounts, selectedAccount]);
 
-  // Re-verifica cache ao voltar para a aba (cobre o cenário de aba aberta overnight)
-  useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === "visible") loadAiCache(); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [selectedAccount, period, unifiedView]);
+  useEffect(() => { setAiDismissed(false); }, [userId, period]);
 
-  useEffect(() => {
-    if (!unifiedView && !selectedAccount) return;
-    if (
-      prevContextRef.current.account !== selectedAccount ||
-      prevContextRef.current.period !== period ||
-      prevContextRef.current.unifiedView !== unifiedView
-    ) {
-      tabLoadedRef.current = new Set();
-      prevContextRef.current = { account: selectedAccount, period, unifiedView };
-    }
-    if (tabLoadedRef.current.has(activeTab)) return;
-    if (activeTab === "top")     loadTop();
-    if (activeTab === "pedidos") loadOrders();
-    if (activeTab === "estoque") loadInventory();
-    tabLoadedRef.current.add(activeTab);
-  }, [activeTab, selectedAccount, period, unifiedView]);
+  const enabled = unifiedView || !!selectedAccount;
 
-  useEffect(() => {
-    if (activeTab === "estoque" && (unifiedView || selectedAccount)) loadInventory();
-  }, [inventoryType, inventoryAlert, inventorySort, activeTab, selectedAccount, unifiedView]);
+  const { data: summary, isLoading: loadingSummary } = useQuery({
+    queryKey: QK.summary(userId, period),
+    queryFn: () => api.get("/meli/analytics/summary", { params: { period, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data),
+    enabled,
+  });
 
-  useEffect(() => {
-    if (activeTab === "top" && (unifiedView || selectedAccount)) loadTop();
-  }, [topSort, topOnlyActive, activeTab, selectedAccount, unifiedView]);
+  const { data: chartData = [], isLoading: loadingChart } = useQuery({
+    queryKey: QK.chart(userId, period),
+    queryFn: () => api.get("/meli/analytics/sales-chart", { params: { period, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data),
+    enabled,
+  });
 
-  async function loadAiCache() {
-    try {
-      const { data } = await api.get("/meli/analytics/ai-analysis", { params: params() });
-      if (data.cached) {
-        setAiAnalysis(data.analysis);
-        setAiGeneratedAt(data.generatedAt);
-        setAiAlreadyUsedToday(true);
-      } else {
-        setAiAlreadyUsedToday(false);
-      }
-    } catch { /* sem cache, ignora */ }
-  }
+  const { data: topProducts = [], isLoading: loadingTop } = useQuery({
+    queryKey: QK.top(userId, period, topSort, topOnlyActive),
+    queryFn: () => api.get("/meli/analytics/top-products", { params: { period, ...(userId ? { user_id: userId } : {}), sortBy: topSort, ...(topOnlyActive ? { onlyActive: "true" } : {}) } }).then(r => r.data),
+    enabled: enabled && activeTab === "top",
+  });
+
+  const { data: ordersData, isLoading: loadingOrders } = useQuery({
+    queryKey: QK.orders(userId, period),
+    queryFn: () => api.get("/meli/analytics/orders", { params: { period, ...(userId ? { user_id: userId } : {}), limit: 1000 } }).then(r => r.data),
+    enabled: enabled && activeTab === "pedidos",
+  });
+  const orders = ordersData?.orders ?? [];
+
+  const invSort = inventorySort.field ? { sortBy: inventorySort.field, sortDir: inventorySort.dir } : {};
+  const { data: inventory = [], isLoading: loadingInventory } = useQuery({
+    queryKey: QK.inventory(userId, period, inventoryType, inventoryAlert, inventorySort),
+    queryFn: () => api.get("/meli/analytics/inventory", { params: { period, ...(userId ? { user_id: userId } : {}), ...(inventoryType ? { filter: inventoryType } : {}), ...(inventoryAlert ? { alert: inventoryAlert } : {}), ...invSort } }).then(r => r.data),
+    enabled: enabled && activeTab === "estoque",
+  });
+
+  const { data: aiCache } = useQuery({
+    queryKey: QK.ai(userId, period),
+    queryFn: () => api.get("/meli/analytics/ai-analysis", { params: { period, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data).catch(() => null),
+    enabled,
+    staleTime: 60 * 60 * 1000,
+  });
+
+  const aiAnalysis = !aiDismissed && aiCache?.cached ? aiCache.analysis : null;
+  const aiGeneratedAt = aiCache?.cached ? aiCache.generatedAt : null;
+  const aiAlreadyUsedToday = !!aiCache?.cached;
 
   async function generateAiAnalysis() {
     setLoadingAI(true);
     try {
-      const { data } = await api.post("/meli/analytics/ai-analysis", null, { params: params() });
-      setAiAnalysis(data.analysis);
-      setAiGeneratedAt(data.generatedAt);
-      setAiAlreadyUsedToday(true);
+      await api.post("/meli/analytics/ai-analysis", null, { params: { period, ...(userId ? { user_id: userId } : {}) } });
+      queryClient.invalidateQueries({ queryKey: QK.ai(userId, period) });
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao gerar análise com IA");
     } finally {
@@ -139,47 +126,10 @@ export default function MeliAnalyticsPage() {
     }
   }
 
-  async function loadSummary() {
-    setLoadingSummary(true);
-    try { const { data } = await api.get("/meli/analytics/summary", { params: params() }); setSummary(data); }
-    catch { setSummary(null); } finally { setLoadingSummary(false); }
-  }
-  async function loadChart() {
-    setLoadingChart(true);
-    try { const { data } = await api.get("/meli/analytics/sales-chart", { params: params() }); setChartData(data); }
-    catch { setChartData([]); } finally { setLoadingChart(false); }
-  }
-  async function loadTop() {
-    setLoadingTop(true);
-    try {
-      const p = { ...params(), sortBy: topSort };
-      if (topOnlyActive) p.onlyActive = "true";
-      const { data } = await api.get("/meli/analytics/top-products", { params: p });
-      setTopProducts(data);
-    } catch { setTopProducts([]); } finally { setLoadingTop(false); }
-  }
-  async function loadOrders() {
-    setLoadingOrders(true);
-    try {
-      const { data } = await api.get("/meli/analytics/orders", { params: { ...params(), limit: 1000 } });
-      setOrders(data.orders || []);
-    } catch { setOrders([]); } finally { setLoadingOrders(false); }
-  }
-  async function loadInventory() {
-    setLoadingInventory(true);
-    try {
-      const p = { ...params() };
-      if (inventoryType)  p.filter = inventoryType;
-      if (inventoryAlert) p.alert  = inventoryAlert;
-      if (inventorySort.field) { p.sortBy = inventorySort.field; p.sortDir = inventorySort.dir; }
-      const { data } = await api.get("/meli/analytics/inventory", { params: p });
-      setInventory(data);
-    } catch { setInventory([]); } finally { setLoadingInventory(false); }
-  }
   async function handleSync(force = false) {
     setSyncing(true);
     try {
-      const qp = { ...(!unifiedView && selectedAccount ? { user_id: selectedAccount } : {}), ...(force ? { force: "true" } : {}) };
+      const qp = { ...(userId ? { user_id: userId } : {}), ...(force ? { force: "true" } : {}) };
       const { data } = await api.post("/meli/analytics/sync", null, { params: qp });
       const accountsText = unifiedView && data.accounts ? " em " + data.accounts + " lojas" : "";
       const slowHint = unifiedView ? " Esse processo pode demorar um pouco." : "";
@@ -187,10 +137,11 @@ export default function MeliAnalyticsPage() {
         ? "Re-sync completo: " + data.synced + " pedidos atualizados" + accountsText + "."
         : data.synced + " pedidos sincronizados" + accountsText + ".";
       notifySuccess(baseMessage + slowHint);
-      loadSummary(); loadChart();
-      if (activeTab === "top")     loadTop();
-      if (activeTab === "pedidos") loadOrders();
-      if (activeTab === "estoque") loadInventory();
+      queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-chart"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-top"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-inventory"] });
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao sincronizar");
     } finally { setSyncing(false); }
@@ -283,7 +234,7 @@ export default function MeliAnalyticsPage() {
         <AIInsightsSection
           aiAnalysis={aiAnalysis}
           aiGeneratedAt={aiGeneratedAt}
-          onDismiss={() => setAiAnalysis(null)}
+          onDismiss={() => setAiDismissed(true)}
         />
       )}
 

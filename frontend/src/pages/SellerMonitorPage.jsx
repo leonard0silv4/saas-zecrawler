@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Bell, Loader2, Package, Pencil, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
@@ -6,6 +7,12 @@ import { notifyError, notifyWarning } from "../utils/notify.js";
 import { format } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+
+const QK = {
+  sellers: () => ["seller-monitor"],
+  products: (id) => ["seller-products", id],
+  alerts: (id) => ["seller-alerts", id],
+};
 
 
 function fmtAgo(iso) {
@@ -20,13 +27,9 @@ function fmtAgo(iso) {
 
 export default function SellerMonitorPage() {
   const { user } = useAuth();
-  const [sellers, setSellers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState(null);
   const [tab, setTab] = useState("products");
-  const [products, setProducts] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [newUrl, setNewUrl] = useState("");
   const [newName, setNewName] = useState("");
@@ -36,80 +39,29 @@ export default function SellerMonitorPage() {
   const [editName, setEditName] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [editSaving, setEditSaving] = useState(false);
-  const prevRef = useRef(new Map());
   const [confirmDialog, setConfirmDialog] = useState(null);
 
-  const fetchSellers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get("/seller-monitor");
-      setSellers(data);
-      prevRef.current = new Map(data.map((s) => [s._id, s]));
-    } catch {
-      notifyError("Erro ao carregar sellers");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: sellers = [], isLoading: loading } = useQuery({
+    queryKey: QK.sellers(),
+    queryFn: () => api.get("/seller-monitor").then(r => r.data),
+    refetchInterval: (query) => query.state.data?.some(s => s.scraping) ? 4000 : 30000,
+  });
 
-  useEffect(() => {
-    fetchSellers();
-  }, [fetchSellers]);
+  const { data: products = [], isLoading: loadingDetail } = useQuery({
+    queryKey: QK.products(selectedId),
+    queryFn: () => api.get(`/seller-monitor/${selectedId}/products`).then(r => r.data),
+    enabled: !!selectedId,
+  });
 
-  const loadProducts = useCallback(async (id) => {
-    setLoadingDetail(true);
-    try {
-      const { data } = await api.get(`/seller-monitor/${id}/products`);
-      setProducts(data);
-    } catch {
-      notifyError("Erro ao carregar produtos");
-    } finally {
-      setLoadingDetail(false);
-    }
-  }, []);
-
-  const loadAlerts = useCallback(async (id) => {
-    try {
-      const { data } = await api.get(`/seller-monitor/${id}/alerts`);
-      setAlerts(data);
-    } catch {
-      notifyError("Erro ao carregar alertas");
-    }
-  }, []);
-
-  useEffect(() => {
-    const tick = async () => {
-      try {
-        const { data } = await api.get("/seller-monitor");
-        const prev = prevRef.current;
-        const curSel = selectedId;
-        let reload = false;
-        data.forEach((s) => {
-          const was = prev.get(s._id);
-          if (!was) return;
-          const done = was.scraping && !s.scraping;
-          const cron = !was.scraping && !s.scraping && was.lastRunAt !== s.lastRunAt;
-          if ((done || cron) && s._id === curSel) reload = true;
-        });
-        setSellers(data);
-        prevRef.current = new Map(data.map((s) => [s._id, s]));
-        if (reload && curSel) {
-          loadProducts(curSel);
-          loadAlerts(curSel);
-        }
-      } catch {
-        /* silencioso */
-      }
-    };
-    const t = setInterval(tick, sellers.some((s) => s.scraping) ? 4000 : 30000);
-    return () => clearInterval(t);
-  }, [sellers, selectedId, loadProducts, loadAlerts]);
+  const { data: alerts = [] } = useQuery({
+    queryKey: QK.alerts(selectedId),
+    queryFn: () => api.get(`/seller-monitor/${selectedId}/alerts`).then(r => r.data),
+    enabled: !!selectedId,
+  });
 
   function selectSeller(s) {
     setSelectedId(s._id);
     setTab("products");
-    loadProducts(s._id);
-    loadAlerts(s._id);
   }
 
   async function handleAdd(e) {
@@ -117,8 +69,8 @@ export default function SellerMonitorPage() {
     if (!newUrl.trim()) return;
     setAdding(true);
     try {
-      const { data } = await api.post("/seller-monitor", { url: newUrl.trim(), name: newName.trim() });
-      setSellers((prev) => [{ ...data, totalProducts: 0, unreadAlerts: 0 }, ...prev]);
+      await api.post("/seller-monitor", { url: newUrl.trim(), name: newName.trim() });
+      queryClient.invalidateQueries({ queryKey: QK.sellers() });
       setAddOpen(false);
       setNewUrl("");
       setNewName("");
@@ -132,7 +84,7 @@ export default function SellerMonitorPage() {
   async function handleRun(s) {
     try {
       await api.post(`/seller-monitor/${s._id}/run`);
-      setSellers((prev) => prev.map((x) => (x._id === s._id ? { ...x, scraping: true } : x)));
+      queryClient.invalidateQueries({ queryKey: QK.sellers() });
     } catch (err) {
       if (err.response?.status === 409) notifyWarning("Scraping já em andamento");
       else notifyError("Erro ao iniciar");
@@ -150,17 +102,14 @@ export default function SellerMonitorPage() {
     if (!editSeller) return;
     setEditSaving(true);
     try {
-      const urlChanged = editUrl.trim() !== editSeller.url;
-      const { data } = await api.put(`/seller-monitor/${editSeller._id}`, {
+      await api.put(`/seller-monitor/${editSeller._id}`, {
         name: editName.trim(),
         url: editUrl.trim(),
       });
-      setSellers((prev) => prev.map((x) => (x._id === data._id ? { ...x, ...data } : x)));
-      if (selectedId === editSeller._id && urlChanged) {
-        setProducts([]);
-        setAlerts([]);
-        loadProducts(editSeller._id);
-        loadAlerts(editSeller._id);
+      queryClient.invalidateQueries({ queryKey: QK.sellers() });
+      if (selectedId === editSeller._id) {
+        queryClient.invalidateQueries({ queryKey: QK.products(selectedId) });
+        queryClient.invalidateQueries({ queryKey: QK.alerts(selectedId) });
       }
       setEditOpen(false);
       setEditSeller(null);
@@ -179,25 +128,21 @@ export default function SellerMonitorPage() {
       onConfirm: async () => {
         await api.delete(`/seller-monitor/${s._id}`);
         setConfirmDialog(null);
-        setSellers((prev) => prev.filter((x) => x._id !== s._id));
-        if (selectedId === s._id) {
-          setSelectedId(null);
-          setProducts([]);
-          setAlerts([]);
-        }
+        if (selectedId === s._id) setSelectedId(null);
+        queryClient.invalidateQueries({ queryKey: QK.sellers() });
       },
     });
   }
 
   async function markRead(aid) {
     await api.put(`/seller-monitor/alerts/${aid}/read`);
-    setAlerts((prev) => prev.map((a) => (a._id === aid ? { ...a, read: true } : a)));
+    queryClient.invalidateQueries({ queryKey: QK.alerts(selectedId) });
   }
 
   async function markAllRead() {
     if (!selectedId) return;
     await api.put(`/seller-monitor/${selectedId}/alerts/read-all`);
-    setAlerts((prev) => prev.map((a) => ({ ...a, read: true })));
+    queryClient.invalidateQueries({ queryKey: QK.alerts(selectedId) });
   }
 
   const selected = sellers.find((s) => s._id === selectedId);
@@ -233,7 +178,7 @@ export default function SellerMonitorPage() {
               {sellers.length} de {maxSellerMonitors} utilizados
             </p>
           </div>
-          <button type="button" onClick={fetchSellers} className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg">
+          <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: QK.sellers() })} className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg">
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
         </div>

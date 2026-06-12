@@ -15,9 +15,11 @@
 
 ## Implementação
 
-Usa parâmetros de período e conta selecionada para consultar `/meli/analytics/*`. Quando a visão unificada está ativa, omite `user_id` para usar as agregações backend de todas as lojas. As abas são controladas por `display: block/none` para preservar scroll e evitar remount dos virtualizadores.
+Usa `@tanstack/react-query` para todos os GETs. O `tabLoadedRef` foi removido — o lazy loading por aba é controlado pela opção `enabled: activeTab === "..."` em cada `useQuery`. Trocar conta, período ou visão unificada altera automaticamente os query keys, forçando re-fetch conforme necessário.
 
-Cache de abas via `tabLoadedRef` (Set) — ao trocar conta, período ou modo unificado, o Set é resetado e todas as abas são re-fetchadas na próxima visita. O seletor de loja fica desabilitado na visão unificada, mantendo a loja selecionada para quando o usuário voltar ao modo por loja.
+Quando a visão unificada está ativa, `userId = null` e o parâmetro `user_id` é omitido nas queries. As abas são controladas por `display: block/none` para preservar scroll e evitar remount dos virtualizadores. O seletor de loja fica desabilitado na visão unificada, mantendo a loja selecionada para quando o usuário voltar ao modo por loja.
+
+Após sync, todos os query keys `["analytics-*"]` são invalidados. O cache da análise IA usa `staleTime: 1h`. O botão de fechar o painel IA usa `aiDismissed` (estado local) e reseta ao trocar contexto.
 
 `unifiedView` inicializa em `true` — a tela abre na visão de todas as lojas por padrão. A primeira conta continua sendo pré-selecionada internamente para que ao trocar para modo "Loja" o seletor já tenha um valor.
 

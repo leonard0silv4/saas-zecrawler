@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import {
   Calculator,
@@ -32,10 +33,11 @@ const empty = {
 };
 
 export default function CatalogPage() {
-  const [items, setItems] = useState([]);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [cursor, setCursor] = useState(null);
+  const [items, setItems] = useState([]);
   const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
@@ -49,30 +51,45 @@ export default function CatalogPage() {
   const [pkgPeso, setPkgPeso] = useState("");
   const [pkgResult, setPkgResult] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
-  const cursorRef = useRef(null);
+  const appendRef = useRef(false);
+  const nextCursorRef = useRef(null);
   const MARGEM_PESO = 0.05;
 
-  const fetchList = useCallback(async (reset) => {
-    setLoading(true);
-    try {
-      const params = { limit: 30, search: search || undefined };
-      if (!reset && cursorRef.current) params.cursor = cursorRef.current;
-      const { data } = await api.get("/catalog", { params });
-      if (reset) setItems(data.data);
-      else setItems((prev) => [...prev, ...data.data]);
-      setHasMore(data.hasNextPage);
-      cursorRef.current = data.nextCursor;
-    } catch {
-      notifyError("Erro ao carregar catálogo");
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
+  const { data: pageData, isLoading: loading, isError } = useQuery({
+    queryKey: ["catalog", search, cursor],
+    queryFn: () => api.get("/catalog", { params: { limit: 30, search: search || undefined, cursor: cursor || undefined } }).then(r => r.data),
+    keepPreviousData: true,
+  });
 
   useEffect(() => {
-    cursorRef.current = null;
-    fetchList(true);
-  }, [search, fetchList]);
+    if (isError) { notifyError("Erro ao carregar catálogo"); return; }
+    if (!pageData) return;
+    nextCursorRef.current = pageData.nextCursor;
+    if (appendRef.current) {
+      setItems((prev) => [...prev, ...pageData.data]);
+      appendRef.current = false;
+    } else {
+      setItems(pageData.data);
+    }
+    setHasMore(pageData.hasNextPage);
+  }, [pageData, isError]);
+
+  // Reset ao mudar search
+  useEffect(() => {
+    appendRef.current = false;
+    setCursor(null);
+  }, [search]);
+
+  const resetList = useCallback(() => {
+    appendRef.current = false;
+    setCursor(null);
+    queryClient.invalidateQueries({ queryKey: ["catalog"] });
+  }, [queryClient]);
+
+  const loadMore = useCallback(() => {
+    appendRef.current = true;
+    setCursor(nextCursorRef.current);
+  }, []);
 
   async function save() {
     if (!form.sku1.trim() || !form.produto.trim() || !form.medidas.trim()) {
@@ -108,8 +125,7 @@ export default function CatalogPage() {
       setModal(false);
       setForm(empty);
       setEditingId(null);
-      cursorRef.current = null;
-      fetchList(true);
+      resetList();
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao salvar");
     } finally {
@@ -125,8 +141,7 @@ export default function CatalogPage() {
       onConfirm: async () => {
         await api.delete(`/catalog/${id}`);
         setConfirmDialog(null);
-        cursorRef.current = null;
-        fetchList(true);
+        resetList();
       },
     });
   }
@@ -140,8 +155,7 @@ export default function CatalogPage() {
       fd.append("file", f);
       const { data } = await api.post("/catalog/import", fd);
       notifySuccess(`Importação: ${data.imported} novos, ${data.skipped} ignorados de ${data.total} linhas.`);
-      cursorRef.current = null;
-      fetchList(true);
+      resetList();
     } catch {
       notifyError("Erro na importação (planilha precisa colunas SKU-1, PRODUTO, MEDIDAS, LARG, COMP, ALTURA, KG…)");
     } finally {
@@ -336,7 +350,7 @@ export default function CatalogPage() {
         {!loading && items.length === 0 && <p className="text-center text-gray-500 py-12">Nenhum item.</p>}
         {hasMore && (
           <div className="p-4 text-center border-t border-gray-100">
-            <button type="button" className="text-brand-600 text-sm font-medium" onClick={() => fetchList(false)}>
+            <button type="button" className="text-brand-600 text-sm font-medium" onClick={loadMore}>
               Carregar mais
             </button>
           </div>

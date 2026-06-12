@@ -6,4 +6,4 @@
 
 ## Implementação
 
-Envia JSON no CRUD e `FormData` na importação. A paginação usa cursor retornado pelo backend.
+Usa `@tanstack/react-query` com query key `["catalog", search, cursor]`. A paginação cursor-based é mantida em estado local: ao clicar "Carregar mais", `appendRef.current = true` e o cursor avança; ao mudar a busca, o cursor reseta e items são substituídos. Após CRUD e importação, `resetList()` invalida o cache e reseta o cursor. O `nextCursor` é armazenado em `nextCursorRef` a cada resposta.

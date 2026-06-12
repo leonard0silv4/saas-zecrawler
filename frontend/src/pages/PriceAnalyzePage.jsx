@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { ExternalLink, Filter, LineChart, RefreshCw, X, AlertTriangle, TrendingUp, Play, Trophy, Eye, AlertCircle } from "lucide-react";
@@ -38,13 +39,9 @@ function formatCurrency(n) {
 const GENERATE_TIMEOUT_MS = 15 * 60 * 1000;
 
 export default function PriceAnalyzePage() {
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState(null);
-  const [noXmlYet, setNoXmlYet] = useState(false);
-  const [extractionDate, setExtractionDate] = useState(null);
-  const [productGroups, setProductGroups] = useState([]);
-
+  const [generateError, setGenerateError] = useState(null);
   const [cookiesAlert, setCookiesAlert] = useState(false);
 
   const [filterAlert, setFilterAlert] = useState(false);
@@ -56,35 +53,27 @@ export default function PriceAnalyzePage() {
 
   const storesForBadge = useMemo(() => myStores, [myStores]);
 
-  const loadXml = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    setNoXmlYet(false);
-    try {
-      const { status, text } = await fetchPriceAnalyzeXmlText();
-      if (status === 404 || !text) {
-        setProductGroups([]);
-        setExtractionDate(null);
-        setNoXmlYet(true);
-        return;
-      }
-      const parsed = parseXML(text, myStores);
-      setProductGroups(parsed.productGroups);
-      setExtractionDate(parsed.extractionDate);
-    } catch (e) {
-      setError(e.message || "Erro ao carregar XML");
-    } finally {
-      setLoading(false);
-    }
-  }, [myStores]);
+  const { data: xmlResult, isLoading: loading, error: xmlError, refetch: reloadXml } = useQuery({
+    queryKey: ["price-analyze-xml"],
+    queryFn: fetchPriceAnalyzeXmlText,
+    staleTime: Infinity,
+    retry: false,
+  });
 
-  useEffect(() => {
-    loadXml();
-  }, [loadXml]);
+  const noXmlYet = !loading && !xmlError && (!xmlResult || xmlResult.status === 404 || !xmlResult.text);
+  const error = xmlError?.message || generateError;
+
+  const parsed = useMemo(() => {
+    if (!xmlResult?.text) return null;
+    return parseXML(xmlResult.text, myStores);
+  }, [xmlResult, myStores]);
+
+  const productGroups = parsed?.productGroups ?? [];
+  const extractionDate = parsed?.extractionDate ?? null;
 
   async function handleGenerate() {
     setGenerating(true);
-    setError(null);
+    setGenerateError(null);
     setCookiesAlert(false);
     try {
       const { data } = await api.post(
@@ -92,13 +81,12 @@ export default function PriceAnalyzePage() {
         { limit: 300 },
         { timeout: GENERATE_TIMEOUT_MS }
       );
-      // Tinha links cadastrados mas nenhum produto foi extraído → cookies provavelmente inválidos/expirados
       if (data.urlsProcessadas > 0 && data.linhasProduto === 0) {
         setCookiesAlert(true);
       }
-      await loadXml();
+      queryClient.invalidateQueries({ queryKey: ["price-analyze-xml"] });
     } catch (e) {
-      setError(e.response?.data?.error || e.message || "Erro ao gerar XML");
+      setGenerateError(e.response?.data?.error || e.message || "Erro ao gerar XML");
     } finally {
       setGenerating(false);
     }
@@ -176,7 +164,7 @@ export default function PriceAnalyzePage() {
             </button>
             <button
               type="button"
-              onClick={loadXml}
+              onClick={reloadXml}
               disabled={loading || generating}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
             >

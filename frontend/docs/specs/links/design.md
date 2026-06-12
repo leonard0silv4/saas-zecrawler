@@ -9,7 +9,9 @@
 
 ## Implementação
 
-Mantém filtros e paginação localmente. O refresh usa streaming para acompanhar progresso. Integra com `/links`, `/links/tags`, `/links/sellers`, `/links/stats` e CRUD de links.
+Usa `@tanstack/react-query` para todas as queries GET (`useQuery`). Após mutations (POST/PUT/DELETE), invalida os query keys relevantes com `queryClient.invalidateQueries`. O refresh de preços usa streaming (`fetch()` direto) e invalida o cache ao concluir.
+
+Query keys: `["links", filters]`, `["links-tags"]`, `["links-sellers"]`, `["links-stats"]`. Tags e sellers têm `staleTime: 10min`.
 
 **`SortableHeader`** permanece definido inline na função do componente principal (é muito pequeno e depende de closure sobre `sortConfig`/`handleSort`).
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Pencil, RefreshCw, Trash2, Tag, TrendingUp, TrendingDown, Minus,
   Search, X, Link2, MoreVertical, ExternalLink, ChevronUp, ChevronDown,
@@ -13,15 +14,20 @@ import { AISection }      from "../components/links/AISection";
 import { AddLinkModal }   from "../components/links/AddLinkModal";
 import { EditLinkModal }  from "../components/links/EditLinkModal";
 
+const QK = {
+  links: (filters) => ["links", filters],
+  tags: () => ["links-tags"],
+  sellers: () => ["links-sellers"],
+  stats: () => ["links-stats"],
+};
+
 // ─── Página principal ────────────────────────────────────────────────────────
 
 export default function LinksPage() {
   const { user } = useAuth();
-  const [links, setLinks] = useState([]);
-  const [total, setTotal] = useState(0);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const storeName = "mercadolivre";
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   // Modais
@@ -43,8 +49,6 @@ export default function LinksPage() {
   const [filterSeller, setFilterSeller] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [debouncedSku, setDebouncedSku] = useState("");
-  const [availableTags, setAvailableTags] = useState([]);
-  const [availableSellers, setAvailableSellers] = useState([]);
 
   // Ordenação
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", dir: "desc" });
@@ -54,22 +58,11 @@ export default function LinksPage() {
   const menuRef = useRef(null);
 
   // IA
-  const [aiData, setAiData] = useState(null);
   const [scenario, setScenario] = useState("conservative");
   const [winableSkus, setWinableSkus] = useState(1);
 
   const perPage = 20;
   const maxLinks = user?.planConfig?.maxLinks || 10;
-
-  // Busca inicial de metadados
-  useEffect(() => {
-    api.get("/links/tags").then(({ data }) => setAvailableTags(data)).catch(() => {});
-    api.get("/links/sellers").then(({ data }) => setAvailableSellers(data)).catch(() => {});
-    api.get("/links/stats", { params: { storeName } }).then(({ data }) => {
-      setAiData(data);
-      setWinableSkus(Math.max(1, Math.min(4, data.losingCount || 1)));
-    }).catch(() => {});
-  }, []);
 
   // Debounce busca por título
   useEffect(() => {
@@ -95,26 +88,39 @@ export default function LinksPage() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [openMenuId]);
 
-  const fetchLinks = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = { page, perPage, storeName, sortBy: sortConfig.key, sortDir: sortConfig.dir };
-      if (filterTag)         params.tag    = filterTag;
-      if (debouncedSearch)   params.search = debouncedSearch;
-      if (debouncedSku)      params.sku    = debouncedSku;
-      if (filterSeller)      params.seller = filterSeller;
-      if (filterStatus !== "all") params.status = filterStatus;
-      const { data } = await api.get("/links", { params });
-      setLinks(data.data);
-      setTotal(data.total);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, perPage, storeName, filterTag, debouncedSearch, debouncedSku, filterSeller, filterStatus, sortConfig]);
+  const filters = { page, perPage, storeName, sortBy: sortConfig.key, sortDir: sortConfig.dir,
+    tag: filterTag || undefined, search: debouncedSearch || undefined, sku: debouncedSku || undefined,
+    seller: filterSeller || undefined, status: filterStatus !== "all" ? filterStatus : undefined,
+  };
 
-  useEffect(() => { fetchLinks(); }, [fetchLinks]);
+  const { data: linksData, isLoading: loading } = useQuery({
+    queryKey: QK.links(filters),
+    queryFn: () => api.get("/links", { params: filters }).then(r => r.data),
+    keepPreviousData: true,
+  });
+  const links = linksData?.data ?? [];
+  const total = linksData?.total ?? 0;
+
+  const { data: availableTags = [] } = useQuery({
+    queryKey: QK.tags(),
+    queryFn: () => api.get("/links/tags").then(r => r.data),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: availableSellers = [] } = useQuery({
+    queryKey: QK.sellers(),
+    queryFn: () => api.get("/links/sellers").then(r => r.data),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: aiData } = useQuery({
+    queryKey: QK.stats(),
+    queryFn: () => api.get("/links/stats", { params: { storeName } }).then(r => r.data),
+  });
+
+  useEffect(() => {
+    if (aiData) setWinableSkus((w) => Math.max(1, Math.min(w, aiData.losingCount || 1)));
+  }, [aiData]);
 
   function resetPage() { setPage(1); }
   function handleFilterStatus(v) { setFilterStatus(v); resetPage(); }
@@ -135,11 +141,8 @@ export default function LinksPage() {
       await api.post("/links", newLink);
       setShowAdd(false);
       setNewLink({ link: "", myPrice: "", tag: "" });
-      fetchLinks();
-      api.get("/links/stats", { params: { storeName } }).then(({ data }) => {
-        setAiData(data);
-        setWinableSkus((w) => Math.max(1, Math.min(w, data.losingCount || 1)));
-      }).catch(() => {});
+      queryClient.invalidateQueries({ queryKey: ["links"] });
+      queryClient.invalidateQueries({ queryKey: QK.stats() });
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao adicionar link");
     } finally {
@@ -160,11 +163,11 @@ export default function LinksPage() {
     setEditSaving(true);
     try {
       const tags = editTags.split(",").map((t) => t.trim()).filter(Boolean);
-      const { data } = await api.put(`/links/${editLink._id}`, {
+      await api.put(`/links/${editLink._id}`, {
         myPrice: Number(editMyPrice) || 0,
         tags,
       });
-      setLinks((prev) => prev.map((l) => (l._id === data._id ? data : l)));
+      queryClient.invalidateQueries({ queryKey: ["links"] });
       setEditOpen(false);
       setEditLink(null);
     } catch (err) {
@@ -183,11 +186,8 @@ export default function LinksPage() {
       onConfirm: async () => {
         await api.delete(`/links/${id}`);
         setConfirmDialog(null);
-        fetchLinks();
-        api.get("/links/stats", { params: { storeName } }).then(({ data }) => {
-          setAiData(data);
-          setWinableSkus((w) => Math.max(1, Math.min(w, data.losingCount || 1)));
-        }).catch(() => {});
+        queryClient.invalidateQueries({ queryKey: ["links"] });
+        queryClient.invalidateQueries({ queryKey: QK.stats() });
       },
     });
   }
@@ -205,11 +205,8 @@ export default function LinksPage() {
         if (done) break;
         decoder.decode(value);
       }
-      fetchLinks();
-      api.get("/links/stats", { params: { storeName } }).then(({ data }) => {
-        setAiData(data);
-        setWinableSkus((w) => Math.max(1, Math.min(w, data.losingCount || 1)));
-      }).catch(() => {});
+      queryClient.invalidateQueries({ queryKey: ["links"] });
+      queryClient.invalidateQueries({ queryKey: QK.stats() });
     } catch (err) {
       console.error(err);
     } finally {
