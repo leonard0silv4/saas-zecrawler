@@ -205,8 +205,8 @@ export default {
       const INACTIVE_ITEM_STATUSES = ["paused", "closed", "under_review", "inactive"];
       const filter = {
         ownerId,
-        // Excluir perguntas cujo raw_payload indica status inválido no ML
-        "raw_payload.status": { $nin: ML_INVALID_STATUSES },
+        // Excluir perguntas com status inválido no ML (campo indexado, sem leitura do raw_payload)
+        ml_status: { $nin: ML_INVALID_STATUSES },
         // Excluir perguntas de anúncios pausados/excluídos.
         // $nin com null: MongoDB retorna docs onde o campo é null ou ausente — correto para registros antigos sem item_status.
         item_status: { $nin: INACTIVE_ITEM_STATUSES },
@@ -232,8 +232,9 @@ export default {
         }
       }
 
+      const QUESTION_FIELDS = "question_id text status date_created answer_text answer_date_created answered_by item_title item_id from_id from_nickname item_status";
       const [items, total] = await Promise.all([
-        MeliQuestion.find(filter).sort({ date_created: -1 }).skip(skip).limit(limit).lean(),
+        MeliQuestion.find(filter).sort({ date_created: -1 }).skip(skip).limit(limit).select(QUESTION_FIELDS).lean(),
         MeliQuestion.countDocuments(filter),
       ]);
 

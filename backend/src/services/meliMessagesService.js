@@ -145,6 +145,7 @@ export function mapQuestionPayload(question, ownerId, contaUserId, itemStatus = 
     from_nickname: question.from?.nickname || (fromId ? (buyerNicknames[fromId] ?? null) : null),
     text: question.text || "",
     status: answer?.text ? "ANSWERED" : "UNANSWERED",
+    ml_status: String(question.status || "").toUpperCase() || null,
     date_created: question.date_created ? new Date(question.date_created) : new Date(),
     answer_text: answer?.text || null,
     answer_status: answer?.status || null,

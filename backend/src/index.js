@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
@@ -20,6 +21,7 @@ dotenv.config({ path: resolve(__dirname, "../.env") });
 const app = express();
 
 // Middlewares
+app.use(compression());
 app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
 
 // Stripe webhook MUST come before express.json() — needs raw body

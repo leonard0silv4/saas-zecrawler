@@ -18,6 +18,7 @@ const meliQuestionSchema = new mongoose.Schema(
     answered_by: { type: String, enum: ["manual", "template"], default: null },
     answeredByUserId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     item_status: { type: String, default: null }, // status do anúncio no ML (active, paused, closed…)
+    ml_status: { type: String, default: null },   // espelho de raw_payload.status para queries eficientes
     last_synced_at: { type: Date, default: null },
     raw_payload: { type: mongoose.Schema.Types.Mixed, default: null },
   },
@@ -26,5 +27,7 @@ const meliQuestionSchema = new mongoose.Schema(
 
 meliQuestionSchema.index({ ownerId: 1, user_id: 1, status: 1 });
 meliQuestionSchema.index({ ownerId: 1, question_id: 1 }, { unique: true });
+meliQuestionSchema.index({ ownerId: 1, from_id: 1 });
+meliQuestionSchema.index({ ownerId: 1, user_id: 1, ml_status: 1 });
 
 export default mongoose.model("MeliQuestion", meliQuestionSchema);
