@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Package, RefreshCw, Clock, X, Info,
+  Package, RefreshCw, Clock,
   ShoppingCart, BarChart3, Layers,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -13,7 +13,6 @@ import { InventoryTab } from "../components/meli-analytics/InventoryTab";
 import { TopProductsTab } from "../components/meli-analytics/TopProductsTab";
 import { OrdersTab } from "../components/meli-analytics/OrdersTab";
 import { ProductDrawer } from "../components/meli-analytics/ProductDrawer";
-import { DateRangePicker } from "../components/meli-analytics/DateRangePicker";
 
 const PERIODS = [
   { label: "7d",  value: "7d" },
@@ -23,43 +22,37 @@ const PERIODS = [
 ];
 
 const TABS = [
-  { id: "estoque",  label: "Estoque",       icon: Layers },
-  { id: "top",      label: "Top Produtos",  icon: BarChart3 },
-  { id: "pedidos",  label: "Pedidos",       icon: ShoppingCart },
+  { id: "estoque",  label: "Estoque",      icon: Layers },
+  { id: "top",      label: "Top Produtos", icon: BarChart3 },
+  { id: "pedidos",  label: "Pedidos",      icon: ShoppingCart },
 ];
 
 const QK = {
-  accounts:  ()                                              => ["meli-analytics-accounts"],
-  inventory: (uid, period, cr, filter, alert, sort)         => ["cat-inventory", uid, period, cr ? `${cr.from}-${cr.to}` : null, filter, alert, sort],
-  top:       (uid, period, cr, sortBy, onlyActive)          => ["cat-top",       uid, period, cr ? `${cr.from}-${cr.to}` : null, sortBy, onlyActive],
-  orders:    (uid, period, cr)                              => ["cat-orders",    uid, period, cr ? `${cr.from}-${cr.to}` : null],
-  lastSync:  (uid)                                          => ["cat-last-sync", uid],
+  accounts:  ()                                      => ["meli-analytics-accounts"],
+  inventory: (uid, period, filter, alert, sort)      => ["cat-inventory", uid, period, filter, alert, sort],
+  top:       (uid, period, sortBy, onlyActive)       => ["cat-top",       uid, period, sortBy, onlyActive],
+  orders:    (uid, period)                           => ["cat-orders",    uid, period],
+  lastSync:  (uid)                                   => ["cat-last-sync", uid],
 };
 
 export default function MeliCatalogPage() {
   const queryClient = useQueryClient();
   const tabSectionRef = useRef(null);
 
-  const [selectedAccount,  setSelectedAccount]  = useState("");
-  const [unifiedView,      setUnifiedView]      = useState(true);
-  const [period,           setPeriod]           = useState("30d");
-  const [customRange,      setCustomRange]      = useState(null);
-  const [activeTab,        setActiveTab]        = useState("estoque");
-  const [inventoryType,    setInventoryType]    = useState("");
-  const [inventoryAlert,   setInventoryAlert]   = useState("");
-  const [inventorySort,    setInventorySort]    = useState({ field: "sold", dir: "desc" });
-  const [topSort,          setTopSort]          = useState("receita");
-  const [topOnlyActive,    setTopOnlyActive]    = useState(false);
-  const [syncing,          setSyncing]          = useState(false);
-  const [selectedProduct,  setSelectedProduct]  = useState(null);
-  const [bannerDismissed,  setBannerDismissed]  = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState("");
+  const [unifiedView,     setUnifiedView]     = useState(true);
+  const [period,          setPeriod]          = useState("30d");
+  const [activeTab,       setActiveTab]       = useState("estoque");
+  const [inventoryType,   setInventoryType]   = useState("");
+  const [inventoryAlert,  setInventoryAlert]  = useState("");
+  const [inventorySort,   setInventorySort]   = useState({ field: "sold", dir: "desc" });
+  const [topSort,         setTopSort]         = useState("receita");
+  const [topOnlyActive,   setTopOnlyActive]   = useState(false);
+  const [syncing,         setSyncing]         = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const userId  = !unifiedView && selectedAccount ? selectedAccount : null;
   const enabled = unifiedView || !!selectedAccount;
-
-  const dateParams = customRange
-    ? { from: format(customRange.from, "yyyy-MM-dd"), to: format(customRange.to, "yyyy-MM-dd") }
-    : { period };
 
   const { data: accounts = [] } = useQuery({
     queryKey: QK.accounts(),
@@ -82,11 +75,11 @@ export default function MeliCatalogPage() {
   const invSort = inventorySort.field ? { sortBy: inventorySort.field, sortDir: inventorySort.dir } : {};
 
   const { data: inventory = [], isLoading: loadingInventory } = useQuery({
-    queryKey: QK.inventory(userId, period, customRange, inventoryType, inventoryAlert, inventorySort),
+    queryKey: QK.inventory(userId, period, inventoryType, inventoryAlert, inventorySort),
     queryFn: () =>
       api.get("/meli/analytics/inventory", {
         params: {
-          ...dateParams,
+          period,
           ...(userId ? { user_id: userId } : {}),
           ...(inventoryType  ? { filter: inventoryType }   : {}),
           ...(inventoryAlert ? { alert: inventoryAlert }   : {}),
@@ -97,11 +90,11 @@ export default function MeliCatalogPage() {
   });
 
   const { data: topProducts = [], isLoading: loadingTop } = useQuery({
-    queryKey: QK.top(userId, period, customRange, topSort, topOnlyActive),
+    queryKey: QK.top(userId, period, topSort, topOnlyActive),
     queryFn: () =>
       api.get("/meli/analytics/top-products", {
         params: {
-          ...dateParams,
+          period,
           ...(userId ? { user_id: userId } : {}),
           sortBy: topSort,
           ...(topOnlyActive ? { onlyActive: "true" } : {}),
@@ -111,10 +104,10 @@ export default function MeliCatalogPage() {
   });
 
   const { data: ordersData, isLoading: loadingOrders } = useQuery({
-    queryKey: QK.orders(userId, period, customRange),
+    queryKey: QK.orders(userId, period),
     queryFn: () =>
       api.get("/meli/analytics/orders", {
-        params: { ...dateParams, ...(userId ? { user_id: userId } : {}), limit: 1000 },
+        params: { period, ...(userId ? { user_id: userId } : {}), limit: 1000 },
       }).then((r) => r.data),
     enabled: enabled && activeTab === "pedidos",
   });
@@ -138,7 +131,6 @@ export default function MeliCatalogPage() {
       queryClient.invalidateQueries({ queryKey: ["cat-top"] });
       queryClient.invalidateQueries({ queryKey: ["cat-orders"] });
       queryClient.invalidateQueries({ queryKey: ["cat-last-sync"] });
-      // invalida analytics também já que os dados são compartilhados
       queryClient.invalidateQueries({ queryKey: ["analytics-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-top"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-orders"] });
@@ -149,18 +141,8 @@ export default function MeliCatalogPage() {
     }
   }
 
-  function handlePeriodChange(p) {
-    setPeriod(p);
-    setCustomRange(null);
-  }
-
-  function handleCustomRange(range) {
-    setCustomRange(range);
-    setPeriod("");
-  }
-
   const lastSyncFormatted = lastSyncData?.lastSync
-    ? format(new Date(lastSyncData.lastSync), "HH:mm", { locale: ptBR })
+    ? format(new Date(lastSyncData.lastSync), "HH:mm 'de' dd/MM", { locale: ptBR })
     : null;
 
   return (
@@ -204,14 +186,14 @@ export default function MeliCatalogPage() {
               disabled={unifiedView}
             />
 
-            {/* Period + custom range */}
+            {/* Period */}
             <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
               {PERIODS.map((p) => (
                 <button
                   key={p.value}
-                  onClick={() => handlePeriodChange(p.value)}
+                  onClick={() => setPeriod(p.value)}
                   className={`px-3 py-1.5 rounded-lg transition-all font-medium ${
-                    period === p.value && !customRange
+                    period === p.value
                       ? "bg-white text-green-700 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
                   }`}
@@ -219,7 +201,6 @@ export default function MeliCatalogPage() {
                   {p.label}
                 </button>
               ))}
-              <DateRangePicker value={customRange} onChange={handleCustomRange} />
             </div>
 
             <button
@@ -241,40 +222,22 @@ export default function MeliCatalogPage() {
             </button>
           </div>
 
-          {/* Linha de info de sync */}
+          {/* Linha de última atualização */}
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <Clock size={12} />
-            <span>Estoque atualizado automaticamente a cada 6h</span>
-            {lastSyncFormatted && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span>
-                  última atualização:{" "}
-                  <strong className="text-gray-500 font-semibold">{lastSyncFormatted}</strong>
-                </span>
-              </>
+            {lastSyncFormatted ? (
+              <span>
+                Último sync de estoque:{" "}
+                <strong className="text-gray-500 font-semibold">{lastSyncFormatted}</strong>
+                <span className="text-gray-300 mx-1">·</span>
+                atualização automática a cada 6h
+              </span>
+            ) : (
+              <span>Estoque atualizado automaticamente a cada 6h</span>
             )}
           </div>
         </div>
       </div>
-
-      {/* Banner de contexto sobre snapshot */}
-      {!bannerDismissed && (
-        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-800">
-          <Info size={16} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="flex-1 leading-relaxed">
-            <strong>Estoque como snapshot:</strong> os dados refletem o último sync automático (a cada 6h) ou manual.
-            Divergências com o painel do Mercado Livre são esperadas se houver vendas recentes — use{" "}
-            <strong>Sincronizar</strong> para atualizar agora.
-          </p>
-          <button
-            onClick={() => setBannerDismissed(true)}
-            className="shrink-0 text-amber-400 hover:text-amber-600 transition-colors mt-0.5"
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
 
       {/* Tabs */}
       <div ref={tabSectionRef} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">

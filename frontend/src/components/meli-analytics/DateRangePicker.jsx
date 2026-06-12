@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { DayPicker } from "react-day-picker";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarRange } from "lucide-react";
 import "react-day-picker/style.css";
@@ -57,15 +57,20 @@ export function DateRangePicker({ value, onChange }) {
 
   function handleSelect(range) {
     setLocalRange(range);
-    if (range?.from && range?.to) {
+    // react-day-picker v10 calls onSelect with from===to on the first click.
+    // Only close and apply when the user has picked a genuine range (start ≠ end).
+    if (range?.from && range?.to && !isSameDay(range.from, range.to)) {
       onChange({ from: range.from, to: range.to });
       setOpen(false);
     }
   }
 
-  const label = isActive
-    ? `${format(value.from, "dd/MM")} – ${format(value.to, "dd/MM")}`
-    : "Personalizado";
+  let label = "Personalizado";
+  if (isActive) {
+    label = `${format(value.from, "dd/MM")} – ${format(value.to, "dd/MM")}`;
+  } else if (localRange?.from) {
+    label = `${format(localRange.from, "dd/MM")} – ?`;
+  }
 
   return (
     <>
@@ -77,6 +82,8 @@ export function DateRangePicker({ value, onChange }) {
           className={`px-3 py-1.5 rounded-lg transition-all font-medium flex items-center gap-1.5 text-sm ${
             isActive
               ? "bg-white text-green-700 shadow-sm"
+              : open
+              ? "bg-white text-gray-700 shadow-sm"
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -96,7 +103,7 @@ export function DateRangePicker({ value, onChange }) {
               />
             </div>
             <div className="px-4 pb-3 text-xs text-gray-400 text-center">
-              Selecione início e fim do período
+              Clique na data inicial e depois na data final
             </div>
           </div>
         )}

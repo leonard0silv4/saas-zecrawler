@@ -1,6 +1,6 @@
 import axios from "axios";
 import mongoose from "mongoose";
-import { startOfDay, subDays, eachDayOfInterval, format } from "date-fns";
+import { startOfDay, endOfDay, subDays, eachDayOfInterval, format } from "date-fns";
 import Conta from "../models/Conta.js";
 import MeliOrder from "../models/MeliOrder.js";
 import MeliProduct from "../models/MeliProduct.js";
@@ -30,7 +30,14 @@ function periodToDates(period = "30d") {
 function resolveDates(query) {
   const { period = "30d", from: fromStr, to: toStr } = query;
   if (fromStr && toStr) {
-    return { from: startOfDay(new Date(fromStr)), to: new Date(toStr) };
+    // Parsear como data local (não UTC) para evitar shift de timezone:
+    // new Date("2025-06-09") interpreta como UTC midnight, o que em UTC-3
+    // equivale a 08/06 às 21h local — causando off-by-one no gráfico.
+    const parseLocal = (s) => {
+      const [y, m, d] = s.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    };
+    return { from: startOfDay(parseLocal(fromStr)), to: endOfDay(parseLocal(toStr)) };
   }
   return periodToDates(period);
 }
