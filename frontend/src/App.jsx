@@ -19,6 +19,7 @@ import CatalogPage from "./pages/CatalogPage";
 import MeliPage from "./pages/MeliPage";
 import MeliMessagesPage from "./pages/MeliMessagesPage";
 import MeliAnalyticsPage from "./pages/MeliAnalyticsPage";
+import MeliCatalogPage from "./pages/MeliCatalogPage";
 import SetupCookiesPage from "./pages/SetupCookiesPage";
 import PriceAnalyzePage from "./pages/PriceAnalyzePage";
 import SellerMonitorPage from "./pages/SellerMonitorPage";
@@ -94,6 +95,7 @@ export default function App() {
             <Route exatc path="/meli" element={<MeliPage />} />
             <Route exatc path="/meli/messages" element={<ModuleRoute module="meliMessages"><MeliMessagesPage /></ModuleRoute>} />
             <Route path="/meli/analytics" element={<ModuleRoute module="meliAnalytics"><MeliAnalyticsPage /></ModuleRoute>} />
+            <Route path="/meli/catalog-ml" element={<ModuleRoute module="meliAnalytics"><MeliCatalogPage /></ModuleRoute>} />
             <Route path="/ml-cookies" element={<MlCookiesPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/team" element={<OwnerRoute><TeamPage /></OwnerRoute>} />

@@ -27,6 +27,14 @@ function periodToDates(period = "30d") {
   return { from, to };
 }
 
+function resolveDates(query) {
+  const { period = "30d", from: fromStr, to: toStr } = query;
+  if (fromStr && toStr) {
+    return { from: startOfDay(new Date(fromStr)), to: new Date(toStr) };
+  }
+  return periodToDates(period);
+}
+
 /**
  * Busca a taxa ML real de cada pedido via /collections/{payment_id}.
  * O endpoint /orders/search e /orders/{id} NÃO retornam marketplace_fee para MLB.
@@ -260,11 +268,25 @@ const MeliAnalyticsController = {
     }
   },
 
+  async lastSync(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const { user_id } = req.query;
+      const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
+      if (user_id) query.user_id = Number(user_id);
+      const product = await MeliProduct.findOne(query).sort({ updatedAt: -1 }).select("updatedAt").lean();
+      res.json({ lastSync: product?.updatedAt ?? null });
+    } catch (err) {
+      console.error("analytics last-sync error:", err);
+      res.status(500).json({ error: "Erro ao buscar última sincronização" });
+    }
+  },
+
   async summary(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d" } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -301,8 +323,8 @@ const MeliAnalyticsController = {
   async salesChart(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d" } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -340,8 +362,8 @@ const MeliAnalyticsController = {
   async topProducts(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d", limit = 20, sortBy = "receita", onlyActive } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id, limit = 20, sortBy = "receita", onlyActive } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -420,8 +442,8 @@ const MeliAnalyticsController = {
   async orders(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d", page = 1, limit = 50, all } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id, page = 1, limit = 50, all } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),

@@ -121,8 +121,9 @@ export function startCronJobs() {
     }
   });
 
-  // Sync completo de produtos ML: todo dia à 1h para usuários Business
-  cron.schedule("0 1 * * *", async () => {
+  // Sync completo de produtos ML: a cada 6h para usuários Business
+  // Intervalo de 6h equilibra atualização de estoque vs. tráfego na API do ML
+  cron.schedule("0 */6 * * *", async () => {
     try {
       const businessOwners = await User.find({
         role: "owner",
