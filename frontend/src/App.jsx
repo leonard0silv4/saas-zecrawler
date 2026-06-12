@@ -90,7 +90,7 @@ export default function App() {
             <Route path="/seller-monitor" element={<SellerMonitorPage />} />
             <Route path="/expedicao" element={<Navigate to="/dashboard" replace />} />
             <Route path="/nfe" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/catalog" element={<ModuleRoute module="catalog"><CatalogPage /></ModuleRoute>} />
             <Route exatc path="/meli" element={<MeliPage />} />
             <Route exatc path="/meli/messages" element={<ModuleRoute module="meliMessages"><MeliMessagesPage /></ModuleRoute>} />
             <Route path="/meli/analytics" element={<ModuleRoute module="meliAnalytics"><MeliAnalyticsPage /></ModuleRoute>} />
