@@ -202,8 +202,14 @@ export default function MeliAnalyticsPage() {
           </button>
           <button
             onClick={generateAiAnalysis}
-            disabled={loadingAI || loadingSummary || aiAlreadyUsedToday || (unifiedView ? accounts.length === 0 : !selectedAccount)}
-            title={aiAlreadyUsedToday ? "Análise gerada hoje · disponível amanhã" : "Gerar análise com IA"}
+            disabled={loadingAI || loadingSummary || aiAlreadyUsedToday || !!customRange || (unifiedView ? accounts.length === 0 : !selectedAccount)}
+            title={
+              customRange
+                ? "Análise IA indisponível para período personalizado. Selecione 7d, 15d, 30d ou 90d."
+                : aiAlreadyUsedToday
+                ? "Análise gerada hoje · disponível amanhã"
+                : "Gerar análise com IA"
+            }
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Sparkles size={13} className={loadingAI ? "animate-pulse" : ""} />
@@ -211,9 +217,9 @@ export default function MeliAnalyticsPage() {
               ? "Gerando…"
               : aiAlreadyUsedToday
               ? "IA usada hoje"
-              : `Análise IA · ${customRange
-                  ? `${format(customRange.from, "dd/MM", { locale: ptBR })} – ${format(customRange.to, "dd/MM", { locale: ptBR })}`
-                  : period}`}
+              : customRange
+              ? "Análise IA · indisponível"
+              : `Análise IA · ${period}`}
           </button>
         </div>
       </div>

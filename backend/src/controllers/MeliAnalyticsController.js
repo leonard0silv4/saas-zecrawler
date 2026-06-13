@@ -563,7 +563,7 @@ const MeliAnalyticsController = {
       const QUESTION_INVALID_STATUSES = ["UNDER_REVIEW", "CLOSED_BY_ML", "DISABLED", "DELETED", "BANNED"];
       const questionFilter = {
         ownerId: ownerObjectId,
-        date_created: { $gte: from },
+        date_created: { $gte: from, $lte: to },
         "raw_payload.status": { $nin: QUESTION_INVALID_STATUSES },
         answer_status: { $ne: "BANNED" },
       };
@@ -601,7 +601,17 @@ const MeliAnalyticsController = {
             pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$id", "$$itemId"] }, { $eq: ["$ownerId", ownerObjectId] }] } } }],
             as: "product",
           }},
-          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" }, daysRestStock: { $first: "$product.daysRestStock" }, alertRuptura: { $first: "$product.alertRuptura" } } },
+          { $addFields: {
+            dias_estoque_periodo: {
+              $cond: {
+                if: { $gt: ["$unidades", 0] },
+                then: { $floor: { $divide: [{ $ifNull: [{ $first: "$product.available_quantity" }, 0] }, { $divide: ["$unidades", days] }] } },
+                else: null,
+              },
+            },
+            alertRuptura: { $first: "$product.alertRuptura" },
+          }},
+          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" }, daysRestStock: "$dias_estoque_periodo", alertRuptura: 1 } },
         ]),
         // Alertas de estoque
         MeliProduct.aggregate([
@@ -626,10 +636,10 @@ const MeliAnalyticsController = {
           { $limit: 2 },
           { $project: { _id: 0, nome: 1, total: 1 } },
         ]),
-        // Alertas de concorrentes nos últimos 7 dias
+        // Alertas de concorrentes no período selecionado
         sellerIds.length > 0
           ? SellerAlert.aggregate([
-              { $match: { sellerId: { $in: sellerIds }, createdAt: { $gte: subDays(new Date(), 7) } } },
+              { $match: { sellerId: { $in: sellerIds }, createdAt: { $gte: from } } },
               { $group: { _id: "$type", count: { $sum: 1 } } },
             ])
           : Promise.resolve([]),
@@ -755,6 +765,11 @@ Analise os dados abaixo e gere exatamente 6 insights — um de cada eixo:
 5) Competitivo (alertas de concorrentes se disponível; caso ausente, use oportunidade de crescimento)
 6) Horários (dias e horas de pico de vendas e perguntas; recomende quando o vendedor deve estar disponível para atender)
 
+Contexto dos dados:
+- "metricas", "top5_produtos", "horarios" e "concorrentes" são dados do período indicado em "periodo".
+- "estoque" e "anuncios" são snapshots da situação ATUAL, independentes do período selecionado.
+- Não relacione o estado atual de estoque ao desempenho do período (não diga que a ruptura causou quedas no período).
+
 Regras:
 - Cite valores exatos do input. Não invente dados.
 - Cada insight: 1 frase de diagnóstico + 1 ação concreta. Máximo 3 linhas por insight.
@@ -762,7 +777,7 @@ Regras:
 - Sempre gere os 6 eixos mesmo que algum dado esteja ausente.
 - Responda em português do Brasil.
 - A plataforma já possui sistema integrado de monitoramento e resposta automática de perguntas via templates; NÃO recomende implementar ou criar sistema de atendimento/monitoramento.
-- Cada produto em top5_produtos pode ter dois campos de estoque: "alerta_estoque" (RUPTURA | CRÍTICO | BAIXO) e "dias_estoque" (dias restantes projetados). Use as regras: RUPTURA → produto parou de vender por falta de estoque; CRÍTICO → reposição extremamente urgente (≤3 dias); BAIXO → estoque baixo (≤7 dias). Se dias_estoque presente mas alerta_estoque ausente, só mencione se dias_estoque < 8. Se ambos ausentes, não faça afirmações sobre estoque desse produto. NUNCA use a palavra "ruptura" se alerta_estoque não for "RUPTURA".`;
+- Cada produto em top5_produtos pode ter dois campos de estoque: "alerta_estoque" (RUPTURA | CRÍTICO | BAIXO) e "dias_estoque" (dias de estoque restante projetados NA VELOCIDADE DE VENDAS DO PERÍODO ANALISADO — pode diferir do histórico total do produto). Use as regras: RUPTURA → produto parou de vender por falta de estoque; CRÍTICO → reposição extremamente urgente (≤3 dias); BAIXO → estoque baixo (≤7 dias). Ao citar dias_estoque, deixe claro que é baseado na velocidade do período (ex: "no ritmo do período analisado, restam X dias de estoque"). Se dias_estoque presente mas alerta_estoque ausente, só mencione se dias_estoque < 8. Se ambos ausentes, não faça afirmações sobre estoque desse produto. NUNCA use a palavra "ruptura" se alerta_estoque não for "RUPTURA".`;
 
       const { data: openaiRes } = await axios.post(
         "https://api.openai.com/v1/chat/completions",
