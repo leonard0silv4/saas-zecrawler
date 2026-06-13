@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Package, RefreshCw, Clock,
-  ShoppingCart, BarChart3, Layers,
+  BarChart3, Layers,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -11,7 +11,6 @@ import { notifyError, notifySuccess } from "../utils/notify.js";
 import { AccountSelect } from "../components/meli-analytics/AccountSelect";
 import { InventoryTab } from "../components/meli-analytics/InventoryTab";
 import { TopProductsTab } from "../components/meli-analytics/TopProductsTab";
-import { OrdersTab } from "../components/meli-analytics/OrdersTab";
 import { ProductDrawer } from "../components/meli-analytics/ProductDrawer";
 
 const PERIODS = [
@@ -22,17 +21,15 @@ const PERIODS = [
 ];
 
 const TABS = [
-  { id: "estoque",  label: "Estoque",      icon: Layers },
-  { id: "top",      label: "Top Produtos", icon: BarChart3 },
-  { id: "pedidos",  label: "Pedidos",      icon: ShoppingCart },
+  { id: "estoque", label: "Estoque",      icon: Layers },
+  { id: "top",     label: "Top Produtos", icon: BarChart3 },
 ];
 
 const QK = {
-  accounts:  ()                                      => ["meli-analytics-accounts"],
-  inventory: (uid, period, filter, alert, sort)      => ["cat-inventory", uid, period, filter, alert, sort],
-  top:       (uid, period, sortBy, onlyActive)       => ["cat-top",       uid, period, sortBy, onlyActive],
-  orders:    (uid, period)                           => ["cat-orders",    uid, period],
-  lastSync:  (uid)                                   => ["cat-last-sync", uid],
+  accounts:  ()                                 => ["meli-analytics-accounts"],
+  inventory: (uid, period, filter, alert, sort) => ["cat-inventory", uid, period, filter, alert, sort],
+  top:       (uid, period, sortBy, onlyActive)  => ["cat-top",       uid, period, sortBy, onlyActive],
+  lastSync:  (uid)                              => ["cat-last-sync", uid],
 };
 
 export default function MeliCatalogPage() {
@@ -104,16 +101,6 @@ export default function MeliCatalogPage() {
     enabled: enabled && activeTab === "top",
   });
 
-  const { data: ordersData, isLoading: loadingOrders } = useQuery({
-    queryKey: QK.orders(userId, period),
-    queryFn: () =>
-      api.get("/meli/analytics/orders", {
-        params: { period, ...(userId ? { user_id: userId } : {}), limit: 1000 },
-      }).then((r) => r.data),
-    enabled: enabled && activeTab === "pedidos",
-  });
-  const orders = ordersData?.orders ?? [];
-
   const rupturaCount = inventoryData?.rupturaTotal ?? 0;
   const criticoCount = inventoryData?.criticoTotal ?? 0;
   const alertTotal   = rupturaCount + criticoCount;
@@ -130,11 +117,9 @@ export default function MeliCatalogPage() {
       );
       queryClient.invalidateQueries({ queryKey: ["cat-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["cat-top"] });
-      queryClient.invalidateQueries({ queryKey: ["cat-orders"] });
       queryClient.invalidateQueries({ queryKey: ["cat-last-sync"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-top"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics-orders"] });
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao sincronizar");
     } finally {
@@ -156,7 +141,7 @@ export default function MeliCatalogPage() {
             Catálogo ML
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Estoque, produtos em destaque e pedidos — visão operacional
+            Estoque e produtos em destaque — visão operacional
           </p>
         </div>
 
@@ -223,45 +208,44 @@ export default function MeliCatalogPage() {
             </button>
           </div>
 
-          {/* Linha de última atualização */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Clock size={12} />
-            {lastSyncFormatted ? (
-              <span>
-                Último sync de estoque:{" "}
-                <strong className="text-gray-500 font-semibold">{lastSyncFormatted}</strong>
-                <span className="text-gray-300 mx-1">·</span>
-                atualização automática a cada 6h
-              </span>
-            ) : (
-              <span>Estoque atualizado automaticamente a cada 6h</span>
-            )}
-          </div>
         </div>
       </div>
 
       {/* Tabs */}
       <div ref={tabSectionRef} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="flex border-b border-gray-100 px-2 pt-2 gap-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                requestAnimationFrame(() =>
-                  tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                );
-              }}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
-                activeTab === tab.id
-                  ? "bg-green-50 text-green-700"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <tab.icon size={14} />
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between border-b border-gray-100 px-2 pt-2 pb-1">
+          <div className="flex gap-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  requestAnimationFrame(() =>
+                    tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  );
+                }}
+                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-green-50 text-green-700"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <tab.icon size={14} />
+                {tab.label}
+                {tab.id === "estoque" && alertTotal > 0 && (
+                  <span className="ml-0.5 text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full leading-none">
+                    {alertTotal}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          {lastSyncFormatted && (
+            <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 pr-2">
+              <Clock size={11} />
+              Sync: <strong className="text-gray-500 font-semibold">{lastSyncFormatted}</strong>
+            </span>
+          )}
         </div>
 
         <div className="p-5">
@@ -288,9 +272,6 @@ export default function MeliCatalogPage() {
               topOnlyActive={topOnlyActive}
               setTopOnlyActive={setTopOnlyActive}
             />
-          </div>
-          <div style={{ display: activeTab === "pedidos" ? "block" : "none" }}>
-            <OrdersTab orders={orders} loading={loadingOrders} />
           </div>
         </div>
       </div>

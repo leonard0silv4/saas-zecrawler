@@ -5,6 +5,7 @@ const MODULE_LABELS = {
   meli: "Contas Mercado Livre",
   meliMessages: "Mensagens ML",
   meliAnalytics: "Analytics ML",
+  meliCatalog:   "Catálogo ML",
   sellerMonitor: "Monitor Sellers",
 };
 

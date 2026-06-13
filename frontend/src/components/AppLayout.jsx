@@ -20,7 +20,7 @@ const NAV_GROUPS = [
     items: [
       { to: "/links",          icon: Link2,         label: "Links",                   module: "links",         ownerOnly: false },
       { to: "/meli/analytics", icon: BarChart2,      label: "Analytics ML",            module: "meliAnalytics", ownerOnly: false },
-      { to: "/meli/catalog-ml", icon: Package,      label: "Catálogo ML",             module: "meliAnalytics", ownerOnly: false },
+      { to: "/meli/catalog-ml", icon: Package,      label: "Catálogo ML",             module: "meliCatalog",   ownerOnly: false },
       { to: "/meli/messages",  icon: MessageCircle,  label: "Mensagens ML",            module: "meliMessages",  ownerOnly: false },
       { to: "/price-analyze",  icon: LineChart,      label: "Análise de concorrência", module: "priceAnalyze",  ownerOnly: false },
       { to: "/seller-monitor", icon: Store,          label: "Monitor sellers",         module: "sellerMonitor", ownerOnly: false },

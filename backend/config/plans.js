@@ -93,5 +93,6 @@ export const MODULES = {
   meli: { name: "Contas Mercado Livre", plans: ["starter", "pro", "business"] },
   meliMessages: { name: "Mensagens Mercado Livre", plans: ["business"] },
   meliAnalytics: { name: "Analytics & Vendas ML", plans: ["pro", "business"] },
+  meliCatalog:   { name: "Catálogo ML",           plans: ["pro", "business"] },
   sellerMonitor: { name: "Monitor de Sellers", plans: ["free", "starter", "pro", "business"] },
 };

@@ -22,6 +22,9 @@ export function computeAccess(userLean, ownerLean, extraPermissions = []) {
     if (perms.has("links") && !perms.has("priceAnalyze")) {
       perms.add("priceAnalyze");
     }
+    if (perms.has("meliCatalog") && !perms.has("meliAnalytics")) {
+      perms.add("meliAnalytics");
+    }
     allowedModules = planModules.filter((m) => perms.has(m));
   }
 

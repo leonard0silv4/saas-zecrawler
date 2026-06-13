@@ -15,6 +15,12 @@ import { ChartTooltip }      from "../components/meli-analytics/ChartTooltip";
 import { DateRangePicker }   from "../components/meli-analytics/DateRangePicker";
 import { formatBRL }         from "../components/meli-analytics/formatBRL";
 import { AIInsightsSection } from "../components/meli-analytics/AIInsightsSection";
+import { OrdersTab }         from "../components/meli-analytics/OrdersTab";
+
+const TABS = [
+  { id: "analytics", label: "Analytics", icon: BarChart2 },
+  { id: "pedidos",   label: "Pedidos",   icon: ShoppingCart },
+];
 
 const PERIODS = [
   { label: "7d",  value: "7d" },
@@ -25,9 +31,10 @@ const PERIODS = [
 
 const QK = {
   accounts: () => ["meli-analytics-accounts"],
-  summary: (userId, period, cr) => ["analytics-summary", userId, period, cr ? `${cr.from}-${cr.to}` : null],
-  chart:   (userId, period, cr) => ["analytics-chart",   userId, period, cr ? `${cr.from}-${cr.to}` : null],
-  ai:      (userId, period)     => ["analytics-ai",      userId, period],
+  summary:  (userId, period, cr) => ["analytics-summary", userId, period, cr ? `${cr.from}-${cr.to}` : null],
+  chart:    (userId, period, cr) => ["analytics-chart",   userId, period, cr ? `${cr.from}-${cr.to}` : null],
+  ai:       (userId, period)     => ["analytics-ai",      userId, period],
+  orders:   (userId, period)     => ["analytics-orders",  userId, period],
 };
 
 export default function MeliAnalyticsPage() {
@@ -36,6 +43,7 @@ export default function MeliAnalyticsPage() {
   const [unifiedView,     setUnifiedView]     = useState(true);
   const [period,          setPeriod]          = useState("30d");
   const [customRange,     setCustomRange]     = useState(null);
+  const [activeTab,       setActiveTab]       = useState("analytics");
   const [syncing,         setSyncing]         = useState(false);
   const [loadingAI,       setLoadingAI]       = useState(false);
   const [aiDismissed,     setAiDismissed]     = useState(false);
@@ -78,6 +86,13 @@ export default function MeliAnalyticsPage() {
     staleTime: 60 * 60 * 1000,
   });
 
+  const { data: ordersData, isLoading: loadingOrders } = useQuery({
+    queryKey: QK.orders(userId, period),
+    queryFn: () => api.get("/meli/analytics/orders", { params: { period, ...(userId ? { user_id: userId } : {}), limit: 1000 } }).then(r => r.data),
+    enabled: enabled && activeTab === "pedidos",
+  });
+  const orders = ordersData?.orders ?? [];
+
   const aiAnalysis = !aiDismissed && aiCache?.cached ? aiCache.analysis : null;
   const aiGeneratedAt = aiCache?.cached ? aiCache.generatedAt : null;
   const aiAlreadyUsedToday = !!aiCache?.cached;
@@ -107,6 +122,7 @@ export default function MeliAnalyticsPage() {
       notifySuccess(baseMessage + slowHint);
       queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-chart"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-orders"] });
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao sincronizar");
     } finally { setSyncing(false); }
@@ -196,79 +212,108 @@ export default function MeliAnalyticsPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={DollarSign} label="Faturamento"       value={loadingSummary ? "…" : formatBRL(summary?.faturamento)}      sub="Pedidos pagos no período"            color="text-green-700"  accent="bg-green-50" />
-        <KpiCard icon={TrendingUp} label="Liq. Marketplace"  value={loadingSummary ? "…" : formatBRL(summary?.liq_marketplace)}  sub={`Taxa ML: ${formatBRL(summary?.taxa_ml)}`} color="text-blue-700"   accent="bg-blue-50" />
-        <KpiCard icon={ShoppingCart} label="Pedidos"         value={loadingSummary ? "…" : (summary?.pedidos ?? "—")}            sub="Pedidos pagos"                       color="text-violet-700" accent="bg-violet-50" />
-        <KpiCard icon={Package}    label="Ticket Médio"      value={loadingSummary ? "…" : formatBRL(summary?.ticket_medio)}                                               color="text-orange-700" accent="bg-orange-50" />
+      {/* Tab nav + pedidos panel num único card; analytics renderiza diretamente na página */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center border-b border-gray-100 px-2 pt-2 pb-1 gap-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
+                activeTab === tab.id
+                  ? "bg-green-50 text-green-700"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <tab.icon size={14} />
+              {tab.label}
+              {tab.id === "pedidos" && orders.length > 0 && (
+                <span className="ml-0.5 text-xs font-semibold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full leading-none">
+                  {orders.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Pedidos: dentro do card */}
+        <div style={{ display: activeTab === "pedidos" ? "block" : "none" }} className="p-5">
+          <OrdersTab orders={orders} loading={loadingOrders} />
+        </div>
       </div>
 
-      {/* Painel de Análise IA */}
-      {aiAnalysis && (
-        <AIInsightsSection
-          aiAnalysis={aiAnalysis}
-          aiGeneratedAt={aiGeneratedAt}
-          onDismiss={() => setAiDismissed(true)}
-        />
-      )}
+      {/* Analytics: fora do card, cada seção tem seu próprio card — sem duplo aninhamento */}
+      <div className="space-y-5" style={{ display: activeTab === "analytics" ? "block" : "none" }}>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <KpiCard icon={DollarSign}   label="Faturamento"      value={loadingSummary ? "…" : formatBRL(summary?.faturamento)}      sub="Pedidos pagos no período"            color="text-green-700"  accent="bg-green-50" />
+          <KpiCard icon={TrendingUp}   label="Liq. Marketplace" value={loadingSummary ? "…" : formatBRL(summary?.liq_marketplace)}  sub={`Taxa ML: ${formatBRL(summary?.taxa_ml)}`} color="text-blue-700"   accent="bg-blue-50" />
+          <KpiCard icon={ShoppingCart} label="Pedidos"          value={loadingSummary ? "…" : (summary?.pedidos ?? "—")}            sub="Pedidos pagos"                       color="text-violet-700" accent="bg-violet-50" />
+          <KpiCard icon={Package}      label="Ticket Médio"     value={loadingSummary ? "…" : formatBRL(summary?.ticket_medio)}                                               color="text-orange-700" accent="bg-orange-50" />
+        </div>
 
-      {/* Gráfico Receita & Pedidos */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-sm font-bold text-gray-800">Receita & Pedidos diários</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{unifiedView ? "Todas as lojas — receita bruta e volume de pedidos" : "Período selecionado — receita bruta e volume de pedidos"}</p>
+        {aiAnalysis && (
+          <AIInsightsSection
+            aiAnalysis={aiAnalysis}
+            aiGeneratedAt={aiGeneratedAt}
+            onDismiss={() => setAiDismissed(true)}
+          />
+        )}
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Receita & Pedidos diários</h2>
+              <p className="text-xs text-gray-400 mt-0.5">{unifiedView ? "Todas as lojas — receita bruta e volume de pedidos" : "Período selecionado — receita bruta e volume de pedidos"}</p>
+            </div>
+            {!loadingChart && chartData.length > 0 && (
+              <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full">
+                {daysWithSales} dias com vendas
+              </span>
+            )}
           </div>
-          {!loadingChart && chartData.length > 0 && (
-            <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full">
-              {daysWithSales} dias com vendas
-            </span>
+          {loadingChart ? (
+            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+              <RefreshCw size={18} className="animate-spin mr-2" /> Carregando…
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">Nenhum dado para o período.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="recGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="#16a34a" stopOpacity={0.35} />
+                    <stop offset="75%"  stopColor="#16a34a" stopOpacity={0.06} />
+                    <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="#f3f4f6" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(d) => { try { return format(parseISO(d), "dd/MM", { locale: ptBR }); } catch { return d; } }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis yAxisId="left"  tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`} width={52} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#d1fae5", strokeWidth: 2 }} />
+                {avgReceita > 0 && (
+                  <ReferenceLine yAxisId="left" y={avgReceita} stroke="#16a34a" strokeDasharray="6 3" strokeOpacity={0.45}
+                    label={{ value: "Média", position: "insideTopRight", fontSize: 10, fill: "#16a34a", opacity: 0.6 }}
+                  />
+                )}
+                <Bar      yAxisId="right" dataKey="pedidos" name="pedidos" fill="#86efac" radius={[4,4,0,0]} maxBarSize={16} />
+                <Area     yAxisId="left"  type="monotone" dataKey="receita" name="receita" stroke="#16a34a" strokeWidth={2.5} fill="url(#recGrad)" dot={false} activeDot={{ r: 5, fill: "#16a34a", stroke: "#fff", strokeWidth: 2 }} />
+                <Legend verticalAlign="bottom" height={28} iconType="circle" iconSize={8}
+                  formatter={(value) => <span className="text-xs text-gray-500 font-medium">{value === "receita" ? "Receita (R$)" : "Pedidos"}</span>}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
           )}
         </div>
-        {loadingChart ? (
-          <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-            <RefreshCw size={18} className="animate-spin mr-2" /> Carregando…
-          </div>
-        ) : chartData.length === 0 ? (
-          <div className="h-64 flex items-center justify-center text-gray-400 text-sm">Nenhum dado para o período.</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="recGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#16a34a" stopOpacity={0.35} />
-                  <stop offset="75%"  stopColor="#16a34a" stopOpacity={0.06} />
-                  <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="4 4" stroke="#f3f4f6" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(d) => { try { return format(parseISO(d), "dd/MM", { locale: ptBR }); } catch { return d; } }}
-                interval="preserveStartEnd"
-              />
-              <YAxis yAxisId="left"  tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`} width={52} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#d1fae5", strokeWidth: 2 }} />
-              {avgReceita > 0 && (
-                <ReferenceLine yAxisId="left" y={avgReceita} stroke="#16a34a" strokeDasharray="6 3" strokeOpacity={0.45}
-                  label={{ value: "Média", position: "insideTopRight", fontSize: 10, fill: "#16a34a", opacity: 0.6 }}
-                />
-              )}
-              <Bar      yAxisId="right" dataKey="pedidos" name="pedidos" fill="#86efac" radius={[4,4,0,0]} maxBarSize={16} />
-              <Area     yAxisId="left"  type="monotone" dataKey="receita" name="receita" stroke="#16a34a" strokeWidth={2.5} fill="url(#recGrad)" dot={false} activeDot={{ r: 5, fill: "#16a34a", stroke: "#fff", strokeWidth: 2 }} />
-              <Legend verticalAlign="bottom" height={28} iconType="circle" iconSize={8}
-                formatter={(value) => <span className="text-xs text-gray-500 font-medium">{value === "receita" ? "Receita (R$)" : "Pedidos"}</span>}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        )}
       </div>
-
     </div>
   );
 }
