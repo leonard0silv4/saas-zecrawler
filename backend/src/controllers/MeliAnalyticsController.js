@@ -601,7 +601,7 @@ const MeliAnalyticsController = {
             pipeline: [{ $match: { $expr: { $and: [{ $eq: ["$id", "$$itemId"] }, { $eq: ["$ownerId", ownerObjectId] }] } } }],
             as: "product",
           }},
-          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" }, daysRestStock: { $first: "$product.daysRestStock" } } },
+          { $project: { _id: 0, nome: 1, receita: 1, unidades: 1, estoque: { $first: "$product.available_quantity" }, daysRestStock: { $first: "$product.daysRestStock" }, alertRuptura: { $first: "$product.alertRuptura" } } },
         ]),
         // Alertas de estoque
         MeliProduct.aggregate([
@@ -709,6 +709,7 @@ const MeliAnalyticsController = {
           receita: Math.round(p.receita * 100) / 100,
           unidades: p.unidades,
           ...(p.daysRestStock != null && { dias_estoque: p.daysRestStock }),
+          ...(p.alertRuptura && { alerta_estoque: p.alertRuptura }),
         })),
         estoque: {
           em_ruptura: alertMap["RUPTURA"] || 0,
@@ -761,7 +762,7 @@ Regras:
 - Sempre gere os 6 eixos mesmo que algum dado esteja ausente.
 - Responda em português do Brasil.
 - A plataforma já possui sistema integrado de monitoramento e resposta automática de perguntas via templates; NÃO recomende implementar ou criar sistema de atendimento/monitoramento.
-- Cada produto em top5_produtos pode ter o campo "dias_estoque" (dias de estoque restante com base na velocidade de vendas). Use esse dado ao recomendar ações: se dias_estoque > 30, o estoque está confortável; se < 15, alertar reposição urgente; se ausente, não faça afirmações sobre o nível de estoque desse produto.`;
+- Cada produto em top5_produtos pode ter dois campos de estoque: "alerta_estoque" (RUPTURA | CRÍTICO | BAIXO) e "dias_estoque" (dias restantes projetados). Use as regras: RUPTURA → produto parou de vender por falta de estoque; CRÍTICO → reposição extremamente urgente (≤3 dias); BAIXO → estoque baixo (≤7 dias). Se dias_estoque presente mas alerta_estoque ausente, só mencione se dias_estoque < 8. Se ambos ausentes, não faça afirmações sobre estoque desse produto. NUNCA use a palavra "ruptura" se alerta_estoque não for "RUPTURA".`;
 
       const { data: openaiRes } = await axios.post(
         "https://api.openai.com/v1/chat/completions",
