@@ -207,7 +207,13 @@ export default function MeliAnalyticsPage() {
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Sparkles size={13} className={loadingAI ? "animate-pulse" : ""} />
-            {loadingAI ? "Gerando…" : aiAlreadyUsedToday ? "IA usada hoje" : "Análise IA"}
+            {loadingAI
+              ? "Gerando…"
+              : aiAlreadyUsedToday
+              ? "IA usada hoje"
+              : `Análise IA · ${customRange
+                  ? `${format(customRange.from, "dd/MM", { locale: ptBR })} – ${format(customRange.to, "dd/MM", { locale: ptBR })}`
+                  : period}`}
           </button>
         </div>
       </div>
@@ -250,14 +256,6 @@ export default function MeliAnalyticsPage() {
           <KpiCard icon={ShoppingCart} label="Pedidos"          value={loadingSummary ? "…" : (summary?.pedidos ?? "—")}            sub="Pedidos pagos"                       color="text-violet-700" accent="bg-violet-50" />
           <KpiCard icon={Package}      label="Ticket Médio"     value={loadingSummary ? "…" : formatBRL(summary?.ticket_medio)}                                               color="text-orange-700" accent="bg-orange-50" />
         </div>
-
-        {aiAnalysis && (
-          <AIInsightsSection
-            aiAnalysis={aiAnalysis}
-            aiGeneratedAt={aiGeneratedAt}
-            onDismiss={() => setAiDismissed(true)}
-          />
-        )}
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
@@ -313,6 +311,14 @@ export default function MeliAnalyticsPage() {
             </ResponsiveContainer>
           )}
         </div>
+
+        {aiAnalysis && (
+          <AIInsightsSection
+            aiAnalysis={aiAnalysis}
+            aiGeneratedAt={aiGeneratedAt}
+            onDismiss={() => setAiDismissed(true)}
+          />
+        )}
       </div>
     </div>
   );

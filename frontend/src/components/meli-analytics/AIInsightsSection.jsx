@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Sparkles, TrendingUp, Package, AlertTriangle,
-  X, CheckCircle2, Clock, ChevronRight,
+  X, CheckCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -171,14 +171,10 @@ export function AIInsightsSection({ aiAnalysis, aiGeneratedAt, onDismiss }) {
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between">
+      <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/60">
         <p className="text-xs text-gray-400">
           {visible.length} {visible.length === 1 ? "recomendação ativa" : "recomendações ativas"}
         </p>
-        <button className="text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center gap-0.5 transition-colors">
-          Ver histórico
-          <ChevronRight size={13} />
-        </button>
       </div>
     </div>
   );
