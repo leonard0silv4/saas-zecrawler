@@ -387,7 +387,8 @@ export default {
       const items = await MeliQuestion.find(filter)
         .sort({ date_created: 1 })
         .limit(30)
-        .select("question_id text status date_created answer_text answer_date_created answered_by item_title item_id from_nickname")
+        .select("question_id text status date_created answer_text answer_date_created answered_by answeredByUserId item_title item_id from_nickname")
+        .populate("answeredByUserId", "name")
         .lean();
       const from_nickname = items.length > 0 ? items[0].from_nickname || null : null;
       return res.json({ items, from_nickname });

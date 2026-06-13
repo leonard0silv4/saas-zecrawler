@@ -12,6 +12,7 @@ import {
   Package,
   Send,
   ShoppingBag,
+  Store,
   Trash2,
 } from "lucide-react";
 import { getInitials } from "./utils";
@@ -153,6 +154,7 @@ export function ChatThread({
   onOpenProducts,
   threadSortOrder,
   setThreadSortOrder,
+  selectedAccount,
 }) {
   const chatContainerRef = useRef(null);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -293,14 +295,26 @@ export function ChatThread({
                           <div className="px-4 py-3 bg-brand-600 text-white rounded-2xl rounded-tr-none text-sm leading-relaxed shadow-md">
                             {item.answer_text}
                           </div>
-                          <div className="flex items-center gap-2 px-1 mt-1">
-                            {item.answered_by === "template" && (
-                              <span className="text-xs text-gray-500">Via template ·</span>
+                          <div className="flex items-center gap-1.5 px-1 mt-1 flex-wrap justify-end">
+                            {selectedAccount?.nickname && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600">
+                                <Store size={10} className="shrink-0" />
+                                {selectedAccount.nickname}
+                              </span>
                             )}
-                            <span className="text-xs text-gray-500">
+                            {item.answeredByUserId?.name && (
+                              <>
+                                <span className="text-gray-300 text-[11px]">·</span>
+                                <span className="text-[11px] font-medium text-gray-500">{item.answeredByUserId.name}</span>
+                              </>
+                            )}
+                            {item.answered_by === "template" && (
+                              <span className="text-[11px] text-gray-400">· via template</span>
+                            )}
+                            <span className="text-[11px] text-gray-400">
                               {formatDate(item.answer_date_created)}
                             </span>
-                            <Check size={14} className="text-emerald-500" />
+                            <Check size={13} className="text-emerald-500" />
                           </div>
                         </div>
                       </div>

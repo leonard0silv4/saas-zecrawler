@@ -542,6 +542,7 @@ export default function MeliMessagesPage() {
           onOpenProducts={() => setProductModalOpen(true)}
           threadSortOrder={threadSortOrder}
           setThreadSortOrder={setThreadSortOrder}
+          selectedAccount={selectedAccount}
         />
       </div>
 
