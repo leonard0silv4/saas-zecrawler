@@ -9,7 +9,23 @@ GET  /meli/analytics/sales-chart  →  requireModule("meliAnalytics") → salesC
 GET  /meli/analytics/top-products →  requireModule("meliAnalytics") → topProducts
 GET  /meli/analytics/orders       →  requireModule("meliAnalytics") → orders
 GET  /meli/analytics/inventory    →  requireModule("meliAnalytics") → inventory
+GET  /meli/analytics/last-sync    →  requireModule("meliAnalytics") → lastSync (updatedAt mais recente de MeliProduct)
 ```
+
+## Filtros de Data (period vs. range customizado)
+
+Os endpoints `summary`, `sales-chart`, `top-products` e `orders` aceitam dois modos de filtro de data:
+
+| Modo | Params | Exemplo |
+|---|---|---|
+| Período fixo | `period=30d` | últimos 30 dias |
+| Range personalizado | `from=2025-01-01&to=2025-01-31` | datas absolutas |
+
+A função `resolveDates(query)` em `MeliAnalyticsController.js` determina qual modo usar. Se `from` e `to` estiverem presentes, o `period` é ignorado.
+
+## Cron de Sync de Produtos
+
+O sync automático de produtos/estoque roda a cada **6 horas** (`0 */6 * * *`). Esse intervalo equilibra atualização de dados vs. tráfego na API do ML. Dados de estoque são um snapshot — divergências com o painel ML são esperadas se houver vendas recentes entre sincronizações. O botão Sincronizar manual força atualização imediata.
 
 ## Filtros de Loja
 

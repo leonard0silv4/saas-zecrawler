@@ -227,10 +227,10 @@ export default function CatalogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package size={22} className="text-brand-600" />
+            <Ruler size={22} className="text-brand-600" />
             Dimensões e Peso
           </h1>
-          <p className="text-gray-500 mt-1">Dimensões e peso cúbico por SKU.</p>
+          <p className="text-gray-500 mt-1 text-sm">Dimensões e peso cúbico por SKU.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium cursor-pointer hover:bg-gray-50">

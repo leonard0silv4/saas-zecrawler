@@ -172,6 +172,8 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                 return (
                   <tr
                     key={p._id || p.id}
+                    ref={virtualizer.measureElement}
+                    data-index={vRow.index}
                     onClick={() => onProductSelect(p)}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                   >

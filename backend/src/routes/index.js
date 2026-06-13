@@ -117,6 +117,7 @@ r.get("/meli/analytics/orders",       requireModule("meliAnalytics"), MeliAnalyt
 r.get("/meli/analytics/inventory",    requireModule("meliAnalytics"), MeliAnalyticsController.inventory);
 r.get("/meli/analytics/ai-analysis",  requireModule("meliAnalytics"), MeliAnalyticsController.aiAnalysis);
 r.post("/meli/analytics/ai-analysis", requireModule("meliAnalytics"), MeliAnalyticsController.aiAnalysis);
+r.get("/meli/analytics/last-sync",    requireModule("meliAnalytics"), MeliAnalyticsController.lastSync);
 
 // ─── Catálogo ──────────────────────────────────────────────────
 r.get("/catalog", requireModule("catalog"), CatalogProductController.index);

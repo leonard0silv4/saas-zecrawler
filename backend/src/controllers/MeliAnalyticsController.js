@@ -1,6 +1,6 @@
 import axios from "axios";
 import mongoose from "mongoose";
-import { startOfDay, subDays, eachDayOfInterval, format } from "date-fns";
+import { startOfDay, endOfDay, subDays, eachDayOfInterval, format } from "date-fns";
 import Conta from "../models/Conta.js";
 import MeliOrder from "../models/MeliOrder.js";
 import MeliProduct from "../models/MeliProduct.js";
@@ -25,6 +25,21 @@ function periodToDates(period = "30d") {
   const to = new Date();
   const from = subDays(startOfDay(to), days - 1);
   return { from, to };
+}
+
+function resolveDates(query) {
+  const { period = "30d", from: fromStr, to: toStr } = query;
+  if (fromStr && toStr) {
+    // Parsear como data local (não UTC) para evitar shift de timezone:
+    // new Date("2025-06-09") interpreta como UTC midnight, o que em UTC-3
+    // equivale a 08/06 às 21h local — causando off-by-one no gráfico.
+    const parseLocal = (s) => {
+      const [y, m, d] = s.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    };
+    return { from: startOfDay(parseLocal(fromStr)), to: endOfDay(parseLocal(toStr)) };
+  }
+  return periodToDates(period);
 }
 
 /**
@@ -260,11 +275,25 @@ const MeliAnalyticsController = {
     }
   },
 
+  async lastSync(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const { user_id } = req.query;
+      const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
+      if (user_id) query.user_id = Number(user_id);
+      const product = await MeliProduct.findOne(query).sort({ updatedAt: -1 }).select("updatedAt").lean();
+      res.json({ lastSync: product?.updatedAt ?? null });
+    } catch (err) {
+      console.error("analytics last-sync error:", err);
+      res.status(500).json({ error: "Erro ao buscar última sincronização" });
+    }
+  },
+
   async summary(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d" } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -301,8 +330,8 @@ const MeliAnalyticsController = {
   async salesChart(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d" } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -340,8 +369,8 @@ const MeliAnalyticsController = {
   async topProducts(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d", limit = 20, sortBy = "receita", onlyActive } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id, limit = 20, sortBy = "receita", onlyActive } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -420,8 +449,8 @@ const MeliAnalyticsController = {
   async orders(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, period = "30d", page = 1, limit = 50, all } = req.query;
-      const { from, to } = periodToDates(period);
+      const { user_id, page = 1, limit = 50, all } = req.query;
+      const { from, to } = resolveDates(req.query);
 
       const filter = {
         ownerId: new mongoose.Types.ObjectId(ownerId),
@@ -447,12 +476,16 @@ const MeliAnalyticsController = {
       const ownerId = getOwnerId(req);
       const { user_id, filter: filterType, alert: alertFilter, sortBy, sortDir = "desc", limit = 1000 } = req.query;
 
-      const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
-      if (user_id) query.user_id = Number(user_id);
-      if (filterType === "full")   query.isFull = true;
-      if (filterType === "normal") query.isFull = { $ne: true };
-      if (alertFilter === "ruptura") query.alertRuptura = "RUPTURA";
-      if (alertFilter === "critico") query.alertRuptura = "CRÍTICO";
+      // baseQuery: sem filtro de alerta (para totais reais)
+      const baseQuery = { ownerId: new mongoose.Types.ObjectId(ownerId) };
+      if (user_id) baseQuery.user_id = Number(user_id);
+      if (filterType === "full")   baseQuery.isFull = true;
+      if (filterType === "normal") baseQuery.isFull = { $ne: true };
+
+      // filteredQuery: com filtro de alerta aplicado (para a lista paginada)
+      const filteredQuery = { ...baseQuery };
+      if (alertFilter === "ruptura") filteredQuery.alertRuptura = "RUPTURA";
+      if (alertFilter === "critico") filteredQuery.alertRuptura = "CRÍTICO";
 
       // Sem sortBy → ordem natural (sem sort explícito)
       let sort = {};
@@ -467,9 +500,13 @@ const MeliAnalyticsController = {
         sort = sortMap[sortBy] ?? {};
       }
 
-      const products = await MeliProduct.find(query).sort(sort).limit(Number(limit)).lean();
+      const [products, rupturaTotal, criticoTotal] = await Promise.all([
+        MeliProduct.find(filteredQuery).sort(sort).limit(Number(limit)).lean(),
+        MeliProduct.countDocuments({ ...baseQuery, alertRuptura: "RUPTURA" }),
+        MeliProduct.countDocuments({ ...baseQuery, alertRuptura: "CRÍTICO" }),
+      ]);
 
-      res.json(products);
+      res.json({ products, rupturaTotal, criticoTotal });
     } catch (err) {
       console.error("analytics inventory error:", err);
       res.status(500).json({ error: "Erro ao listar inventário" });

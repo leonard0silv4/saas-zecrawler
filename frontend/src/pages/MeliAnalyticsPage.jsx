@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ComposedChart, Area, Bar, XAxis, YAxis,
@@ -9,14 +9,11 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import api from "../services/api";
 import { notifyError, notifySuccess } from "../utils/notify.js";
-import { KpiCard }       from "../components/meli-analytics/KpiCard";
-import { AccountSelect } from "../components/meli-analytics/AccountSelect";
-import { ChartTooltip }  from "../components/meli-analytics/ChartTooltip";
-import { ProductDrawer } from "../components/meli-analytics/ProductDrawer";
-import { InventoryTab }  from "../components/meli-analytics/InventoryTab";
-import { TopProductsTab } from "../components/meli-analytics/TopProductsTab";
-import { OrdersTab }     from "../components/meli-analytics/OrdersTab";
-import { formatBRL }    from "../components/meli-analytics/formatBRL";
+import { KpiCard }           from "../components/meli-analytics/KpiCard";
+import { AccountSelect }     from "../components/meli-analytics/AccountSelect";
+import { ChartTooltip }      from "../components/meli-analytics/ChartTooltip";
+import { DateRangePicker }   from "../components/meli-analytics/DateRangePicker";
+import { formatBRL }         from "../components/meli-analytics/formatBRL";
 import { AIInsightsSection } from "../components/meli-analytics/AIInsightsSection";
 
 const PERIODS = [
@@ -28,34 +25,25 @@ const PERIODS = [
 
 const QK = {
   accounts: () => ["meli-analytics-accounts"],
-  summary: (userId, period) => ["analytics-summary", userId, period],
-  chart: (userId, period) => ["analytics-chart", userId, period],
-  top: (userId, period, sortBy, onlyActive) => ["analytics-top", userId, period, sortBy, onlyActive],
-  orders: (userId, period) => ["analytics-orders", userId, period],
-  inventory: (userId, period, filter, alert, sort) => ["analytics-inventory", userId, period, filter, alert, sort],
-  ai: (userId, period) => ["analytics-ai", userId, period],
+  summary: (userId, period, cr) => ["analytics-summary", userId, period, cr ? `${cr.from}-${cr.to}` : null],
+  chart:   (userId, period, cr) => ["analytics-chart",   userId, period, cr ? `${cr.from}-${cr.to}` : null],
+  ai:      (userId, period)     => ["analytics-ai",      userId, period],
 };
 
 export default function MeliAnalyticsPage() {
   const queryClient = useQueryClient();
   const [selectedAccount, setSelectedAccount] = useState("");
-  const [unifiedView, setUnifiedView] = useState(true);
+  const [unifiedView,     setUnifiedView]     = useState(true);
   const [period,          setPeriod]          = useState("30d");
-  const [activeTab,       setActiveTab]       = useState("estoque");
-  const tabSectionRef  = useRef(null);
-
-  const [inventoryType,   setInventoryType]   = useState("");
-  const [inventoryAlert,  setInventoryAlert]  = useState("");
-  const [inventorySort,   setInventorySort]   = useState({ field: "sold", dir: "desc" });
-  const [topSort,         setTopSort]         = useState("receita");
-  const [topOnlyActive,   setTopOnlyActive]   = useState(false);
-
+  const [customRange,     setCustomRange]     = useState(null);
   const [syncing,         setSyncing]         = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [loadingAI,       setLoadingAI]       = useState(false);
   const [aiDismissed,     setAiDismissed]     = useState(false);
 
   const userId = !unifiedView && selectedAccount ? selectedAccount : null;
+  const dateParams = customRange
+    ? { from: format(customRange.from, "yyyy-MM-dd"), to: format(customRange.to, "yyyy-MM-dd") }
+    : { period };
 
   const { data: accounts = [] } = useQuery({
     queryKey: QK.accounts(),
@@ -72,35 +60,15 @@ export default function MeliAnalyticsPage() {
   const enabled = unifiedView || !!selectedAccount;
 
   const { data: summary, isLoading: loadingSummary } = useQuery({
-    queryKey: QK.summary(userId, period),
-    queryFn: () => api.get("/meli/analytics/summary", { params: { period, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data),
+    queryKey: QK.summary(userId, period, customRange),
+    queryFn: () => api.get("/meli/analytics/summary", { params: { ...dateParams, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data),
     enabled,
   });
 
   const { data: chartData = [], isLoading: loadingChart } = useQuery({
-    queryKey: QK.chart(userId, period),
-    queryFn: () => api.get("/meli/analytics/sales-chart", { params: { period, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data),
+    queryKey: QK.chart(userId, period, customRange),
+    queryFn: () => api.get("/meli/analytics/sales-chart", { params: { ...dateParams, ...(userId ? { user_id: userId } : {}) } }).then(r => r.data),
     enabled,
-  });
-
-  const { data: topProducts = [], isLoading: loadingTop } = useQuery({
-    queryKey: QK.top(userId, period, topSort, topOnlyActive),
-    queryFn: () => api.get("/meli/analytics/top-products", { params: { period, ...(userId ? { user_id: userId } : {}), sortBy: topSort, ...(topOnlyActive ? { onlyActive: "true" } : {}) } }).then(r => r.data),
-    enabled: enabled && activeTab === "top",
-  });
-
-  const { data: ordersData, isLoading: loadingOrders } = useQuery({
-    queryKey: QK.orders(userId, period),
-    queryFn: () => api.get("/meli/analytics/orders", { params: { period, ...(userId ? { user_id: userId } : {}), limit: 1000 } }).then(r => r.data),
-    enabled: enabled && activeTab === "pedidos",
-  });
-  const orders = ordersData?.orders ?? [];
-
-  const invSort = inventorySort.field ? { sortBy: inventorySort.field, sortDir: inventorySort.dir } : {};
-  const { data: inventory = [], isLoading: loadingInventory } = useQuery({
-    queryKey: QK.inventory(userId, period, inventoryType, inventoryAlert, inventorySort),
-    queryFn: () => api.get("/meli/analytics/inventory", { params: { period, ...(userId ? { user_id: userId } : {}), ...(inventoryType ? { filter: inventoryType } : {}), ...(inventoryAlert ? { alert: inventoryAlert } : {}), ...invSort } }).then(r => r.data),
-    enabled: enabled && activeTab === "estoque",
   });
 
   const { data: aiCache } = useQuery({
@@ -139,16 +107,22 @@ export default function MeliAnalyticsPage() {
       notifySuccess(baseMessage + slowHint);
       queryClient.invalidateQueries({ queryKey: ["analytics-summary"] });
       queryClient.invalidateQueries({ queryKey: ["analytics-chart"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics-top"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics-inventory"] });
     } catch (err) {
       notifyError(err.response?.data?.error || "Erro ao sincronizar");
     } finally { setSyncing(false); }
   }
 
-  const rupturaCount = useMemo(() => inventory.filter((p) => p.alertRuptura === "RUPTURA").length, [inventory]);
-  const avgReceita   = useMemo(() => chartData.length > 0 ? chartData.reduce((s, d) => s + d.receita, 0) / chartData.length : 0, [chartData]);
+  function handlePeriodChange(p) {
+    setPeriod(p);
+    setCustomRange(null);
+  }
+
+  function handleCustomRange(range) {
+    setCustomRange(range);
+    setPeriod("");
+  }
+
+  const avgReceita    = useMemo(() => chartData.length > 0 ? chartData.reduce((s, d) => s + d.receita, 0) / chartData.length : 0, [chartData]);
   const daysWithSales = useMemo(() => chartData.filter((d) => d.receita > 0).length, [chartData]);
 
   return (
@@ -184,14 +158,15 @@ export default function MeliAnalyticsPage() {
             {PERIODS.map((p) => (
               <button
                 key={p.value}
-                onClick={() => setPeriod(p.value)}
+                onClick={() => handlePeriodChange(p.value)}
                 className={`px-3 py-1.5 rounded-lg transition-all font-medium ${
-                  period === p.value ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                  period === p.value && !customRange ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 {p.label}
               </button>
             ))}
+            <DateRangePicker value={customRange} onChange={handleCustomRange} />
           </div>
           <button
             onClick={() => handleSync(false)}
@@ -294,60 +269,6 @@ export default function MeliAnalyticsPage() {
         )}
       </div>
 
-      {/* Tabs */}
-      <div ref={tabSectionRef} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="flex border-b border-gray-100 px-2 pt-2 gap-1">
-          {[
-            { id: "estoque", label: "Estoque" },
-            { id: "top",     label: "Top Produtos" },
-            { id: "pedidos", label: "Pedidos" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                requestAnimationFrame(() => tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-              }}
-              className={`px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
-                activeTab === tab.id ? "bg-green-50 text-green-700" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <div className="p-5">
-          <div style={{ display: activeTab === "estoque" ? "block" : "none" }}>
-            <InventoryTab
-              inventory={inventory}
-              loading={loadingInventory}
-              inventoryType={inventoryType}
-              setInventoryType={setInventoryType}
-              inventoryAlert={inventoryAlert}
-              setInventoryAlert={setInventoryAlert}
-              inventorySort={inventorySort}
-              setInventorySort={setInventorySort}
-              rupturaCount={rupturaCount}
-              onProductSelect={setSelectedProduct}
-            />
-          </div>
-          <div style={{ display: activeTab === "top" ? "block" : "none" }}>
-            <TopProductsTab
-              topProducts={topProducts}
-              loading={loadingTop}
-              topSort={topSort}
-              setTopSort={setTopSort}
-              topOnlyActive={topOnlyActive}
-              setTopOnlyActive={setTopOnlyActive}
-            />
-          </div>
-          <div style={{ display: activeTab === "pedidos" ? "block" : "none" }}>
-            <OrdersTab orders={orders} loading={loadingOrders} />
-          </div>
-        </div>
-      </div>
-
-      <ProductDrawer product={selectedProduct} onClose={() => setSelectedProduct(null)} />
     </div>
   );
 }

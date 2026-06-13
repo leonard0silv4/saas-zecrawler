@@ -2,7 +2,7 @@ import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import {
-  Link2, ShoppingBag, Package,
+  Link2, ShoppingBag, Package, Ruler,
   LogOut, LayoutDashboard, Crown, Lock, Menu, X, CreditCard,
   LineChart, Store, Settings, MessageCircle, Unplug, Users, AlertTriangle, HelpCircle, BarChart2,
 } from "lucide-react";
@@ -20,10 +20,11 @@ const NAV_GROUPS = [
     items: [
       { to: "/links",          icon: Link2,         label: "Links",                   module: "links",         ownerOnly: false },
       { to: "/meli/analytics", icon: BarChart2,      label: "Analytics ML",            module: "meliAnalytics", ownerOnly: false },
+      { to: "/meli/catalog-ml", icon: Package,      label: "Catálogo ML",             module: "meliAnalytics", ownerOnly: false },
       { to: "/meli/messages",  icon: MessageCircle,  label: "Mensagens ML",            module: "meliMessages",  ownerOnly: false },
       { to: "/price-analyze",  icon: LineChart,      label: "Análise de concorrência", module: "priceAnalyze",  ownerOnly: false },
       { to: "/seller-monitor", icon: Store,          label: "Monitor sellers",         module: "sellerMonitor", ownerOnly: false },
-      { to: "/catalog",        icon: Package,        label: "Dimensões e Peso",        module: "catalog",       ownerOnly: false },
+      { to: "/catalog",        icon: Ruler,          label: "Dimensões e Peso",        module: "catalog",       ownerOnly: false },
       { to: "/meli",           icon: Unplug,         label: "Contas conectadas",       module: "meli",          ownerOnly: false },
     ],
   },

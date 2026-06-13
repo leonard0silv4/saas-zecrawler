@@ -153,7 +153,7 @@ export default function TeamPage() {
             <Users size={22} className="text-brand-600" />
             Time & Permissões
           </h1>
-          <p className="text-gray-500 mt-1">Gerencie usuários e times com permissões específicas.</p>
+          <p className="text-gray-500 mt-1 text-sm">Gerencie usuários e times com permissões específicas.</p>
         </div>
       </div>
 

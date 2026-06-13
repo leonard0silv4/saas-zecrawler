@@ -467,11 +467,11 @@ export default function MeliMessagesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageCircle size={28} className="text-brand-600" />
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <MessageCircle size={22} className="text-brand-600" />
             Mensagens ML
           </h1>
-          <p className="text-gray-500 mt-1">Gerencie perguntas, respostas e templates.</p>
+          <p className="text-gray-500 mt-1 text-sm">Gerencie perguntas, respostas e templates.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
