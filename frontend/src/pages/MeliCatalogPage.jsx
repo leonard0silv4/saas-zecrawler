@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Package, RefreshCw, Clock,
@@ -74,7 +74,7 @@ export default function MeliCatalogPage() {
 
   const invSort = inventorySort.field ? { sortBy: inventorySort.field, sortDir: inventorySort.dir } : {};
 
-  const { data: inventory = [], isLoading: loadingInventory } = useQuery({
+  const { data: inventoryData, isLoading: loadingInventory } = useQuery({
     queryKey: QK.inventory(userId, period, inventoryType, inventoryAlert, inventorySort),
     queryFn: () =>
       api.get("/meli/analytics/inventory", {
@@ -88,6 +88,7 @@ export default function MeliCatalogPage() {
       }).then((r) => r.data),
     enabled: enabled && activeTab === "estoque",
   });
+  const inventory = inventoryData?.products ?? [];
 
   const { data: topProducts = [], isLoading: loadingTop } = useQuery({
     queryKey: QK.top(userId, period, topSort, topOnlyActive),
@@ -113,8 +114,8 @@ export default function MeliCatalogPage() {
   });
   const orders = ordersData?.orders ?? [];
 
-  const rupturaCount = useMemo(() => inventory.filter((p) => p.alertRuptura === "RUPTURA").length, [inventory]);
-  const criticoCount = useMemo(() => inventory.filter((p) => p.alertRuptura === "CRÍTICO").length,  [inventory]);
+  const rupturaCount = inventoryData?.rupturaTotal ?? 0;
+  const criticoCount = inventoryData?.criticoTotal ?? 0;
   const alertTotal   = rupturaCount + criticoCount;
 
   async function handleSync(force = false) {
@@ -259,11 +260,6 @@ export default function MeliCatalogPage() {
             >
               <tab.icon size={14} />
               {tab.label}
-              {tab.id === "estoque" && alertTotal > 0 && (
-                <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
-                  {alertTotal}
-                </span>
-              )}
             </button>
           ))}
         </div>

@@ -105,7 +105,7 @@ export default function MeliPage() {
           <Unplug size={22} className="text-yellow-500" />
           Contas conectadas
         </h1>
-        <p className="text-gray-500 mt-1">Conecte contas OAuth e consulte produtos indexados.</p>
+        <p className="text-gray-500 mt-1 text-sm">Conecte contas OAuth e consulte produtos indexados.</p>
       </div>
 
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">

@@ -476,12 +476,16 @@ const MeliAnalyticsController = {
       const ownerId = getOwnerId(req);
       const { user_id, filter: filterType, alert: alertFilter, sortBy, sortDir = "desc", limit = 1000 } = req.query;
 
-      const query = { ownerId: new mongoose.Types.ObjectId(ownerId) };
-      if (user_id) query.user_id = Number(user_id);
-      if (filterType === "full")   query.isFull = true;
-      if (filterType === "normal") query.isFull = { $ne: true };
-      if (alertFilter === "ruptura") query.alertRuptura = "RUPTURA";
-      if (alertFilter === "critico") query.alertRuptura = "CRÍTICO";
+      // baseQuery: sem filtro de alerta (para totais reais)
+      const baseQuery = { ownerId: new mongoose.Types.ObjectId(ownerId) };
+      if (user_id) baseQuery.user_id = Number(user_id);
+      if (filterType === "full")   baseQuery.isFull = true;
+      if (filterType === "normal") baseQuery.isFull = { $ne: true };
+
+      // filteredQuery: com filtro de alerta aplicado (para a lista paginada)
+      const filteredQuery = { ...baseQuery };
+      if (alertFilter === "ruptura") filteredQuery.alertRuptura = "RUPTURA";
+      if (alertFilter === "critico") filteredQuery.alertRuptura = "CRÍTICO";
 
       // Sem sortBy → ordem natural (sem sort explícito)
       let sort = {};
@@ -496,9 +500,13 @@ const MeliAnalyticsController = {
         sort = sortMap[sortBy] ?? {};
       }
 
-      const products = await MeliProduct.find(query).sort(sort).limit(Number(limit)).lean();
+      const [products, rupturaTotal, criticoTotal] = await Promise.all([
+        MeliProduct.find(filteredQuery).sort(sort).limit(Number(limit)).lean(),
+        MeliProduct.countDocuments({ ...baseQuery, alertRuptura: "RUPTURA" }),
+        MeliProduct.countDocuments({ ...baseQuery, alertRuptura: "CRÍTICO" }),
+      ]);
 
-      res.json(products);
+      res.json({ products, rupturaTotal, criticoTotal });
     } catch (err) {
       console.error("analytics inventory error:", err);
       res.status(500).json({ error: "Erro ao listar inventário" });
