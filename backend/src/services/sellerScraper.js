@@ -39,8 +39,9 @@ const ML_PAGE_SIZE = 48;
 function buildPageUrl(baseUrl, pageNumber) {
   if (pageNumber <= 1) return baseUrl;
   const offset = 1 + (pageNumber - 1) * ML_PAGE_SIZE;
-  // Strip any existing _Desde_ and _NoIndex_True before rebuilding
+  // Strip hash fragments, existing _Desde_ and _NoIndex_True before rebuilding
   const cleanBase = baseUrl
+    .split("#")[0]
     .replace(/_Desde_\d+_NoIndex_True/gi, "")
     .replace(/_Desde_\d+/gi, "")
     .replace(/\/_NoIndex_True/gi, "")
@@ -65,17 +66,36 @@ function parseTotalCount($) {
   return null;
 }
 
+const ML_USER_AGENT =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+function isBotBlockPage(html) {
+  return html.includes("suspicious-traffic-frontend") || html.includes("robot_icon");
+}
+
 async function extractProductsFromPage(url, ownerId) {
   const { cookieString } = await loadCookiesWithFallback(ownerId);
-  const request = superagent.get(url).timeout({ response: 10000, deadline: 15000 });
+  const request = superagent
+    .get(url)
+    .set("User-Agent", ML_USER_AGENT)
+    .timeout({ response: 10000, deadline: 15000 });
   if (cookieString) request.set("Cookie", cookieString);
 
   const response = await request;
+
+  if (isBotBlockPage(response.text)) {
+    console.warn(`[SellerScraper] Bloqueio bot detection em ${url} — configure cookies válidos do ML`);
+    return { products: [], totalCount: null };
+  }
   const $ = cheerio.load(response.text);
   const products = [];
   const seen = new Set();
 
-  $(".ui-search-layout__item").each((_, el) => {
+  // Support both ML search pages (.ui-search-layout__item) and Mercado Shops pages ([class*='poly-card'])
+  const itemSelector =
+    $(".ui-search-layout__item").length > 0 ? ".ui-search-layout__item" : "[class*='poly-card']";
+
+  $(itemSelector).each((_, el) => {
     if ($(el).find('[class*="ads-promotions"], [class*="pub-label"], [class*="ads-label"]').length > 0) return;
     const linkEl = $(el)
       .find(
