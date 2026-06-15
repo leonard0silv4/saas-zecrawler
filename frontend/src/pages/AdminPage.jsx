@@ -173,6 +173,7 @@ function Dashboard({ onLogout }) {
   const [filterPlan, setFilterPlan] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sort, setSort]         = useState({ col: "createdAt", dir: "desc" });
+  const [expandedIds, setExpandedIds] = useState(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -195,9 +196,16 @@ function Dashboard({ onLogout }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Sorting
   function toggleSort(col) {
     setSort((s) => s.col === col ? { col, dir: s.dir === "asc" ? "desc" : "asc" } : { col, dir: "asc" });
+  }
+
+  function toggleExpand(id) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   // Filtering + sorting
@@ -333,13 +341,14 @@ function Dashboard({ onLogout }) {
               <table className="w-full text-sm">
                 <thead className="border-b border-gray-800">
                   <tr>
+                    <th className="w-8" />
                     <Th col="name"         label="Cliente" />
                     <Th col="plan"         label="Plano" />
                     <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-left">Status</th>
-                    <Th col="links"        label="Links" right />
-                    <Th col="sellers"      label="Sellers" right />
-                    <Th col="users"        label="Usuários" right />
-                    <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Times</th>
+                    <Th col="links"        label="Links" />
+                    <Th col="sellers"      label="Sellers" />
+                    <Th col="users"        label="Usuários" />
+                    <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-left">Times</th>
                     <Th col="createdAt"    label="Criado" />
                     <Th col="lastAccessAt" label="Último acesso" />
                     <Th col="nextPayment"  label="Próx. pag." />
@@ -348,81 +357,138 @@ function Dashboard({ onLogout }) {
                 <tbody className="divide-y divide-gray-800/60">
                   {visible.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="text-center py-12 text-gray-500">Nenhum resultado</td>
+                      <td colSpan={11} className="text-center py-12 text-gray-500">Nenhum resultado</td>
                     </tr>
                   )}
-                  {visible.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-800/40 transition-colors">
-                      {/* Cliente */}
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-white">{c.name}</p>
-                        <p className="text-xs text-gray-400">{c.email}</p>
-                      </td>
+                  {visible.flatMap((c) => {
+                    const isExpanded = expandedIds.has(c.id);
+                    const hasMembers = c.members?.length > 0;
+                    const rows = [
+                      <tr key={c.id} className="hover:bg-gray-800/40 transition-colors">
+                        {/* Expand toggle */}
+                        <td className="pl-3 py-3 w-8">
+                          {hasMembers ? (
+                            <button
+                              onClick={() => toggleExpand(c.id)}
+                              className="text-gray-500 hover:text-amber-400 text-xs transition-colors leading-none"
+                              title={isExpanded ? "Recolher usuários" : `Ver ${c.members.length} usuário(s)`}
+                            >
+                              {isExpanded ? "▼" : "▶"}
+                            </button>
+                          ) : null}
+                        </td>
 
-                      {/* Plano */}
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${PLAN_COLORS[c.plan] || "bg-gray-700 text-gray-300"}`}>
-                          {c.planName}
-                        </span>
-                        {c.planPrice > 0 && (
-                          <p className="text-xs text-gray-500 mt-0.5">R$ {c.planPrice.toFixed(2)}/mês</p>
-                        )}
-                      </td>
+                        {/* Cliente */}
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-white">{c.name}</p>
+                          <p className="text-xs text-gray-400">{c.email}</p>
+                        </td>
 
-                      {/* Status */}
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-medium ${STATUS_COLORS[c.subscriptionStatus] || "text-gray-400"}`}>
-                          ● {STATUS_LABELS[c.subscriptionStatus] || c.subscriptionStatus}
-                        </span>
-                        {c.hasStripe && (
-                          <p className="text-xs text-gray-600 mt-0.5">Stripe</p>
-                        )}
-                      </td>
-
-                      {/* Links */}
-                      <td className="px-4 py-3 text-right">
-                        <Bar value={c.links.count} max={c.links.max} color="bg-blue-500" />
-                      </td>
-
-                      {/* Sellers */}
-                      <td className="px-4 py-3 text-right">
-                        <Bar value={c.sellers.count} max={c.sellers.max} color="bg-teal-500" />
-                      </td>
-
-                      {/* Usuários */}
-                      <td className="px-4 py-3 text-right">
-                        <Bar value={c.users.count} max={c.users.max} color="bg-violet-500" />
-                      </td>
-
-                      {/* Times */}
-                      <td className="px-4 py-3 text-right">
-                        <Bar value={c.teams.count} max={c.teams.max} color="bg-orange-400" />
-                      </td>
-
-                      {/* Criado */}
-                      <td className="px-4 py-3">
-                        <span className="text-xs text-gray-400">{fmt(c.createdAt)}</span>
-                      </td>
-
-                      {/* Último acesso */}
-                      <td className="px-4 py-3">
-                        <span className={`text-xs ${c.lastAccessAt ? "text-gray-300" : "text-gray-600"}`}>
-                          {fmtRelative(c.lastAccessAt)}
-                        </span>
-                      </td>
-
-                      {/* Próximo pagamento */}
-                      <td className="px-4 py-3">
-                        {c.planExpiresAt ? (
-                          <span className={`text-xs ${new Date(c.planExpiresAt) < new Date() ? "text-red-400" : "text-gray-300"}`}>
-                            {fmt(c.planExpiresAt)}
+                        {/* Plano */}
+                        <td className="px-4 py-3">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${PLAN_COLORS[c.plan] || "bg-gray-700 text-gray-300"}`}>
+                            {c.planName}
                           </span>
-                        ) : (
-                          <span className="text-xs text-gray-600">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          {c.planPrice > 0 && (
+                            <p className="text-xs text-gray-500 mt-0.5">R$ {c.planPrice.toFixed(2)}/mês</p>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-medium ${STATUS_COLORS[c.subscriptionStatus] || "text-gray-400"}`}>
+                            ● {STATUS_LABELS[c.subscriptionStatus] || c.subscriptionStatus}
+                          </span>
+                          {c.hasStripe && (
+                            <p className="text-xs text-gray-600 mt-0.5">Stripe</p>
+                          )}
+                        </td>
+
+                        {/* Links */}
+                        <td className="px-4 py-3">
+                          <Bar value={c.links.count} max={c.links.max} color="bg-blue-500" />
+                        </td>
+
+                        {/* Sellers */}
+                        <td className="px-4 py-3">
+                          <Bar value={c.sellers.count} max={c.sellers.max} color="bg-teal-500" />
+                        </td>
+
+                        {/* Usuários */}
+                        <td className="px-4 py-3">
+                          <Bar value={c.users.count} max={c.users.max} color="bg-violet-500" />
+                        </td>
+
+                        {/* Times */}
+                        <td className="px-4 py-3">
+                          <Bar value={c.teams.count} max={c.teams.max} color="bg-orange-400" />
+                        </td>
+
+                        {/* Criado */}
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-gray-400">{fmt(c.createdAt)}</span>
+                        </td>
+
+                        {/* Último acesso */}
+                        <td className="px-4 py-3">
+                          <span className={`text-xs ${c.lastAccessAt ? "text-gray-300" : "text-gray-600"}`}>
+                            {fmtRelative(c.lastAccessAt)}
+                          </span>
+                        </td>
+
+                        {/* Próximo pagamento */}
+                        <td className="px-4 py-3">
+                          {c.planExpiresAt ? (
+                            <span className={`text-xs ${new Date(c.planExpiresAt) < new Date() ? "text-red-400" : "text-gray-300"}`}>
+                              {fmt(c.planExpiresAt)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-600">—</span>
+                          )}
+                        </td>
+                      </tr>,
+                    ];
+
+                    if (isExpanded && hasMembers) {
+                      rows.push(
+                        <tr key={`${c.id}-members`} className="bg-gray-800/20">
+                          <td colSpan={11} className="px-0 py-0">
+                            <div className="ml-10 mr-4 my-2 border-l-2 border-gray-700 pl-4">
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr>
+                                    <th className="text-left py-1 pr-6 font-medium text-gray-500 uppercase tracking-wide">Usuário</th>
+                                    <th className="text-left py-1 pr-6 font-medium text-gray-500 uppercase tracking-wide">Role</th>
+                                    <th className="text-left py-1 font-medium text-gray-500 uppercase tracking-wide">Último acesso</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {c.members.map((m) => (
+                                    <tr key={m.id} className="border-t border-gray-700/40">
+                                      <td className="py-1.5 pr-6">
+                                        <p className="text-gray-300">{m.name}</p>
+                                        <p className="text-gray-500">{m.email}</p>
+                                      </td>
+                                      <td className="py-1.5 pr-6">
+                                        <span className="text-gray-400 capitalize">{m.role}</span>
+                                      </td>
+                                      <td className="py-1.5">
+                                        <span className={m.lastAccessAt ? "text-gray-300" : "text-gray-600"}>
+                                          {fmtRelative(m.lastAccessAt)}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return rows;
+                  })}
                 </tbody>
               </table>
             </div>
