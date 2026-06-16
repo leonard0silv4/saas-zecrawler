@@ -102,6 +102,11 @@ filter = {
 No sync (`syncQuestionsForConta`), além dos status inválidos da pergunta, perguntas com
 `answer.status === "BANNED"` também são ignoradas — não são inseridas nem atualizadas no banco.
 
+**Invariante de status durante sync:** O sync nunca faz downgrade de `"ANSWERED"` → `"UNANSWERED"`.
+Quando a API do ML retorna uma pergunta sem `answer.text` (race condition ou atraso de propagação),
+o campo `status` é omitido do `$set` para documentos existentes e definido apenas via `$setOnInsert`
+para novos documentos. Isso garante que perguntas respondidas via nosso sistema não sejam sobrescritas.
+
 ## Fluxo de Sugestões Rápidas
 
 ```

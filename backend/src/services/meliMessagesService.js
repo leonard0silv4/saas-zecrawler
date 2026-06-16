@@ -207,9 +207,16 @@ export async function syncQuestionsForConta(ownerId, conta) {
 
       const itemStatus = q.item_id ? (itemStatuses[q.item_id] ?? null) : null;
 
+      const mapped = mapQuestionPayload(q, ownerId, conta.user_id, itemStatus, buyerNicknames);
+      const { status: mappedStatus, ...mappedRest } = mapped;
+      // Never downgrade ANSWERED → UNANSWERED during sync (ML API may lag behind our system)
+      const updateOp =
+        mappedStatus === "ANSWERED"
+          ? { $set: mapped }
+          : { $set: mappedRest, $setOnInsert: { status: mappedStatus } };
       await MeliQuestion.updateOne(
         { ownerId: toObjectId(ownerId), question_id: Number(q.id) },
-        { $set: mapQuestionPayload(q, ownerId, conta.user_id, itemStatus, buyerNicknames) },
+        updateOp,
         { upsert: true }
       );
       insertedOrUpdated += 1;
@@ -342,9 +349,15 @@ export async function syncQuestionFromWebhook({ userId, resource }) {
   const itemStatus = question.item_id ? (itemStatuses[question.item_id] ?? null) : null;
   const mapped = mapQuestionPayload(question, ownerId, conta.user_id, itemStatus, buyerNicknames);
 
+  const { status: mappedStatus, ...mappedRest } = mapped;
+  // Never downgrade ANSWERED → UNANSWERED during sync (ML API may lag behind our system)
+  const updateOp =
+    mappedStatus === "ANSWERED"
+      ? { $set: mapped }
+      : { $set: mappedRest, $setOnInsert: { status: mappedStatus } };
   const result = await MeliQuestion.updateOne(
     { ownerId: toObjectId(ownerId), question_id: Number(question.id) },
-    { $set: mapped },
+    updateOp,
     { upsert: true }
   );
 
