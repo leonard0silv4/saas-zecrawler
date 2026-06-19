@@ -22,6 +22,10 @@ const QK = {
   productDetail: (itemId)       => ["product-detail", itemId],
 };
 
+// TTL curto do prefetch das outras lojas (troca de loja instantânea)
+const PREFETCH_STALE_TIME = 5 * 60_000;  // 5 min — evita re-prefetch redundante
+const PREFETCH_GC_TIME    = 10 * 60_000; // 10 min — mantém o cache das lojas inativas
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h >= 6 && h < 12) return "Bom dia";
@@ -102,6 +106,26 @@ export default function MeliMessagesPage() {
     staleTime: 30_000,
     refetchInterval: 5 * 60_000,
   });
+
+  // Prefetch em background das mensagens das OUTRAS lojas (cache p/ troca instantânea)
+  useEffect(() => {
+    if (!selectedUserId || accounts.length < 2) return;
+
+    const others = accounts.filter(a => String(a.user_id) !== String(selectedUserId));
+
+    others.forEach((acc) => {
+      const userId = String(acc.user_id);
+      queryClient.prefetchQuery({
+        queryKey: QK.questions(userId, statusFilter),
+        queryFn: () =>
+          api.get("/meli/messages/questions", {
+            params: { user_id: userId, status: statusFilter, page: 1, limit: 50 },
+          }).then(r => r.data?.items ?? []),
+        staleTime: PREFETCH_STALE_TIME,
+        gcTime: PREFETCH_GC_TIME,
+      });
+    });
+  }, [accounts, selectedUserId, statusFilter, queryClient]);
 
   const { data: buyerThread = [], isLoading: loadingBuyerThread } = useQuery({
     queryKey: QK.buyerThread(selectedConversationFromId, selectedUserId),

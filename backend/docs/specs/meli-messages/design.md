@@ -144,6 +144,20 @@ meliQuestionSchema.index({ ownerId: 1, question_id: 1 }, { unique: true });
 meliMessageTemplateSchema.index({ ownerId: 1, name: 1 }, { unique: true });
 ```
 
+## Prefetch em background das outras lojas (2026-06-19)
+
+Ao abrir a tela de Mensagens (`MeliMessagesPage.jsx`), o frontend dispara em background
+o fetch das mensagens das **outras** contas ML (as não selecionadas), para que trocar de
+loja seja instantâneo.
+
+- **Sem novo endpoint:** reutiliza `GET /meli/messages/questions?user_id=<loja>&status=<filtro>&page=1&limit=50`
+  (mais recentes primeiro — já cobre as do dia). Apenas o `statusFilter` ativo é prefetchado.
+- **Mecanismo:** React Query `queryClient.prefetchQuery` com a mesma query key
+  `["questions", userId, status]` do `useQuery` ativo, então a troca de loja serve do cache.
+- **TTL curto:** `staleTime` 5 min (evita re-prefetch redundante) e `gcTime` 10 min
+  (mantém o cache das lojas inativas). Revalidação em background continua via o
+  `refetchInterval` de 5 min do `useQuery` de questions.
+
 ## UI Frontend (ajustes visuais — 2026-05-31)
 
 Remodelagem visual dos componentes da página `/meli/messages` (apenas CSS/Tailwind, sem mudanças de lógica):
