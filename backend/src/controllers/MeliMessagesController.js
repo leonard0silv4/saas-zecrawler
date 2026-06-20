@@ -27,6 +27,11 @@ function parsePage(value, fallback) {
   return parsed;
 }
 
+/** Escapa caracteres especiais de regex para uso seguro em $regex */
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 const PT_STOPWORDS = new Set([
   "o","a","os","as","um","uma","de","do","da","dos","das","em","no","na",
   "nos","nas","por","para","com","que","e","é","se","ao","me","te","eu",
@@ -223,11 +228,12 @@ export default {
       }
 
       if (req.query.search) {
-        const safe = String(req.query.search).trim();
+        const safe = escapeRegex(String(req.query.search).trim());
         if (safe) {
+          // Busca global de mensagens (pergunta do comprador + resposta do vendedor)
           filter.$or = [
             { text: { $regex: safe, $options: "i" } },
-            { item_title: { $regex: safe, $options: "i" } },
+            { answer_text: { $regex: safe, $options: "i" } },
           ];
         }
       }

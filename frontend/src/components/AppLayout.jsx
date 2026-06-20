@@ -1,4 +1,5 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import {
@@ -37,6 +38,23 @@ const NAV_GROUPS = [
     ],
   },
 ];
+
+// Títulos por rota (aba do navegador). Deriva dos itens de navegação + extras.
+const ROUTE_TITLES = {
+  ...Object.fromEntries(NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.to, i.label]))),
+  "/ajuda": "Ajuda",
+  "/setup-cookies": "Configurar cookies",
+};
+
+function pageTitleFor(pathname) {
+  const label =
+    ROUTE_TITLES[pathname] ||
+    // rotas aninhadas (ex.: /meli/analytics/...) → casa pelo prefixo mais longo
+    Object.entries(ROUTE_TITLES)
+      .filter(([to]) => pathname.startsWith(to))
+      .sort((a, b) => b[0].length - a[0].length)[0]?.[1];
+  return label ? `${label} | ML SmartHub` : "ML SmartHub";
+}
 
 const planColors = {
   free:     "bg-gray-100 text-gray-600",
@@ -91,6 +109,10 @@ export default function AppLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
+      <Helmet>
+        <title>{pageTitleFor(location.pathname)}</title>
+      </Helmet>
+
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div

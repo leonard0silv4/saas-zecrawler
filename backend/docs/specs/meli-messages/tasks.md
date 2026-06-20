@@ -19,3 +19,4 @@
 - [ ]* 8. Exportar histórico de perguntas/respostas para CSV
 - [x] 9. Sugestões rápidas baseadas em histórico real: endpoint `GET /meli/messages/suggestions` minera perguntas respondidas do owner, prioriza a loja selecionada, deduplica e retorna top 5; frontend usa fallback estático quando sem histórico
 - [x] 10. Prefetch em background das mensagens das outras lojas ao abrir a tela: frontend (`MeliMessagesPage.jsx`) usa `queryClient.prefetchQuery` reutilizando `GET /meli/messages/questions` (sem novo endpoint); TTL curto via `staleTime` 5 min / `gcTime` 10 min para troca de loja instantânea
+- [x] 11. Busca global de mensagens (estilo WhatsApp): `listQuestions` passa a casar o termo em `text` + `answer_text` com escape de regex; frontend (`MeliMessagesPage` + `ConversationList`) tem campo de busca com debounce 300ms que varre todas as conversas da loja respeitando o filtro de status, com destaque do termo e snippet do trecho encontrado

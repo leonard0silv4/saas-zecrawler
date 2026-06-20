@@ -99,6 +99,22 @@ filter = {
 }
 ```
 
+### Busca global (`search`)
+
+```javascript
+// MeliMessagesController.listQuestions — quando req.query.search presente
+const safe = escapeRegex(String(req.query.search).trim());
+filter.$or = [
+  { text:        { $regex: safe, $options: "i" } }, // pergunta do comprador
+  { answer_text: { $regex: safe, $options: "i" } }, // resposta do vendedor
+];
+```
+
+- `escapeRegex` neutraliza caracteres especiais (`(`, `*`, `[`, …) evitando regex inválido / 500.
+- Mantém o filtro de `status` vigente — a busca não cruza Pendentes/Respondidas.
+- Pré-filtro por `ownerId + user_id + status` (índice existente) limita o conjunto antes do
+  regex de substring; não há índice de texto (incompatível com substring multi-campo).
+
 No sync (`syncQuestionsForConta`), além dos status inválidos da pergunta, perguntas com
 `answer.status === "BANNED"` também são ignoradas — não são inseridas nem atualizadas no banco.
 

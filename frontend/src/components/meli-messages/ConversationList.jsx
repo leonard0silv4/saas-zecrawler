@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, Loader2, MessageSquare } from "lucide-react";
-import { getInitials } from "./utils";
+import { ArrowDown, ArrowUp, Loader2, MessageSquare, Search, X } from "lucide-react";
+import { getInitials, escapeRegex } from "./utils";
 
 function cn(...c) { return c.filter(Boolean).join(" "); }
 
@@ -15,6 +15,18 @@ function formatRelativeTime(value) {
   return new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
+/** Destaca as ocorrências do termo no texto (estilo busca do WhatsApp) */
+function Highlight({ text, term }) {
+  const str = String(text ?? "");
+  if (!term) return str;
+  const parts = str.split(new RegExp(`(${escapeRegex(term)})`, "ig"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === term.toLowerCase()
+      ? <mark key={i} className="bg-brand-100 text-brand-800 rounded px-0.5">{part}</mark>
+      : part
+  );
+}
+
 export function ConversationList({
   conversations,
   selectedConversationFromId,
@@ -24,31 +36,66 @@ export function ConversationList({
   selectedAccount,
   sortOrder,
   setSortOrder,
+  searchInput,
+  setSearchInput,
+  searchTerm,
+  searching,
 }) {
+  const isSearching = !!searchTerm;
+
   return (
     <section className="bg-white rounded-lg border border-gray-200 lg:col-span-2 flex flex-col overflow-hidden shadow-sm h-56 shrink-0 lg:h-auto lg:shrink">
-      <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-        <div>
-          <h2 className="font-bold text-gray-900 text-base">Conversas</h2>
-          {selectedAccount && (
-            <p className="text-xs text-gray-500 mt-1">
-              {selectedAccount.nickname || selectedAccount.user_id}
-            </p>
-          )}
+      <div className="px-5 py-4 border-b border-gray-200 shrink-0 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-gray-900 text-base">Conversas</h2>
+            {selectedAccount && (
+              <p className="text-xs text-gray-500 mt-1">
+                {selectedAccount.nickname || selectedAccount.user_id}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSortOrder((s) => (s === "desc" ? "asc" : "desc"))}
+              title={sortOrder === "desc" ? "Mais novas primeiro" : "Mais antigas primeiro"}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+            >
+              {sortOrder === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
+            </button>
+            {conversations.length > 0 && (
+              <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full tabular-nums">
+                {conversations.length}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSortOrder((s) => (s === "desc" ? "asc" : "desc"))}
-            title={sortOrder === "desc" ? "Mais novas primeiro" : "Mais antigas primeiro"}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
-          >
-            {sortOrder === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}
-          </button>
-          {conversations.length > 0 && (
-            <span className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full tabular-nums">
-              {conversations.length}
-            </span>
+
+        {/* Busca global de mensagens */}
+        <div className="relative">
+          {searching ? (
+            <Loader2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 animate-spin" />
+          ) : (
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          )}
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            disabled={!selectedUserId}
+            placeholder="Buscar em todas as conversas..."
+            className="w-full pl-9 pr-9 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput("")}
+              title="Limpar busca"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            >
+              <X size={14} />
+            </button>
           )}
         </div>
       </div>
@@ -59,20 +106,25 @@ export function ConversationList({
             Selecione uma conta para ver as conversas.
           </p>
         </div>
-      ) : loadingQuestions && conversations.length === 0 ? (
+      ) : (loadingQuestions || searching) && conversations.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-8">
           <Loader2 size={20} className="animate-spin text-gray-300" />
         </div>
       ) : conversations.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 gap-2">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 gap-2 text-center">
           <MessageSquare size={28} className="text-gray-200" />
-          <p className="text-sm text-gray-400">Nenhuma conversa encontrada.</p>
+          <p className="text-sm text-gray-400">
+            {isSearching
+              ? <>Nenhuma mensagem encontrada para <span className="font-semibold text-gray-500">"{searchTerm}"</span>.</>
+              : "Nenhuma conversa encontrada."}
+          </p>
         </div>
       ) : (
         <div className="overflow-y-auto flex-1">
           {conversations.map((conv) => {
             const isSelected = String(conv.from_id) === String(selectedConversationFromId);
             const initials = getInitials(conv.from_nickname);
+            const preview = isSearching && conv.matchSnippet ? conv.matchSnippet : conv.lastQuestionText;
             return (
               <button
                 key={conv.from_id}
@@ -104,7 +156,7 @@ export function ConversationList({
                           ? "font-bold text-gray-900"
                           : "font-semibold text-gray-800"
                       )}>
-                        {conv.from_nickname || `Comprador #${conv.from_id}`}
+                        <Highlight text={conv.from_nickname || `Comprador #${conv.from_id}`} term={searchTerm} />
                       </span>
                       <span className="text-xs text-gray-500 shrink-0 tabular-nums font-medium">
                         {formatRelativeTime(conv.lastDate)}
@@ -116,7 +168,7 @@ export function ConversationList({
                       </p>
                     )}
                     <p className="text-xs text-gray-600 line-clamp-1">
-                      {conv.lastQuestionText}
+                      <Highlight text={preview} term={searchTerm} />
                     </p>
                   </div>
                 </div>

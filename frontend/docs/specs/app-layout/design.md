@@ -8,6 +8,10 @@
 
 `AppLayout` usa `Outlet` do React Router e consome `AuthContext` e `NotificationContext`. Bloqueios por plano enviam para `/plans`; bloqueios por permissão impedem navegação.
 
+## Título da aba (react-helmet-async)
+
+O shell autenticado define o `<title>` de cada página via `<Helmet>`, derivando o nome da rota atual a partir de `NAV_GROUPS` (mapa `ROUTE_TITLES` + extras como `/ajuda`, `/setup-cookies`), no formato `Label | ML SmartHub` (fallback `ML SmartHub`). Rotas aninhadas casam pelo prefixo mais longo. Sem isso, o título ficava preso no da última página pública montada (ex.: "Login —…"), já que as páginas internas não renderizavam `<SEO>`/`<Helmet>`. O `LoginPage` passou a usar `title="Login"` (o componente `SEO` já acrescenta `| ML SmartHub`, evitando sufixo duplicado).
+
 ## Estrutura do Sidebar
 
 Nav organizada em 3 grupos via `NAV_GROUPS`:

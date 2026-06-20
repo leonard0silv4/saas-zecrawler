@@ -12,7 +12,8 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 - Filtra automaticamente perguntas com status inválido no ML: `UNDER_REVIEW`, `CLOSED_BY_ML`, `DISABLED`, `DELETED`, `BANNED`.
 - Filtra perguntas de anúncios inativos: `paused`, `closed`, `under_review`, `inactive`.
 - Filtra perguntas cuja resposta foi banida por moderação do ML (`answer_status: "BANNED"`).
-- Filtros opcionais: `status` (UNANSWERED/ANSWERED), `user_id`, `search` (texto ou título do anúncio).
+- Filtros opcionais: `status` (UNANSWERED/ANSWERED), `user_id`, `search`.
+- Busca global (`search`): pesquisa o termo na **pergunta do comprador** (`text`) e na **resposta do vendedor** (`answer_text`), via regex case-insensitive, escopada por `ownerId` + `user_id` + filtros vigentes. Respeita o filtro de `status` atual (Pendentes/Respondidas). Caracteres especiais de regex no termo são escapados.
 - Paginação via `page` e `limit` (máximo 100 por página).
 - Retorna `{ items, page, limit, total }`.
 

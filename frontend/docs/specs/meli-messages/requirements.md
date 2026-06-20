@@ -8,6 +8,7 @@ Central de perguntas e respostas Mercado Livre em `/meli/messages`.
 
 - Deve listar contas ML em dropdown com badge vermelho por conta com mensagens não lidas.
 - Deve filtrar perguntas por status (Pendentes / Respondidas) e ordenar conversas por data (mais novas / mais antigas).
+- Deve oferecer um campo de **busca global** no topo da lista de conversas (estilo WhatsApp) que pesquisa em **todas as conversas da loja selecionada** — não apenas nas carregadas. A busca casa o termo na pergunta do comprador e na resposta do vendedor, respeita o filtro de status ativo, tem debounce de 300ms, destaca o termo encontrado e exibe o trecho correspondente. Clicar em um resultado abre a conversa mesmo que ela não esteja entre as mais recentes.
 - Deve permitir ordenar as mensagens dentro de uma conversa por data (mais antigas / mais novas primeiro).
 - Deve agrupar perguntas por comprador (`from_id`) em uma interface de chat.
 - Deve exibir histórico de mensagens de cada comprador como bolhas de chat.

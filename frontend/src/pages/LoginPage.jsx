@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       <SEO
-        title="Login — ML SmartHub"
+        title="Login"
         description="Gerencie seus anúncios, preços e perguntas do Mercado Livre com o ML SmartHub."
         canonical="/login"
       />

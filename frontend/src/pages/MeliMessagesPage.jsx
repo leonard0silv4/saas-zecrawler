@@ -12,15 +12,19 @@ import { ChatThread } from "../components/meli-messages/ChatThread";
 import { TemplateModal } from "../components/meli-messages/TemplateModal";
 import { ProductSearchModal } from "../components/meli-messages/ProductSearchModal";
 import { ConfirmReplyModal } from "../components/meli-messages/ConfirmReplyModal";
+import { buildConversations } from "../components/meli-messages/utils";
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 const QK = {
-  accounts:      ()             => ["meli-accounts"],
-  templates:     ()             => ["meli-templates"],
-  questions:     (userId, status) => ["questions", userId, status],
-  buyerThread:   (fromId, userId) => ["buyer-thread", fromId, userId],
-  productDetail: (itemId)       => ["product-detail", itemId],
+  accounts:       ()                   => ["meli-accounts"],
+  templates:      ()                   => ["meli-templates"],
+  questions:      (userId, status)     => ["questions", userId, status],
+  searchMessages: (userId, status, q)  => ["messages-search", userId, status, q],
+  buyerThread:    (fromId, userId)     => ["buyer-thread", fromId, userId],
+  productDetail:  (itemId)             => ["product-detail", itemId],
 };
+
+const MIN_SEARCH_LEN = 2;
 
 // TTL curto do prefetch das outras lojas (troca de loja instantânea)
 const PREFETCH_STALE_TIME = 5 * 60_000;  // 5 min — evita re-prefetch redundante
@@ -50,6 +54,10 @@ export default function MeliMessagesPage() {
 
   const [selectedConversationFromId, setSelectedConversationFromId] = useState(null);
   const [replyText, setReplyText] = useState("");
+
+  // Busca global de mensagens (estilo WhatsApp)
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Template CRUD state
   const [newTemplateName, setNewTemplateName] = useState("");
@@ -105,6 +113,18 @@ export default function MeliMessagesPage() {
     enabled: !!selectedUserId,
     staleTime: 30_000,
     refetchInterval: 5 * 60_000,
+  });
+
+  // Busca global: varre TODAS as conversas da loja (respeitando o filtro de status)
+  const isSearching = searchTerm.length >= MIN_SEARCH_LEN;
+  const { data: searchResults = [], isFetching: searching } = useQuery({
+    queryKey: QK.searchMessages(selectedUserId, statusFilter, searchTerm),
+    queryFn: () =>
+      api.get("/meli/messages/questions", {
+        params: { user_id: selectedUserId, status: statusFilter, search: searchTerm, page: 1, limit: 100 },
+      }).then(r => r.data?.items ?? []),
+    enabled: !!selectedUserId && isSearching,
+    staleTime: 30_000,
   });
 
   // Prefetch em background das mensagens das OUTRAS lojas (cache p/ troca instantânea)
@@ -199,41 +219,41 @@ export default function MeliMessagesPage() {
   });
 
   // ─── Derived values ───────────────────────────────────────────────────────────
-  const conversations = useMemo(() => {
-    const map = new Map();
-    for (const q of questions) {
-      if (!map.has(q.from_id)) {
-        map.set(q.from_id, {
-          from_id: q.from_id,
-          from_nickname: q.from_nickname,
-          questions: [],
-          lastDate: q.date_created,
-          unansweredCount: 0,
-          lastQuestionText: q.text,
-          item_title: q.item_title,
-        });
-      }
-      const conv = map.get(q.from_id);
-      conv.questions.push(q);
-      if (q.date_created > conv.lastDate) {
-        conv.lastDate = q.date_created;
-        conv.lastQuestionText = q.text;
-        conv.item_title = q.item_title;
-      }
-      if (q.status === "UNANSWERED") conv.unansweredCount++;
-    }
-    const sorted = [...map.values()].sort((a, b) =>
-      sortOrder === "desc"
-        ? b.lastDate > a.lastDate ? 1 : -1
-        : a.lastDate > b.lastDate ? 1 : -1
-    );
-    return sorted;
-  }, [questions, sortOrder]);
-
-  const selectedConversation = useMemo(
-    () => conversations.find((c) => String(c.from_id) === String(selectedConversationFromId)) || null,
-    [conversations, selectedConversationFromId]
+  const conversations = useMemo(
+    () => buildConversations(questions, sortOrder),
+    [questions, sortOrder]
   );
+
+  const searchConversations = useMemo(
+    () => (isSearching ? buildConversations(searchResults, sortOrder, searchTerm) : []),
+    [isSearching, searchResults, sortOrder, searchTerm]
+  );
+
+  const displayConversations = isSearching ? searchConversations : conversations;
+
+  // Conversa selecionada: procura na lista normal e na de busca; cai para o buyerThread
+  // carregado (que busca por from_id + user_id) caso não esteja em nenhuma das listas.
+  const selectedConversation = useMemo(() => {
+    if (selectedConversationFromId == null) return null;
+    const match = (c) => String(c.from_id) === String(selectedConversationFromId);
+    const found = conversations.find(match) || searchConversations.find(match);
+    if (found) return found;
+    if (buyerThread.length) {
+      const unansweredCount = buyerThread.filter((q) => q.status === "UNANSWERED").length;
+      const last = buyerThread[buyerThread.length - 1];
+      return {
+        from_id: selectedConversationFromId,
+        from_nickname: last?.from_nickname,
+        questions: buyerThread,
+        lastDate: last?.date_created,
+        unansweredCount,
+        lastQuestionText: last?.text,
+        item_title: last?.item_title,
+        matchSnippet: "",
+      };
+    }
+    return null;
+  }, [conversations, searchConversations, selectedConversationFromId, buyerThread]);
 
   const activeQuestion = useMemo(() => {
     if (!selectedConversation) return null;
@@ -266,8 +286,16 @@ export default function MeliMessagesPage() {
     if (!selectedUserId) return;
     setSelectedConversationFromId(null);
     setReplyText("");
+    setSearchInput("");
+    setSearchTerm("");
     loadProducts("");
   }, [selectedUserId, statusFilter]);
+
+  // Debounce da busca de mensagens
+  useEffect(() => {
+    const handle = setTimeout(() => setSearchTerm(searchInput.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [searchInput]);
 
   // Auto-select first conversation
   useEffect(() => {
@@ -532,7 +560,7 @@ export default function MeliMessagesPage() {
       {/* Chat grid */}
       <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 lg:flex-1 lg:min-h-0">
         <ConversationList
-          conversations={conversations}
+          conversations={displayConversations}
           selectedConversationFromId={selectedConversationFromId}
           onSelectConversation={handleSelectConversation}
           loadingQuestions={loadingQuestions}
@@ -540,6 +568,10 @@ export default function MeliMessagesPage() {
           selectedAccount={selectedAccount}
           sortOrder={sortOrder}
           setSortOrder={setSortOrder}
+          searchInput={searchInput}
+          setSearchInput={setSearchInput}
+          searchTerm={isSearching ? searchTerm : ""}
+          searching={searching}
         />
         <ChatThread
           selectedConversation={selectedConversation}

@@ -13,7 +13,9 @@
 
 O estado completo permanece em `MeliMessagesPage` — os componentes filhos recebem tudo via props.
 
-**Agrupamento de conversas:** `useMemo` sobre `questions` agrupa por `from_id`, calcula `lastDate`, `unansweredCount`, `lastQuestionText`. Ordenado por `lastDate` de acordo com `sortOrder` ("desc" = mais novas, "asc" = mais antigas).
+**Agrupamento de conversas:** helper `buildConversations(questions, sortOrder, searchTerm)` em `components/meli-messages/utils.js` agrupa por `from_id`, calcula `lastDate`, `unansweredCount`, `lastQuestionText` e (quando `searchTerm`) `matchSnippet`. Ordenado por `lastDate` de acordo com `sortOrder` ("desc" = mais novas, "asc" = mais antigas). Usado tanto pela lista normal quanto pela lista de resultados de busca.
+
+**Busca global (estilo WhatsApp):** campo de busca no header de `ConversationList`. `searchInput` (controlado) → `searchTerm` (debounce 300ms, ativa com ≥ 2 chars). Query separada `["messages-search", userId, status, term]` chama `GET /meli/messages/questions?search=<termo>&limit=100` (não toca na query principal `questions`, evitando interferência com update otimista/SSE/prefetch). `displayConversations = isSearching ? searchConversations : conversations`. O termo é destacado com `<mark>` no nome e no snippet; cada card mostra o `matchSnippet` (trecho da pergunta ou da resposta que casou). A busca limpa ao trocar de conta/status. `selectedConversation` procura nas duas listas e, como fallback, monta a conversa a partir do `buyerThread` carregado — garantindo que clicar em qualquer resultado abra a thread.
 
 **Seleção de conversa:** `selectedConversationFromId` (Number | null). Auto-seleção da primeira conversa via `useEffect` sobre `conversations`.
 
