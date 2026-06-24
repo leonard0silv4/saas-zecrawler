@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Team from "../models/Team.js";
 import Link from "../models/Link.js";
 import SellerPage from "../models/SellerPage.js";
+import MeliQuestion from "../models/MeliQuestion.js";
 import { PLANS } from "../../config/plans.js";
 
 export default {
@@ -42,7 +43,7 @@ export default {
       const ownerIds = owners.map((o) => o._id);
 
       // Parallel aggregation across collections
-      const [linkCounts, sellerCounts, userCounts, teamCounts] = await Promise.all([
+      const [linkCounts, sellerCounts, userCounts, teamCounts, autoReplyCounts] = await Promise.all([
         Link.aggregate([
           { $match: { ownerId: { $in: ownerIds } } },
           { $group: { _id: "$ownerId", count: { $sum: 1 } } },
@@ -59,6 +60,10 @@ export default {
           { $match: { ownerId: { $in: ownerIds } } },
           { $group: { _id: "$ownerId", count: { $sum: 1 } } },
         ]),
+        MeliQuestion.aggregate([
+          { $match: { ownerId: { $in: ownerIds }, answered_by: { $in: ["template", "manual"] } } },
+          { $group: { _id: "$ownerId", count: { $sum: 1 } } },
+        ]),
       ]);
 
       const toMap = (arr) =>
@@ -67,10 +72,11 @@ export default {
           return acc;
         }, {});
 
-      const linkMap   = toMap(linkCounts);
-      const sellerMap = toMap(sellerCounts);
-      const userMap   = toMap(userCounts);
-      const teamMap   = toMap(teamCounts);
+      const linkMap      = toMap(linkCounts);
+      const sellerMap    = toMap(sellerCounts);
+      const userMap      = toMap(userCounts);
+      const teamMap      = toMap(teamCounts);
+      const autoReplyMap = toMap(autoReplyCounts);
 
       const subUsers = await User.find({ ownerId: { $in: ownerIds }, role: { $ne: "owner" } })
         .select("name email role lastAccessAt ownerId")
@@ -123,10 +129,11 @@ export default {
           planExpiresAt: owner.planExpiresAt || null,
           createdAt: owner.createdAt,
           lastAccessAt: owner.lastAccessAt || null,
-          links:   { count: linkMap[id]   || 0, max: plan.maxLinks },
-          sellers: { count: sellerMap[id] || 0, max: plan.maxSellerMonitors },
-          users:   { count: userMap[id]   || 0, max: plan.maxTeamUsers },
-          teams:   { count: teamMap[id]   || 0, max: plan.maxTeams },
+          links:      { count: linkMap[id]      || 0, max: plan.maxLinks },
+          sellers:    { count: sellerMap[id]    || 0, max: plan.maxSellerMonitors },
+          users:      { count: userMap[id]      || 0, max: plan.maxTeamUsers },
+          teams:      { count: teamMap[id]      || 0, max: plan.maxTeams },
+          autoReplies: autoReplyMap[id] || 0,
           members: subUserMap[id] || [],
         };
       });
@@ -135,6 +142,37 @@ export default {
     } catch (err) {
       console.error("[Admin] customers error:", err);
       return res.status(500).json({ error: "Erro ao buscar clientes" });
+    }
+  },
+
+  /**
+   * POST /api/panel/impersonate/:userId
+   * Generates a short-lived JWT for the given user so the admin can access the app as them.
+   */
+  async impersonate(req, res) {
+    try {
+      const user = await User.findById(req.params.userId).lean();
+      if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+      const token = jwt.sign(
+        { userId: user._id, role: user.role },
+        process.env.SECRET,
+        { expiresIn: "2h" }
+      );
+
+      return res.json({
+        token,
+        user: {
+          id: String(user._id),
+          name: user.name,
+          email: user.email,
+          plan: user.plan,
+          role: user.role,
+        },
+      });
+    } catch (err) {
+      console.error("[Admin] impersonate error:", err);
+      return res.status(500).json({ error: "Erro ao gerar token de impersonação" });
     }
   },
 

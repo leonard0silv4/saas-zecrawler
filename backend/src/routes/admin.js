@@ -8,7 +8,8 @@ const r = Router();
 r.post("/login", AdminController.login);
 
 // Protected: require valid admin JWT
-r.get("/stats",     adminAuth, AdminController.stats);
-r.get("/customers", adminAuth, AdminController.customers);
+r.get("/stats",               adminAuth, AdminController.stats);
+r.get("/customers",           adminAuth, AdminController.customers);
+r.post("/impersonate/:userId", adminAuth, AdminController.impersonate);
 
 export default r;

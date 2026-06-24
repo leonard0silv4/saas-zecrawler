@@ -174,6 +174,7 @@ function Dashboard({ onLogout }) {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sort, setSort]         = useState({ col: "createdAt", dir: "desc" });
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [impersonatingId, setImpersonatingId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -198,6 +199,20 @@ function Dashboard({ onLogout }) {
 
   function toggleSort(col) {
     setSort((s) => s.col === col ? { col, dir: s.dir === "asc" ? "desc" : "asc" } : { col, dir: "asc" });
+  }
+
+  async function impersonate(customerId) {
+    setImpersonatingId(customerId);
+    try {
+      const { data } = await adminApi.post(`/impersonate/${customerId}`);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      window.open("/", "_blank");
+    } catch (err) {
+      alert(err.response?.data?.error || "Erro ao impersonar usuário");
+    } finally {
+      setImpersonatingId(null);
+    }
   }
 
   function toggleExpand(id) {
@@ -230,6 +245,7 @@ function Dashboard({ onLogout }) {
       if (sort.col === "lastAccessAt") return dir * (new Date(a.lastAccessAt || 0) - new Date(b.lastAccessAt || 0));
       if (sort.col === "createdAt")    return dir * (new Date(a.createdAt) - new Date(b.createdAt));
       if (sort.col === "nextPayment")  return dir * (new Date(a.planExpiresAt || 0) - new Date(b.planExpiresAt || 0));
+      if (sort.col === "autoReplies")  return dir * ((a.autoReplies || 0) - (b.autoReplies || 0));
       return 0;
     });
 
@@ -278,7 +294,7 @@ function Dashboard({ onLogout }) {
         </div>
       </div>
 
-      <div className="max-w-screen-2xl mx-auto px-6 py-6 space-y-6">
+      <div className="px-6 py-6 space-y-6">
         {/* Stats */}
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
@@ -337,7 +353,7 @@ function Dashboard({ onLogout }) {
               Carregando…
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div>
               <table className="w-full text-sm">
                 <thead className="border-b border-gray-800">
                   <tr>
@@ -352,12 +368,14 @@ function Dashboard({ onLogout }) {
                     <Th col="createdAt"    label="Criado" />
                     <Th col="lastAccessAt" label="Último acesso" />
                     <Th col="nextPayment"  label="Próx. pag." />
+                    <Th col="autoReplies" label="Respostas auto." right />
+                    <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-left">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800/60">
                   {visible.length === 0 && (
                     <tr>
-                      <td colSpan={11} className="text-center py-12 text-gray-500">Nenhum resultado</td>
+                      <td colSpan={13} className="text-center py-12 text-gray-500">Nenhum resultado</td>
                     </tr>
                   )}
                   {visible.flatMap((c) => {
@@ -446,13 +464,31 @@ function Dashboard({ onLogout }) {
                             <span className="text-xs text-gray-600">—</span>
                           )}
                         </td>
+
+                        {/* Respostas automáticas */}
+                        <td className="px-4 py-3 text-right">
+                          <span className={`text-sm font-semibold tabular-nums ${c.autoReplies > 0 ? "text-emerald-400" : "text-gray-600"}`}>
+                            {(c.autoReplies || 0).toLocaleString("pt-BR")}
+                          </span>
+                        </td>
+
+                        {/* Ações */}
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => impersonate(c.id)}
+                            disabled={impersonatingId === c.id}
+                            className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
+                          >
+                            {impersonatingId === c.id ? "…" : "Entrar como"}
+                          </button>
+                        </td>
                       </tr>,
                     ];
 
                     if (isExpanded && hasMembers) {
                       rows.push(
                         <tr key={`${c.id}-members`} className="bg-gray-800/20">
-                          <td colSpan={11} className="px-0 py-0">
+                          <td colSpan={13} className="px-0 py-0">
                             <div className="ml-10 mr-4 my-2 border-l-2 border-gray-700 pl-4">
                               <table className="w-full text-xs">
                                 <thead>
