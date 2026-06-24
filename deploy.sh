@@ -6,7 +6,7 @@ LANDING_TARGET="/var/www/mlsmarthub-landing"
 
 echo "==> [1/5] git pull"
 cd "$REPO_DIR"
-git pull origin main
+git pull origin main || (git fetch origin && git reset --hard origin/main)
 
 echo "==> [2/5] backend deps"
 cd "$REPO_DIR/backend"
