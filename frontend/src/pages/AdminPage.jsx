@@ -353,8 +353,8 @@ function Dashboard({ onLogout }) {
               Carregando…
             </div>
           ) : (
-            <div>
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-sm">
                 <thead className="border-b border-gray-800">
                   <tr>
                     <th className="w-8" />
