@@ -18,6 +18,7 @@
 - [x] `meliAnalytics` aberto para plano Pro (era exclusivo Business)
 - [x] `checkMeliAccountLimit` implementado em `middleware/plan.js`; checagem de reconexão em `MeliController.authCallback`
 - [x] Script `migrateExistingSubscriptions.js` criado para migrar assinantes com proration
+- [x] Script `sendPromoCampaign.js` + `sendPromoEmail` (emailService) — campanha pontual de cupom promocional (50%) por email para usuários do plano free, com passo a passo de aplicação do cupom no Checkout
 
 ## Pendente — Pós-Deploy
 

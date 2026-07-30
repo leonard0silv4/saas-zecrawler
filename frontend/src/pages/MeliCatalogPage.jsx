@@ -26,10 +26,10 @@ const TABS = [
 ];
 
 const QK = {
-  accounts:  ()                                 => ["meli-analytics-accounts"],
-  inventory: (uid, period, filter, alert, sort) => ["cat-inventory", uid, period, filter, alert, sort],
-  top:       (uid, period, sortBy, onlyActive)  => ["cat-top",       uid, period, sortBy, onlyActive],
-  lastSync:  (uid)                              => ["cat-last-sync", uid],
+  accounts:  ()                                         => ["meli-analytics-accounts"],
+  inventory: (uid, period, filter, status, alert, sort) => ["cat-inventory", uid, period, filter, status, alert, sort],
+  top:       (uid, period, sortBy, onlyActive)          => ["cat-top",       uid, period, sortBy, onlyActive],
+  lastSync:  (uid)                                      => ["cat-last-sync", uid],
 };
 
 export default function MeliCatalogPage() {
@@ -41,6 +41,7 @@ export default function MeliCatalogPage() {
   const [period,          setPeriod]          = useState("30d");
   const [activeTab,       setActiveTab]       = useState("estoque");
   const [inventoryType,   setInventoryType]   = useState("");
+  const [inventoryStatus, setInventoryStatus] = useState("active");
   const [inventoryAlert,  setInventoryAlert]  = useState("");
   const [inventorySort,   setInventorySort]   = useState({ field: "sold", dir: "desc" });
   const [topSort,         setTopSort]         = useState("receita");
@@ -72,11 +73,12 @@ export default function MeliCatalogPage() {
   const invSort = inventorySort.field ? { sortBy: inventorySort.field, sortDir: inventorySort.dir } : {};
 
   const { data: inventoryData, isLoading: loadingInventory } = useQuery({
-    queryKey: QK.inventory(userId, period, inventoryType, inventoryAlert, inventorySort),
+    queryKey: QK.inventory(userId, period, inventoryType, inventoryStatus, inventoryAlert, inventorySort),
     queryFn: () =>
       api.get("/meli/analytics/inventory", {
         params: {
           period,
+          status: inventoryStatus,
           ...(userId ? { user_id: userId } : {}),
           ...(inventoryType  ? { filter: inventoryType }   : {}),
           ...(inventoryAlert ? { alert: inventoryAlert }   : {}),
@@ -110,11 +112,20 @@ export default function MeliCatalogPage() {
     try {
       const qp = { ...(userId ? { user_id: userId } : {}), ...(force ? { force: "true" } : {}) };
       const { data } = await api.post("/meli/analytics/sync", null, { params: qp });
-      notifySuccess(
-        force
-          ? `Re-sync completo: ${data.synced} pedidos atualizados.`
-          : `${data.synced} pedidos sincronizados.`
-      );
+      if (data.accountsFailed?.length) {
+        notifyError(
+          `Sync parcial: ${data.accountsFailed.length} conta(s) falharam (` +
+          `${data.accountsFailed.map((a) => a.nickname || a.user_id).join(", ")}).`
+        );
+      } else if (data.productsFailedTotal > 0) {
+        notifyError(`Sync concluído com ${data.productsFailedTotal} produto(s) não atualizados.`);
+      } else {
+        notifySuccess(
+          force
+            ? `Re-sync completo: ${data.synced} pedidos atualizados.`
+            : `${data.synced} pedidos sincronizados.`
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["cat-inventory"] });
       queryClient.invalidateQueries({ queryKey: ["cat-top"] });
       queryClient.invalidateQueries({ queryKey: ["cat-last-sync"] });
@@ -255,6 +266,8 @@ export default function MeliCatalogPage() {
               loading={loadingInventory}
               inventoryType={inventoryType}
               setInventoryType={setInventoryType}
+              inventoryStatus={inventoryStatus}
+              setInventoryStatus={setInventoryStatus}
               inventoryAlert={inventoryAlert}
               setInventoryAlert={setInventoryAlert}
               inventorySort={inventorySort}

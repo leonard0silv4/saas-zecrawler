@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Package, ArrowUp, ArrowDown, AlertTriangle, AlertCircle, Search } from "lucide-react";
+import { Package, ArrowUp, ArrowDown, AlertTriangle, AlertCircle, Search, HelpCircle } from "lucide-react";
 import { RupturaAlert } from "./RupturaAlert";
 import { formatBRL } from "./formatBRL";
 
@@ -8,6 +8,11 @@ const TYPE_FILTERS = [
   { label: "Todos",  value: "" },
   { label: "Full",   value: "full" },
   { label: "Normal", value: "normal" },
+];
+
+const STATUS_FILTERS = [
+  { label: "Ativos", value: "active" },
+  { label: "Todos",  value: "all" },
 ];
 
 const ALERT_FILTERS = [
@@ -22,7 +27,7 @@ const SORT_OPTIONS = [
   { value: "price",    label: "Preço" },
 ];
 
-export function InventoryTab({ inventory, loading, inventoryType, setInventoryType, inventoryAlert, setInventoryAlert, inventorySort, setInventorySort, rupturaCount, onProductSelect }) {
+export function InventoryTab({ inventory, loading, inventoryType, setInventoryType, inventoryStatus, setInventoryStatus, inventoryAlert, setInventoryAlert, inventorySort, setInventorySort, rupturaCount, onProductSelect }) {
   const parentRef = useRef(null);
   const debounceRef = useRef(null);
   const [searchInput, setSearchInput] = useState("");
@@ -115,6 +120,21 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
             ))}
           </div>
           <div className="flex gap-1">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setInventoryStatus(f.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  inventoryStatus === f.value
+                    ? "bg-green-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
             {ALERT_FILTERS.map((f) => {
               const Icon = f.icon;
               const isActive = inventoryAlert === f.value;
@@ -198,8 +218,17 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                     </td>
                     <td className="py-2.5 pr-4 text-right">
                       {p.isFull ? (
-                        <span className={p.estoque_full === 0 ? "text-red-600 font-bold" : "font-medium"}>
-                          {p.estoque_full ?? "—"}
+                        <span className="inline-flex items-center gap-1 justify-end">
+                          <span className={p.estoque_full === 0 ? "text-red-600 font-bold" : "font-medium"}>
+                            {p.estoque_full ?? "—"}
+                          </span>
+                          {p.estoqueFullSource === "fallback_item" && (
+                            <HelpCircle
+                              size={12}
+                              className="text-amber-500 shrink-0"
+                              title="Estoque Full estimado — API de fulfillment indisponível para este item"
+                            />
+                          )}
                         </span>
                       ) : (
                         <span className="font-medium">{p.available_quantity ?? "—"}</span>

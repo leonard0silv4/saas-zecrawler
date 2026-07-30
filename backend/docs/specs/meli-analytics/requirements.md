@@ -9,13 +9,14 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
 ## Requisitos Funcionais
 
 ### RF-01 Sincronização de Pedidos
-- `POST /meli/analytics/sync` sincroniza pedidos de todas as contas ML ativas do owner (ou de uma conta específica via `user_id`) e retorna `{ synced, forceFrom, accounts }`.
+- `POST /meli/analytics/sync` sincroniza pedidos de todas as contas ML ativas do owner (ou de uma conta específica via `user_id`) e retorna `{ synced, forceFrom, accounts, accountsOk, accountsFailed, productsFailedTotal, accountResults }`.
 - Busca pedidos a partir da data do último pedido salvo menos 1 dia (ou 90 dias se não houver pedidos).
 - `force=true` força re-sync completo dos últimos 90 dias.
 - Busca taxa ML real via `GET /collections/:payment_id` (único endpoint que retorna `net_received_amount`).
 - Taxa ML = `total_amount - net_received_amount`.
 - Usa `bulkWrite` com upsert por `(ownerId, order_id)`.
 - Após sync de pedidos, sincroniza também os produtos (`syncProductsForConta`).
+- Falhas por conta (erro de token, ML indisponível) não são silenciadas: aparecem em `accountsFailed`. Falhas de itens individuais dentro de uma conta que sincronizou com sucesso aparecem agregadas em `productsFailedTotal`.
 
 ### RF-02 Resumo Financeiro
 - `GET /meli/analytics/summary?period=30d&user_id=<uid>` retorna as métricas abaixo; sem `user_id`, agrega todas as lojas:
@@ -38,17 +39,26 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
 - `GET /meli/analytics/orders?period=30d&page=1&limit=50` retorna pedidos paginados; sem `user_id`, lista todas as lojas.
 
 ### RF-06 Inventário
-- `GET /meli/analytics/inventory?filter=full|normal|ruptura&sortBy=sold|velocity|stock|price` retorna produtos do cache; sem `user_id`, lista todas as lojas.
+- `GET /meli/analytics/inventory?filter=full|normal|ruptura&status=active|all&sortBy=sold|velocity|stock|price` retorna produtos do cache; sem `user_id`, lista todas as lojas.
 - `filter=ruptura` retorna apenas produtos com `alertRuptura = "RUPTURA"`.
+- `status` filtra por status do anúncio no ML; default `active`, para bater com a visão padrão do painel do ML. `status=all` remove o filtro.
 
 ### RF-07 Sincronização Automática (Cron)
 - A cada 15 minutos, sincroniza pedidos de todos os owners Business com subscription ativa.
 - Ignora contas com `authError` definido.
-- Diariamente à 1h, sincroniza todos os produtos ML de owners Business.
+- A cada 6 horas (`0 */6 * * *`), sincroniza todos os produtos ML de owners Business.
 
 ### RF-08 Tratamento de Erro 403
 - Se a API ML retorna 403, força refresh do token e tenta novamente.
 - Se persistir, marca `conta.authError = "forbidden"` e retorna 0 (não lança exceção).
+
+### RF-09 Estoque Full a partir da API real de Fulfillment
+- Para itens com `logisticType === "fulfillment"`, o sync busca o estoque real via `GET /inventories/{inventory_id}/stock/fulfillment`, com fallback para `GET /user-products/{user_product_id}/stock`, e fallback final para `item.available_quantity` caso ambos falhem.
+- A fonte efetivamente usada é persistida em `estoqueFullSource` (`fulfillment_api` | `user_products_api` | `fallback_item`), visível na UI (aba Estoque e drawer de produto) quando o valor é estimado (`fallback_item`).
+
+### RF-10 Falhas de item individual não são silenciadas
+- Itens que falham ao buscar `GET /items/{id}` durante o sync recebem 1 retry com backoff antes de serem considerados falha definitiva (exceto 404/400).
+- Itens que falharam permanecem com o valor anterior no cache e são contabilizados em `failedCount`/`failedIds`, propagados até a resposta de `POST /meli/analytics/sync` (`productsFailedTotal`).
 
 ---
 

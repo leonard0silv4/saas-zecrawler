@@ -6,6 +6,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "seed:plans": "node src/scripts/seedPlans.js",
+    "promo:campaign": "node src/scripts/sendPromoCampaign.js",
     "test": "node --test src/tests/**/*.test.js"
   },
   "dependencies": {

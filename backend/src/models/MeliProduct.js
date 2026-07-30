@@ -40,6 +40,20 @@ const meliProductSchema = new mongoose.Schema(
         available_quantity: Number,
       },
     ],
+    logisticType: String,
+    inventoryId: String,
+    estoqueFullSource: {
+      type: String,
+      enum: ["fulfillment_api", "user_products_api", "fallback_item", null],
+      default: null,
+    },
+    estoque_full_detalhe: {
+      total: Number,
+      available: Number,
+      not_available_by_reason: mongoose.Schema.Types.Mixed,
+      fetchedAt: Date,
+    },
+    variationsAvailableQuantitySum: Number,
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", index: true },
   },
   { timestamps: true }

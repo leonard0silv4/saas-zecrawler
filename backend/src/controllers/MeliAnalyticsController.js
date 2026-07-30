@@ -257,18 +257,37 @@ const MeliAnalyticsController = {
       if (!contas.length) return res.status(400).json({ error: "Nenhuma conta ML ativa" });
 
       let total = 0;
+      const accountResults = [];
       for (const conta of contas) {
+        const accountReport = { user_id: conta.user_id, nickname: conta.nickname || null, ok: true };
         try {
           const count = await syncOrdersForConta(conta, ownerId, { forceFrom });
           total += count;
           // Sincronizar todos os produtos (anúncios) do vendedor
-          await syncProductsForConta(conta, ownerId);
+          const productReport = await syncProductsForConta(conta, ownerId);
+          accountReport.productsSynced = productReport.total;
+          accountReport.productsFailed = productReport.failedCount;
+          accountReport.paginationLimitReached = productReport.paginationLimitReached;
         } catch (err) {
           console.error(`Erro ao sincronizar conta ${conta.user_id}:`, err.message);
+          accountReport.ok = false;
+          accountReport.error = err.response?.data?.message || err.message;
         }
+        accountResults.push(accountReport);
       }
 
-      res.json({ synced: total, forceFrom, accounts: contas.length });
+      const accountsFailed = accountResults.filter((a) => !a.ok);
+      const productsFailedTotal = accountResults.reduce((s, a) => s + (a.productsFailed || 0), 0);
+
+      res.json({
+        synced: total,
+        forceFrom,
+        accounts: contas.length,
+        accountsOk: accountResults.length - accountsFailed.length,
+        accountsFailed: accountsFailed.map((a) => ({ user_id: a.user_id, nickname: a.nickname, error: a.error })),
+        productsFailedTotal,
+        accountResults,
+      });
     } catch (err) {
       console.error("analytics sync error:", err);
       res.status(500).json({ error: "Erro ao sincronizar pedidos" });
@@ -474,13 +493,22 @@ const MeliAnalyticsController = {
   async inventory(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const { user_id, filter: filterType, alert: alertFilter, sortBy, sortDir = "desc", limit = 1000 } = req.query;
+      const {
+        user_id,
+        filter: filterType,
+        alert: alertFilter,
+        sortBy,
+        sortDir = "desc",
+        limit = 1000,
+        status = "active",
+      } = req.query;
 
       // baseQuery: sem filtro de alerta (para totais reais)
       const baseQuery = { ownerId: new mongoose.Types.ObjectId(ownerId) };
       if (user_id) baseQuery.user_id = Number(user_id);
       if (filterType === "full")   baseQuery.isFull = true;
       if (filterType === "normal") baseQuery.isFull = { $ne: true };
+      if (status && status !== "all") baseQuery.status = status;
 
       // filteredQuery: com filtro de alerta aplicado (para a lista paginada)
       const filteredQuery = { ...baseQuery };

@@ -140,13 +140,21 @@ export function startCronJobs() {
         $or: [{ authError: { $exists: false } }, { authError: null }],
       });
 
+      let contasOk = 0;
+      let contasFalhas = 0;
       for (const conta of contas) {
         try {
-          await syncProductsForConta(conta, conta.ownerId);
+          const report = await syncProductsForConta(conta, conta.ownerId);
+          contasOk += 1;
+          if (report.failedCount > 0) {
+            console.warn(`[Cron] Products sync conta=${conta.user_id}: ${report.failedCount} itens falharam.`);
+          }
         } catch (err) {
+          contasFalhas += 1;
           console.error(`[Cron] Products sync conta=${conta.user_id}:`, err.message);
         }
       }
+      console.log(`[Cron] Products sync: ${contasOk}/${contas.length} contas ok, ${contasFalhas} falharam.`);
     } catch (err) {
       console.error("[Cron] Products sync schedule:", err.message);
     }

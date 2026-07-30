@@ -76,7 +76,30 @@ export function ProductDrawer({ product, onClose }) {
             <Row label="Preço atual" value={formatBRL(product.price)} />
             <Row label="Tipo" value={product.isFull ? "Full" : "Normal/Clássico"} badge={product.isFull ? "full" : "normal"} />
             <Row label="Estoque disponível" value={product.available_quantity ?? "—"} />
-            {product.isFull && <Row label="Estoque Full" value={product.estoque_full ?? "—"} />}
+            {product.isFull && (
+              <Row
+                label="Estoque Full"
+                value={
+                  product.estoqueFullSource === "fallback_item"
+                    ? `${product.estoque_full ?? "—"} (estimado)`
+                    : product.estoque_full ?? "—"
+                }
+              />
+            )}
+            {product.isFull && product.estoque_full_detalhe && (
+              <>
+                <Row label="Full — Total no depósito" value={product.estoque_full_detalhe.total ?? "—"} />
+                {product.estoque_full_detalhe.not_available_by_reason &&
+                  Object.entries(product.estoque_full_detalhe.not_available_by_reason).map(([reason, qty]) => (
+                    <Row
+                      key={reason}
+                      label={`Full — indisponível (${reason})`}
+                      value={typeof qty === "object" ? JSON.stringify(qty) : qty ?? 0}
+                    />
+                  ))}
+              </>
+            )}
+            {product.logisticType && <Row label="Logística" value={product.logisticType} />}
             <Row label="Vendidos (total)" value={product.sold_quantity ?? "—"} />
             {product.averageSellDay != null && (
               <Row label="Média vendas/dia" value={product.averageSellDay.toFixed(1)} />

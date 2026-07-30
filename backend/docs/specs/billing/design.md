@@ -115,6 +115,24 @@ node src/scripts/migrateExistingSubscriptions.js               # aplicar
 Requer `OLD_STRIPE_PRICE_STARTER/PRO/BUSINESS` no `.env` (os IDs antigos).
 Usa `proration_behavior: 'create_prorations'` — ajuste proporcional na próxima fatura.
 
+## Campanha de Email — Cupom Promocional
+
+`src/scripts/sendPromoCampaign.js` — script pontual para divulgar um cupom de
+desconto (ex: `DESCONTO50`, 50% na primeira mensalidade) aos usuários no plano
+gratuito, via Resend:
+
+```
+node src/scripts/sendPromoCampaign.js --test=<email>   # envia só para o email de teste
+node src/scripts/sendPromoCampaign.js                   # envia para todos com plan="free"
+```
+
+- Busca destinatários com `User.find({ role: "owner", plan: "free" })`
+- Reutiliza `sendPromoEmail(to, name)` em `services/emailService.js` (mesmo
+  transporte Resend do reset de senha), com template próprio (`buildPromoHtml`)
+  contendo o passo a passo de onde inserir o código promocional na tela de
+  Checkout do Stripe (que já aceita `allow_promotion_codes: true`)
+- Envio sequencial com delay entre mensagens e log de sucesso/falha por usuário
+
 ## Variáveis de Ambiente Necessárias
 
 | Variável | Descrição |

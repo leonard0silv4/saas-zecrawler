@@ -25,7 +25,13 @@ A função `resolveDates(query)` em `MeliAnalyticsController.js` determina qual 
 
 ## Cron de Sync de Produtos
 
-O sync automático de produtos/estoque roda a cada **6 horas** (`0 */6 * * *`). Esse intervalo equilibra atualização de dados vs. tráfego na API do ML. Dados de estoque são um snapshot — divergências com o painel ML são esperadas se houver vendas recentes entre sincronizações. O botão Sincronizar manual força atualização imediata.
+O sync automático de produtos/estoque roda a cada **6 horas** (`0 */6 * * *`). Esse intervalo equilibra atualização de dados vs. tráfego na API do ML. Dados de estoque são um snapshot — pequenas divergências com o painel ML são esperadas se houver vendas recentes entre sincronizações. O botão Sincronizar manual força atualização imediata.
+
+`syncProductsForConta` busca cada item via `GET /items/{id}` com **1 retry com backoff** em caso de falha (exceto 404/400, que não repetem). Itens que falham após o retry ficam com o valor anterior no Mongo e são reportados em `failedCount`/`failedIds` — não silenciados. O retorno de `syncProductsForConta` é `{ total, failedCount, failedIds, totalItems, paginationLimitReached }`.
+
+`POST /meli/analytics/sync` propaga essas falhas por conta em vez de reportar sucesso sempre: retorna `accountsFailed` (contas cuja sincronização de pedidos/produtos falhou por completo) e `productsFailedTotal` (soma de itens que falharam individualmente entre as contas ok). O front usa esses campos para diferenciar sync total, parcial e falho.
+
+`fetchAllSellerItemIds` para de paginar ao atingir offset **1000** (limite documentado da API `items/search` por seller) e marca `paginationLimitReached: true` — catálogos maiores que isso têm itens não sincronizados naquela rodada, sem paginação alternativa implementada ainda.
 
 ## Filtros de Loja
 
@@ -33,14 +39,29 @@ Todos os endpoints de leitura aceitam `user_id` opcional. Quando presente, filtr
 
 ## Filtros de Inventário
 
-O endpoint `GET /meli/analytics/inventory` aceita dois filtros independentes:
+O endpoint `GET /meli/analytics/inventory` aceita três filtros independentes:
 
 | Param | Valores | Comportamento |
 |---|---|---|
 | `filter` | `full`, `normal` | Filtra por tipo de logística (isFull) |
 | `alert` | `ruptura`, `critico` | Filtra por nível de alerta de estoque |
+| `status` | status do ML (ex: `active`, `paused`) ou `all` | Filtra por status do anúncio. **Default: `active`** — para bater com a visão padrão do painel do ML. |
 
-Os dois parâmetros podem ser combinados (ex: `filter=full&alert=ruptura` = produtos Full em ruptura). Cada um é opcional e independente do outro. O campo `nickname` (nome da loja no ML) já está no documento `MeliProduct` e é retornado junto com os demais campos pelo `.lean()`.
+Os parâmetros podem ser combinados (ex: `filter=full&alert=ruptura` = produtos Full em ruptura). Cada um é opcional e independente dos outros. O campo `nickname` (nome da loja no ML) já está no documento `MeliProduct` e é retornado junto com os demais campos pelo `.lean()`.
+
+## Estoque Full — Fonte de Dados
+
+`estoque_full` deixou de ser uma cópia de `available_quantity` (bug que causava divergência grande e sistemática com o painel Full do ML). Para itens com `logisticType === "fulfillment"`, `syncProductsForConta` busca o estoque real em cascata:
+
+1. `GET /inventories/{item.inventory_id}/stock/fulfillment` (modelo clássico) → `{ total, available_quantity, not_available_quantity: {damaged, lost, withdrawal, not_supported, ...} }`.
+2. Se indisponível, `GET /user-products/{item.user_product_id}/stock` (modelo "estoque distribuído") → `{ locations: [{ type: "meli_facility", quantity }] }`.
+3. Se ambos falharem, cai de volta para `item.available_quantity` do endpoint clássico `/items/{id}`.
+
+A fonte usada fica registrada em `estoqueFullSource` (`fulfillment_api` | `user_products_api` | `fallback_item`), e o breakdown fica em `estoque_full_detalhe` (`{total, available, not_available_by_reason, fetchedAt}`). O frontend mostra um indicador quando `estoqueFullSource === "fallback_item"`, avisando que o número é estimado.
+
+Essa chamada extra roda sequencialmente (throttle de 150ms) só para itens Full, separada do throttle de 300ms entre batches do endpoint clássico — catálogos com muitos itens Full tornam o sync mais lento.
+
+**Ainda não confirmado em produção**: qual dos dois modelos (`inventory_id` vs `user_product_id`) a conta do seller realmente usa, nem se `item.user_product_id` vem no payload padrão de `/items/{id}` — precisa validação contínua via `estoqueFullSource` nos logs.
 
 ## Fluxo de Sincronização de Pedidos
 
@@ -117,7 +138,7 @@ data = days.map(d => ({
 | Schedule | Ação |
 |---|---|
 | `*/15 * * * *` | Sync de pedidos para owners Business com subscription ativa |
-| `0 1 * * *` | Sync completo de produtos ML para owners Business |
+| `0 */6 * * *` | Sync completo de produtos ML para owners Business |
 
 ## Análise de IA (`aiAnalysis`)
 

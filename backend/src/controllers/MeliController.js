@@ -70,10 +70,20 @@ async function fetchSellerItemIds(token, sellerId, { query = "", limit = 50, off
 async function fetchAllSellerItemIds(token, sellerId) {
   const LIMIT = 100; // máximo permitido pela API do ML
   const DELAY_MS = 250;
+  const HARD_OFFSET_LIMIT = 1000; // limite documentado da API de busca clássica (items/search por seller)
   const allIds = [];
   let offset = 0;
+  let paginationLimitReached = false;
 
   while (true) {
+    if (offset >= HARD_OFFSET_LIMIT) {
+      paginationLimitReached = true;
+      console.warn(
+        `[Sync] seller=${sellerId}: atingiu o limite de paginação (${HARD_OFFSET_LIMIT}) da API items/search. ` +
+        `Catálogo pode ter mais itens não sincronizados nesta rodada.`
+      );
+      break;
+    }
     const { data } = await axios.get(
       `https://api.mercadolibre.com/users/${sellerId}/items/search`,
       { headers: { Authorization: `Bearer ${token}` }, params: { limit: LIMIT, offset } }
@@ -85,7 +95,62 @@ async function fetchAllSellerItemIds(token, sellerId) {
     // Proteção contra rate limit
     await new Promise((r) => setTimeout(r, DELAY_MS));
   }
-  return allIds;
+  return { allIds, paginationLimitReached };
+}
+
+/**
+ * Busca o estoque real de Fulfillment de um item Full.
+ * Tenta o endpoint clássico via inventory_id; se indisponível, tenta o modelo
+ * de estoque distribuído (user-products). Retorna null se ambos falharem —
+ * quem chama deve então cair de volta em item.available_quantity.
+ */
+async function fetchFullStockDetail(token, item) {
+  const headers = { Authorization: `Bearer ${token}` };
+
+  if (item.inventory_id) {
+    try {
+      const { data } = await axios.get(
+        `https://api.mercadolibre.com/inventories/${item.inventory_id}/stock/fulfillment`,
+        { headers }
+      );
+      return {
+        source: "fulfillment_api",
+        total: data.total ?? null,
+        available: data.available_quantity ?? null,
+        notAvailableByReason: data.not_available_quantity ?? null,
+      };
+    } catch (err) {
+      console.warn(
+        `[Sync] fulfillment stock falhou p/ item=${item.id} inventory_id=${item.inventory_id}: ${err.response?.status ?? err.message}`
+      );
+    }
+  }
+
+  if (item.user_product_id) {
+    try {
+      const { data } = await axios.get(
+        `https://api.mercadolibre.com/user-products/${item.user_product_id}/stock`,
+        { headers }
+      );
+      const meliFacility = Array.isArray(data.locations)
+        ? data.locations.find((l) => l.type === "meli_facility")
+        : null;
+      if (meliFacility) {
+        return {
+          source: "user_products_api",
+          total: meliFacility.quantity ?? null,
+          available: meliFacility.quantity ?? null,
+          notAvailableByReason: null,
+        };
+      }
+    } catch (err) {
+      console.warn(
+        `[Sync] user-products stock falhou p/ item=${item.id} user_product_id=${item.user_product_id}: ${err.response?.status ?? err.message}`
+      );
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -95,22 +160,41 @@ async function fetchAllSellerItemIds(token, sellerId) {
 export async function syncProductsForConta(conta, ownerId) {
   const ownerObjectId = new mongoose.Types.ObjectId(ownerId);
   const token = await renewToken(conta);
-  const allIds = await fetchAllSellerItemIds(token, conta.user_id);
-  if (!allIds.length) return 0;
+  const { allIds, paginationLimitReached } = await fetchAllSellerItemIds(token, conta.user_id);
+  if (!allIds.length) return { total: 0, failedCount: 0, failedIds: [], totalItems: 0, paginationLimitReached };
 
   const BATCH = 20;
   const DELAY_MS = 300;
   let total = 0;
+  let failedCount = 0;
+  const failedIds = [];
 
   for (let i = 0; i < allIds.length; i += BATCH) {
     const batch = allIds.slice(i, i + BATCH);
-    const items = await fetchItemsDetails(token, batch);
+    const { items, failed } = await fetchItemsDetailsReport(token, batch);
+
+    // Busca estoque Full real, só para itens com logística fulfillment.
+    const fullStockByItemId = new Map();
+    const fullItems = items.filter((it) => it.shipping?.logistic_type === "fulfillment");
+    for (const it of fullItems) {
+      const detail = await fetchFullStockDetail(token, it);
+      if (detail) fullStockByItemId.set(it.id, detail);
+      await new Promise((r) => setTimeout(r, 150)); // throttle extra, separado do delay entre batches
+    }
+
     if (items.length) {
-      await upsertProductsFromItems(items, { ownerObjectId, conta });
+      await upsertProductsFromItems(items, { ownerObjectId, conta, fullStockByItemId });
       total += items.length;
+    }
+    if (failed.length) {
+      failedCount += failed.length;
+      failedIds.push(...failed.map((f) => f.itemId));
     }
     if (i + BATCH < allIds.length) await new Promise((r) => setTimeout(r, DELAY_MS));
   }
+  console.log(
+    `[Sync] conta=${conta.user_id}: ${total}/${allIds.length} itens atualizados, ${failedCount} falharam.`
+  );
   // Remove produtos que o vendedor não possui mais (não vieram no sync atual)
   const deleted = await MeliProduct.deleteMany({
     ownerId: ownerObjectId,
@@ -121,21 +205,49 @@ export async function syncProductsForConta(conta, ownerId) {
     console.log(`[Sync] Removed ${deleted.deletedCount} orphaned products for conta=${conta.user_id}`);
   }
 
-  return total;
+  return { total, failedCount, failedIds, totalItems: allIds.length, paginationLimitReached };
+}
+
+async function fetchOneItemWithRetry(token, itemId, { retries = 1, backoffMs = 500 } = {}) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const { data } = await axios.get(`https://api.mercadolibre.com/items/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return { ok: true, itemId, data };
+    } catch (err) {
+      const status = err.response?.status;
+      // Não faz sentido retry em 404/400 (item não existe/inválido)
+      if (attempt === retries || status === 404 || status === 400) {
+        return { ok: false, itemId, status, message: err.message };
+      }
+      await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+    }
+  }
+}
+
+/** Como fetchItemsDetails, mas expõe quais itens falharam (para relatório de sync). */
+async function fetchItemsDetailsReport(token, itemIds) {
+  if (!itemIds.length) return { items: [], failed: [] };
+  const results = await Promise.all(
+    itemIds.map((itemId) => fetchOneItemWithRetry(token, itemId))
+  );
+  const items = results.filter((r) => r.ok).map((r) => r.data);
+  const failed = results
+    .filter((r) => !r.ok)
+    .map((r) => ({ itemId: r.itemId, status: r.status, message: r.message }));
+  if (failed.length) {
+    console.error(
+      `[Sync] fetchItemsDetails: ${failed.length}/${itemIds.length} itens falharam:`,
+      failed.map((f) => `${f.itemId}(${f.status ?? "?"})`).join(", ")
+    );
+  }
+  return { items, failed };
 }
 
 async function fetchItemsDetails(token, itemIds) {
-  if (!itemIds.length) return [];
-  const details = await Promise.allSettled(
-    itemIds.map((itemId) =>
-      axios.get(`https://api.mercadolibre.com/items/${itemId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    )
-  );
-  return details
-    .filter((entry) => entry.status === "fulfilled")
-    .map((entry) => entry.value.data);
+  const { items } = await fetchItemsDetailsReport(token, itemIds);
+  return items;
 }
 
 function computeRupturaAlert(availableQty, isFull, daysRestStock) {
@@ -145,13 +257,22 @@ function computeRupturaAlert(availableQty, isFull, daysRestStock) {
   return null;
 }
 
-function mapItemToProductDoc(item, { ownerObjectId, conta }) {
+function mapItemToProductDoc(item, { ownerObjectId, conta, fullStockByItemId }) {
   const sku = item.seller_custom_field || null;
   const availableQty = item.available_quantity || 0;
   const soldQty = item.sold_quantity || 0;
-  const isFull =
-    item.shipping?.logistic_type === "fulfillment" ||
-    item.listing_type_id === "gold_pro";
+  const logisticType = item.shipping?.logistic_type || null;
+  const isFull = logisticType === "fulfillment";
+  const fullStockDetail = isFull ? fullStockByItemId?.get(item.id) || null : null;
+
+  const variationsSum = Array.isArray(item.variations) && item.variations.length
+    ? item.variations.reduce((acc, v) => acc + (v.available_quantity || 0), 0)
+    : null;
+  if (variationsSum !== null && variationsSum !== availableQty) {
+    console.warn(
+      `[Sync] item=${item.id} available_quantity=${availableQty} != soma variações=${variationsSum}`
+    );
+  }
 
   const startTime = item.start_time ? new Date(item.start_time) : null;
   const daysSinceStart = startTime
@@ -174,7 +295,19 @@ function mapItemToProductDoc(item, { ownerObjectId, conta }) {
     start_time: startTime,
     listingTypeId: item.listing_type_id || null,
     isFull,
-    estoque_full: isFull ? availableQty : 0,
+    logisticType,
+    inventoryId: item.inventory_id || null,
+    estoque_full: isFull ? (fullStockDetail?.available ?? availableQty) : 0,
+    estoqueFullSource: isFull ? (fullStockDetail ? fullStockDetail.source : "fallback_item") : null,
+    estoque_full_detalhe: fullStockDetail
+      ? {
+          total: fullStockDetail.total,
+          available: fullStockDetail.available,
+          not_available_by_reason: fullStockDetail.notAvailableByReason,
+          fetchedAt: new Date(),
+        }
+      : null,
+    variationsAvailableQuantitySum: variationsSum,
     averageSellDay,
     daysRestStock,
     alertRuptura: computeRupturaAlert(availableQty, isFull, daysRestStock),
