@@ -4,6 +4,7 @@ import SellerPage from "../models/SellerPage.js";
 import User from "../models/User.js";
 import Team from "../models/Team.js";
 import Conta from "../models/Conta.js";
+import MeliQuestion from "../models/MeliQuestion.js";
 
 /**
  * Checks if user's plan allows access to a specific module.
@@ -122,6 +123,52 @@ export async function checkMeliAccountLimit(req, res, next) {
     next();
   } catch (err) {
     return res.status(500).json({ error: "Erro ao verificar limite de contas ML" });
+  }
+}
+
+/**
+ * Retorna o uso de respostas de mensagens ML no mês corrente (UTC) vs. o limite do plano.
+ * max === null significa ilimitado (não há necessidade de contar nesse caso).
+ */
+export async function getMeliMessageUsage(ownerId, effectivePlan) {
+  const planConfig = PLANS[effectivePlan];
+  const max = planConfig?.maxMonthlyMessages ?? 0;
+  if (max === null) return { current: null, max: null, plan: effectivePlan };
+
+  const now = new Date();
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+  const current = await MeliQuestion.countDocuments({
+    ownerId,
+    answered_by: { $in: ["manual", "template"] },
+    answer_date_created: { $gte: startOfMonth },
+  });
+
+  return { current, max, plan: effectivePlan };
+}
+
+/**
+ * Checks if owner can still answer ML questions this month based on plan limits.
+ * Use as middleware before the reply route.
+ */
+export async function checkMeliMessageLimit(req, res, next) {
+  try {
+    const effectivePlan = req.user.effectivePlan || req.user.plan || "free";
+    const ownerId = String(req.user.role === "owner" ? req.user.id : req.user.ownerId);
+    const usage = await getMeliMessageUsage(ownerId, effectivePlan);
+
+    if (usage.max !== null && usage.current >= usage.max) {
+      return res.status(403).json({
+        error: "Limite mensal de mensagens respondidas atingido",
+        current: usage.current,
+        max: usage.max,
+        plan: effectivePlan,
+      });
+    }
+
+    req.meliMessageLimit = usage;
+    next();
+  } catch (err) {
+    return res.status(500).json({ error: "Erro ao verificar limite de mensagens" });
   }
 }
 

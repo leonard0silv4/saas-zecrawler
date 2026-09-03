@@ -8,12 +8,14 @@ Gerencia planos de assinatura (Free, Starter, Pro, Business), integração com S
 
 ## Planos Disponíveis
 
-| Plano    | Preço      | Links | Sellers | Usuários Time | Times | Contas ML | Módulos Adicionais          |
-|----------|-----------|-------|---------|---------------|-------|-----------|-----------------------------|
-| Free     | R$ 0      | 5     | 1       | 1             | 1     | 0         | links, priceAnalyze, sellerMonitor |
-| Starter  | R$ 99,90  | 30    | 5       | 2             | 1     | 1         | + meli                      |
-| Pro      | R$ 139,90 | 50    | 10      | 6             | 3     | 3         | + catalog, meliAnalytics    |
-| Business | R$ 199,90 | 200   | 20      | 20            | 10    | 10        | + meliMessages              |
+| Plano    | Preço      | Links | Sellers | Usuários Time | Times | Contas ML | Msgs ML/mês | Módulos Adicionais          |
+|----------|-----------|-------|---------|---------------|-------|-----------|-------------|-----------------------------|
+| Free     | R$ 0      | 5     | 1       | 1             | 1     | 0         | 0           | links, priceAnalyze, sellerMonitor, catalog |
+| Starter  | R$ 99,90  | 30    | 5       | 2             | 1     | 1         | 100         | + meli, meliAnalytics, meliCatalog, meliMessages |
+| Pro      | R$ 139,90 | 50    | 10      | 6             | 3     | 3         | 200         | (mesmos módulos do Starter) |
+| Business | R$ 199,90 | 200   | 20      | 20            | 10    | 10        | ilimitado   | (mesmos módulos do Starter) |
+
+Todo módulo é liberado a partir de qualquer plano pago (Starter+); `catalog` (Dimensões e Peso) é liberado inclusive no Free. A diferenciação entre planos pagos passa a ser por limite numérico (`maxMeliAccounts`, `maxMonthlyMessages`), não por bloqueio de módulo.
 
 ---
 
@@ -44,8 +46,9 @@ Gerencia planos de assinatura (Free, Starter, Pro, Business), integração com S
 
 ### RF-06 Controle de Acesso por Módulo
 - Middleware `requireModule(moduleName)` bloqueia acesso (HTTP 403) se o módulo não está em `allowedModules` do usuário.
-- Middlewares de limite (`checkLinkLimit`, `checkSellerMonitorLimit`, `checkTeamUserLimit`, `checkTeamLimit`, `checkMeliAccountLimit`) bloqueiam criação quando o limite do plano é atingido.
+- Middlewares de limite (`checkLinkLimit`, `checkSellerMonitorLimit`, `checkTeamUserLimit`, `checkTeamLimit`, `checkMeliAccountLimit`, `checkMeliMessageLimit`) bloqueiam criação/ação quando o limite do plano é atingido.
 - `checkMeliAccountLimit` é verificado dentro de `MeliController.authCallback` (rota pública de OAuth). Reconexões de contas já existentes contornam a checagem de limite.
+- `checkMeliMessageLimit` é verificado apenas em `POST /meli/messages/questions/:questionId/reply`: conta (via `MeliQuestion.countDocuments`) as respostas do mês corrente (UTC) e compara com `planConfig.maxMonthlyMessages` (`null` = ilimitado).
 
 ### RF-07 Migração de Assinantes Existentes
 - Script `src/scripts/migrateExistingSubscriptions.js` migra assinantes ativos para os novos price IDs.
@@ -67,6 +70,7 @@ Gerencia planos de assinatura (Free, Starter, Pro, Business), integração com S
 
 - **P1**: Após `checkout.session.completed` com subscription ativa, `user.plan` deve corresponder ao `planSlug` mapeado pelo `priceId`.
 - **P2**: Após `customer.subscription.deleted`, `user.plan` deve ser `"free"` e `stripeSubscriptionId` deve ser `null`.
-- **P3**: `requireModule("catalog")` deve retornar 403 para usuários com plano `free` ou `starter`.
+- **P3**: `requireModule("catalog")` deve permitir acesso (200) para qualquer plano, incluindo `free`. `requireModule("meliMessages")`/`requireModule("meliAnalytics")`/`requireModule("meliCatalog")` devem retornar 403 apenas para o plano `free`.
+- **P6**: `checkMeliMessageLimit` deve retornar 403 quando a contagem de respostas do mês corrente `>= planConfig.maxMonthlyMessages`, exceto quando `maxMonthlyMessages === null` (Business, sempre permite).
 - **P4**: `checkLinkLimit` deve retornar 403 quando `Link.countDocuments({ ownerId }) >= planConfig.maxLinks`.
 - **P5**: Um usuário com subscription `past_due` não deve ter `isPlanActive = true` (a menos que seja free).

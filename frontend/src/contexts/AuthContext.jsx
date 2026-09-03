@@ -43,43 +43,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  // O backend sempre popula allowedModules/planModules (via computeAccess) em
+  // /auth/login, /auth/register e /auth/me — não há fallback local aqui de propósito,
+  // para não duplicar a matriz módulo→plano que já vive em backend/config/plans.js.
   function canAccess(module) {
     if (module == null) return true;
-    const allowed = user?.allowedModules;
-    if (Array.isArray(allowed)) {
-      return allowed.includes(module);
-    }
-    const plan = user?.effectivePlan || user?.plan || "free";
-    if (!user?.planConfig) return false;
-    const moduleMap = {
-      links: ["free", "starter", "pro", "business"],
-      priceAnalyze: ["free", "starter", "pro", "business"],
-      catalog: ["pro", "business"],
-      meli: ["starter", "pro", "business"],
-      meliMessages: ["business"],
-      meliAnalytics: ["pro", "business"],
-      sellerMonitor: ["free", "starter", "pro", "business"],
-    };
-    return moduleMap[module]?.includes(plan) || false;
+    return Array.isArray(user?.allowedModules) ? user.allowedModules.includes(module) : false;
   }
 
   function isBlockedByPlan(module) {
     if (module == null) return false;
-    const planMods = user?.planModules;
-    if (Array.isArray(planMods)) {
-      return !planMods.includes(module);
-    }
-    const plan = user?.effectivePlan || user?.plan || "free";
-    const moduleMap = {
-      links: ["free", "starter", "pro", "business"],
-      priceAnalyze: ["free", "starter", "pro", "business"],
-      catalog: ["pro", "business"],
-      meli: ["starter", "pro", "business"],
-      meliMessages: ["business"],
-      meliAnalytics: ["pro", "business"],
-      sellerMonitor: ["free", "starter", "pro", "business"],
-    };
-    return !(moduleMap[module]?.includes(plan) || false);
+    return Array.isArray(user?.planModules) ? !user.planModules.includes(module) : true;
   }
 
   async function refreshUser() {

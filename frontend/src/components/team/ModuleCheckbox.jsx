@@ -1,13 +1,4 @@
-const MODULE_LABELS = {
-  links: "Links",
-  priceAnalyze: "Análise de Preços",
-  catalog: "Catálogo",
-  meli: "Contas Mercado Livre",
-  meliMessages: "Mensagens ML",
-  meliAnalytics: "Analytics ML",
-  meliCatalog:   "Catálogo ML",
-  sellerMonitor: "Monitor Sellers",
-};
+import { MODULE_LABELS } from "../../lib/moduleLabels";
 
 export { MODULE_LABELS };
 

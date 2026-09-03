@@ -23,6 +23,10 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 - Ao usar template, atualiza `lastUsedAt` do template.
 - Retorna erros específicos: `ALREADY_ANSWERED` (409), `QUESTION_NOT_ACCESSIBLE` (404), `ML_API_ERROR` (status do ML).
 - Para erro 403 do ML, inclui `hint` orientando o usuário a reconectar a conta.
+- Antes de responder, passa por `checkMeliMessageLimit`: bloqueia com 403 se o número de respostas (`answered_by` manual ou template) do mês corrente já atingiu `planConfig.maxMonthlyMessages` (100 no Starter, 200 no Pro; `null` = ilimitado no Business).
+
+### RF-02.1 Uso Mensal de Mensagens
+- `GET /meli/messages/usage` retorna `{ current, max, plan }` com a contagem de respostas do mês corrente vs. o limite do plano (`max: null` = ilimitado). Usado pelo frontend para exibir "X de Y mensagens usadas este mês".
 
 ### RF-03 Histórico de Comprador
 - `GET /meli/messages/questions/buyer-thread?from_id=<id>` retorna todas as perguntas de um comprador específico.
@@ -68,7 +72,7 @@ Gerencia perguntas de compradores no Mercado Livre, permitindo responder manualm
 
 ## Requisitos Não-Funcionais
 
-- Módulo exclusivo do plano Business (`requireModule("meliMessages")`).
+- Módulo disponível a partir do plano Starter (`requireModule("meliMessages")`), com limite mensal de respostas por plano: 100/mês no Starter, 200/mês no Pro, ilimitado no Business (`checkMeliMessageLimit`, contagem ao vivo de `MeliQuestion` respondidas no mês corrente via `GET /meli/messages/usage`).
 - Perguntas são armazenadas localmente para performance (cache do ML).
 - `raw_payload` armazena o payload original do ML para diagnóstico.
 - Webhook de mensagens deve ser público e idempotente; autenticação ocorre pela correspondência `user_id` -> `Conta` e, opcionalmente, por `ML_APPLICATION_ID`. Logs de eventos ignorados/processados ficam desativados por padrão e só aparecem com `ML_WEBHOOK_DEBUG=true`.

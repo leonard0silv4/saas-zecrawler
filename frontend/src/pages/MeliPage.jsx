@@ -6,7 +6,8 @@ import { useAuth } from "../contexts/AuthContext";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function MeliPage() {
-  const { isOwner } = useAuth();
+  const { isOwner, user } = useAuth();
+  const maxMeliAccounts = user?.planConfig?.maxMeliAccounts ?? 0;
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState("");
@@ -110,7 +111,14 @@ export default function MeliPage() {
 
       <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="font-semibold text-gray-900">Contas conectadas</h2>
+          <div>
+            <h2 className="font-semibold text-gray-900">Contas conectadas</h2>
+            {maxMeliAccounts > 0 && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {accounts.length} de {maxMeliAccounts} {maxMeliAccounts === 1 ? "conta utilizada" : "contas utilizadas"}
+              </p>
+            )}
+          </div>
           {isOwner && (
             <button
               type="button"

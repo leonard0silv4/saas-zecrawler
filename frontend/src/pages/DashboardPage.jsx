@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   Link2, Package, ShoppingBag, Lock, LineChart as LineChartIcon,
-  Store, BarChart2, Sparkles, RefreshCw,
+  Store, BarChart2, Sparkles, RefreshCw, MessageCircle, LayoutGrid,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
@@ -20,6 +20,8 @@ const MODULE_CARDS = [
   { module: "catalog", icon: Package, label: "Dimensões e Peso", desc: "Validação de pacotes e cálculo de peso cúbico", to: "/catalog", color: "bg-orange-500" },
   { module: "meli", icon: ShoppingBag, label: "Mercado Livre", desc: "Contas e produtos ML", to: "/meli", color: "bg-yellow-500" },
   { module: "meliAnalytics", icon: BarChart2, label: "Analytics ML", desc: "Vendas, faturamento e estoque Full", to: "/meli/analytics", color: "bg-green-600" },
+  { module: "meliCatalog", icon: LayoutGrid, label: "Catálogo ML", desc: "Catálogo de produtos do Mercado Livre", to: "/meli/catalog-ml", color: "bg-rose-500" },
+  { module: "meliMessages", icon: MessageCircle, label: "Mensagens ML", desc: "Perguntas e respostas dos compradores", to: "/meli/messages", color: "bg-indigo-500" },
 ];
 
 function computeCatalogStats(productGroups) {
@@ -53,9 +55,9 @@ function computeCatalogStats(productGroups) {
 
 export default function DashboardPage() {
   const { user, canAccess, isBlockedByPlan } = useAuth();
-  const plan = user?.effectivePlan || user?.plan || "free";
-  const isPaid = ["starter", "pro", "business"].includes(plan);
-  const isBusiness = plan === "business";
+  const canPriceAnalyze = canAccess("priceAnalyze");
+  const canSellerMonitor = canAccess("sellerMonitor");
+  const canMeliMessages = canAccess("meliMessages");
 
   const { myStores, loading: storesLoading } = useMyStores();
   const [stats, setStats] = useState(null);
@@ -83,7 +85,7 @@ export default function DashboardPage() {
   }, [fetchStats]);
 
   useEffect(() => {
-    if (!isPaid || storesLoading) return;
+    if (!canPriceAnalyze || storesLoading) return;
     setXmlLoading(true);
     const token = localStorage.getItem("token");
     fetch("/api/price-analyze/xml", {
@@ -101,7 +103,7 @@ export default function DashboardPage() {
       })
       .catch(() => setXmlStats(null))
       .finally(() => setXmlLoading(false));
-  }, [isPaid, myStores, storesLoading]);
+  }, [canPriceAnalyze, myStores, storesLoading]);
 
   return (
     <div className="mx-auto space-y-8">
@@ -171,20 +173,20 @@ export default function DashboardPage() {
       {/* Dashboard sections */}
       <LinksSection stats={stats?.links} loading={statsLoading} />
 
-      {isPaid && (
-        <>
-          <MensagensMlSection
-            stats={stats?.messages}
-            loading={statsLoading}
-            isBusiness={isBusiness}
-          />
-          <PriceAnalyzeSection
-            xmlStats={xmlStats}
-            loading={xmlLoading}
-            noStores={!storesLoading && myStores.length === 0}
-          />
-          <SellerSection stats={stats?.sellers} loading={statsLoading} />
-        </>
+      {canMeliMessages && (
+        <MensagensMlSection stats={stats?.messages} loading={statsLoading} />
+      )}
+
+      {canPriceAnalyze && (
+        <PriceAnalyzeSection
+          xmlStats={xmlStats}
+          loading={xmlLoading}
+          noStores={!storesLoading && myStores.length === 0}
+        />
+      )}
+
+      {canSellerMonitor && (
+        <SellerSection stats={stats?.sellers} loading={statsLoading} />
       )}
     </div>
   );

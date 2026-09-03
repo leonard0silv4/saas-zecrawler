@@ -17,7 +17,7 @@ import SellerPage from "../models/SellerPage.js";
 import SellerProduct from "../models/SellerProduct.js";
 import SellerAlert from "../models/SellerAlert.js";
 import { ExpedicaoRegistro, ExpedicaoMeta, ExpedicaoDiaEncerrado } from "../models/Expedicao.js";
-import { PLANS } from "../../config/plans.js";
+import { PLANS, MODULES } from "../../config/plans.js";
 import { computeAccess, loadTeamPermissions } from "../utils/access.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
 
@@ -112,7 +112,7 @@ export default {
   },
 
   async getPlans(req, res) {
-    return res.json(PLANS);
+    return res.json({ plans: PLANS, modules: MODULES });
   },
 
   async forgotPassword(req, res) {

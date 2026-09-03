@@ -4,8 +4,9 @@
 
 - [ ] 1. Teste unitário para `syncSubscription` — status `canceled` deve zerar subscription e downgrade para free
 - [ ] 2. Teste unitário para `computeAccess` — member com permissão `links` deve receber `priceAnalyze` automaticamente
-- [ ] 3. Teste para `requireModule` — plano free não acessa `catalog`, `meli`, `meliMessages`, `meliAnalytics`
+- [ ] 3. Teste para `requireModule` — plano free não acessa `meli`, `meliMessages`, `meliAnalytics`, `meliCatalog` (mas acessa `catalog`)
 - [ ] 4. Teste para `checkLinkLimit` — retorna 403 quando count >= maxLinks
+- [ ] 5. Teste para `checkMeliMessageLimit` — retorna 403 no Starter/Pro ao atingir 100/200 respostas no mês corrente, e nunca bloqueia no Business (`maxMonthlyMessages: null`)
 
 ## Implementado
 
@@ -17,6 +18,7 @@
 - [x] Refatoração de planos e preços (jun/2026): novos preços R$99,90/139,90/199,90, novos limites, campo `maxMeliAccounts` adicionado
 - [x] `meliAnalytics` aberto para plano Pro (era exclusivo Business)
 - [x] `checkMeliAccountLimit` implementado em `middleware/plan.js`; checagem de reconexão em `MeliController.authCallback`
+- [x] Reestruturação de planos (set/2026): `catalog`, `meliAnalytics`, `meliCatalog`, `meliMessages` liberados a partir do Starter (catalog inclusive no Free); novo `maxMonthlyMessages` (100/200/ilimitado) e `checkMeliMessageLimit`; `GET /plans` passa a expor `MODULES`; jobs de cron de Analytics ML (`services/cron.js`) atualizados para não filtrar mais só `plan: "business"`
 - [x] Script `migrateExistingSubscriptions.js` criado para migrar assinantes com proration
 - [x] Script `sendPromoCampaign.js` + `sendPromoEmail` (emailService) — campanha pontual de cupom promocional (50%) por email para usuários do plano free, com passo a passo de aplicação do cupom no Checkout
 

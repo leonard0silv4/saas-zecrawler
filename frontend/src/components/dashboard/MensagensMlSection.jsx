@@ -1,12 +1,24 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MessageSquare, TrendingUp, Clock, Zap, Users, Lock } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { StatCard, StatCardSkeleton } from "./StatCard";
 import { SectionHeader, SectionWrap, Panel, RankList } from "./DashboardPrimitives";
 import { DarkTooltip } from "./DarkTooltip";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 
-export function MensagensMlSection({ stats, loading, isBusiness }) {
-  if (!isBusiness) {
+export function MensagensMlSection({ stats, loading }) {
+  const { canAccess } = useAuth();
+  const hasAccess = canAccess("meliMessages");
+  const [usage, setUsage] = useState(null);
+
+  useEffect(() => {
+    if (!hasAccess) return;
+    api.get("/meli/messages/usage").then((r) => setUsage(r.data)).catch(() => {});
+  }, [hasAccess]);
+
+  if (!hasAccess) {
     return (
       <SectionWrap>
         <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} accent="bg-amber-500" />
@@ -14,7 +26,7 @@ export function MensagensMlSection({ stats, loading, isBusiness }) {
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
             <Lock size={22} className="text-amber-500" />
           </div>
-          <p className="text-gray-600 font-medium">Disponível no plano Business</p>
+          <p className="text-gray-600 font-medium">Disponível a partir do plano Starter</p>
           <p className="text-sm text-gray-400 text-center max-w-sm">
             Gerencie perguntas do Mercado Livre com análise de desempenho da equipe
           </p>
@@ -63,6 +75,13 @@ export function MensagensMlSection({ stats, loading, isBusiness }) {
   return (
     <SectionWrap>
       <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} accent="bg-amber-500" />
+      {usage && (
+        <p className="text-xs text-gray-500 -mt-2">
+          {usage.max == null
+            ? "Mensagens respondidas este mês: ilimitado"
+            : `Mensagens respondidas este mês: ${usage.current} de ${usage.max}`}
+        </p>
+      )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)

@@ -2,6 +2,7 @@ import cron from "node-cron";
 import User from "../models/User.js";
 import Link from "../models/Link.js";
 import Conta from "../models/Conta.js";
+import { MODULES } from "../../config/plans.js";
 import { scrapeProductData } from "../utils/scraper.js";
 import { resetStaleByTimeout } from "./scraperQueue.js";
 import { runAllActiveSellers } from "./sellerScraper.js";
@@ -88,12 +89,12 @@ export function startCronJobs() {
     }
   });
 
-  // Analytics ML: sincroniza pedidos a cada 15 min para owners Business
+  // Analytics ML: sincroniza pedidos a cada 15 min para owners com o módulo liberado
   cron.schedule("*/15 * * * *", async () => {
     try {
       const businessOwners = await User.find({
         role: "owner",
-        plan: "business",
+        plan: { $in: MODULES.meliAnalytics.plans },
         stripeSubscriptionStatus: { $in: ["active", "trialing"] },
       }).select("_id");
 
@@ -121,13 +122,13 @@ export function startCronJobs() {
     }
   });
 
-  // Sync completo de produtos ML: a cada 6h para usuários Business
+  // Sync completo de produtos ML: a cada 6h para owners com o módulo liberado
   // Intervalo de 6h equilibra atualização de estoque vs. tráfego na API do ML
   cron.schedule("0 */6 * * *", async () => {
     try {
       const businessOwners = await User.find({
         role: "owner",
-        plan: "business",
+        plan: { $in: MODULES.meliAnalytics.plans },
         stripeSubscriptionStatus: { $in: ["active", "trialing"] },
       }).select("_id");
 

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import MeliQuestion from "../models/MeliQuestion.js";
 import MeliMessageTemplate from "../models/MeliMessageTemplate.js";
 import { getOwnerId } from "../middleware/auth.js";
+import { getMeliMessageUsage } from "../middleware/plan.js";
 import { answerQuestion, syncQuestionFromWebhook, syncQuestionsForAllActiveContas, syncQuestionsForContaUserId, syncQuestionsForItemResource, syncQuestionsForOwner } from "../services/meliMessagesService.js";
 import { emitSSE } from "../utils/sse.js";
 
@@ -452,6 +453,17 @@ export default {
       return res.json({ perAccount });
     } catch (error) {
       return res.status(500).json({ error: "Erro ao consultar mensagens não respondidas" });
+    }
+  },
+
+  async usage(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const effectivePlan = req.user.effectivePlan || req.user.plan || "free";
+      const usage = await getMeliMessageUsage(ownerId, effectivePlan);
+      return res.json(usage);
+    } catch (error) {
+      return res.status(500).json({ error: "Erro ao buscar uso de mensagens" });
     }
   },
 

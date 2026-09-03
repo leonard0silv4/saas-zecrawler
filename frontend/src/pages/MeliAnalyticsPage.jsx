@@ -150,7 +150,7 @@ export default function MeliAnalyticsPage() {
             <BarChart2 size={22} className="text-green-600" />
             Analytics ML
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">Vendas, estoque Full e KPIs financeiros — exclusivo Business</p>
+          <p className="text-gray-500 mt-1 text-sm">Vendas, estoque Full e KPIs financeiros</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">

@@ -103,7 +103,7 @@ const MODULES = [
   {
     id: "meliAnalytics",
     module: "meliAnalytics",
-    step: "Plano Business",
+    step: "Planos pagos",
     icon: BarChart2,
     color: "bg-green-600",
     textColor: "text-green-600",
@@ -121,12 +121,12 @@ const MODULES = [
       "Clique em qualquer linha da tabela de estoque para ver a análise completa do produto",
       "Na aba Top Produtos, veja o ranking por receita no período selecionado",
     ],
-    tip: "Produtos Full com estoque zero são marcados automaticamente como RUPTURA. Os pedidos são sincronizados automaticamente a cada 15 minutos para contas Business ativas.",
+    tip: "Produtos Full com estoque zero são marcados automaticamente como RUPTURA. Os pedidos são sincronizados automaticamente a cada 15 minutos para contas com plano pago ativo.",
   },
   {
     id: "meliMessages",
     module: "meliMessages",
-    step: "Plano Business",
+    step: "Planos pagos",
     icon: MessageCircle,
     color: "bg-indigo-500",
     textColor: "text-indigo-600",
@@ -143,7 +143,7 @@ const MODULES = [
       "Responda diretamente ou use os templates — digite # para acionar o autocomplete",
       "Use as sugestões automáticas para agilizar respostas baseadas no contexto da pergunta",
     ],
-    tip: "Crie templates de resposta com # para acionar o autocomplete. Nomeie-os de forma descritiva para encontrá-los rapidamente durante o atendimento.",
+    tip: "Crie templates de resposta com # para acionar o autocomplete. Nomeie-os de forma descritiva para encontrá-los rapidamente durante o atendimento. Limite de respostas por mês: 100 no Starter, 200 no Pro, ilimitado no Business.",
   },
 ];
 

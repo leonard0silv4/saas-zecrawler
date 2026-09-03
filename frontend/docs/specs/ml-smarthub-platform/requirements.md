@@ -44,7 +44,7 @@ Cada pasta de spec deve conter:
 - `ExpedicaoPage.jsx` e `NfePage.jsx` existem em `frontend/src/pages`, mas as rotas `/expedicao` e `/nfe` redirecionam para `/dashboard`.
 - O backend também possui controllers de expedição e NF, mas eles não estão montados em `backend/src/routes/index.js`.
 - As props e estados internos de componentes grandes ainda não têm testes automatizados de UI.
-- O mapa de módulos por plano existe no frontend e no backend; mudanças de plano devem ser revisadas nos dois lados para evitar divergência visual.
+- O mapa de módulos por plano vive em `backend/config/plans.js` (`MODULES`) e é exposto ao frontend via `GET /plans` (`{ plans, modules }`) e via `user.allowedModules`/`user.planModules` no login; a página institucional (`PublicPricingPage.jsx`) e a interna (`PlansPage.jsx`, `SettingsPlanSection.jsx`) consomem esses dados dinamicamente. A única cópia que ainda precisa de atualização manual é `landing/index.html` (site estático, domínio separado, não consome API).
 
 ## Arquitetura de Domínios (desde 2026-05-30)
 

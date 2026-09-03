@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
-import { requireModule, checkLinkLimit, checkSellerMonitorLimit, requireOwner, checkTeamUserLimit, checkTeamLimit } from "../middleware/plan.js";
+import { requireModule, checkLinkLimit, checkSellerMonitorLimit, requireOwner, checkTeamUserLimit, checkTeamLimit, checkMeliMessageLimit } from "../middleware/plan.js";
 import { addSSEClient, removeSSEClient } from "../utils/sse.js";
 import { getOwnerId } from "../middleware/auth.js";
 
@@ -99,7 +99,7 @@ r.get("/meli/shipment/:shipmentId", requireModule("meli"), MeliController.getShi
 r.get("/meli/messages/suggestions", requireModule("meliMessages"), MeliMessagesController.getSuggestions);
 r.get("/meli/messages/questions", requireModule("meliMessages"), MeliMessagesController.listQuestions);
 r.get("/meli/messages/questions/buyer-thread", requireModule("meliMessages"), MeliMessagesController.buyerThread);
-r.post("/meli/messages/questions/:questionId/reply", requireModule("meliMessages"), MeliMessagesController.replyQuestion);
+r.post("/meli/messages/questions/:questionId/reply", requireModule("meliMessages"), checkMeliMessageLimit, MeliMessagesController.replyQuestion);
 r.delete("/meli/messages/questions/:questionId", requireModule("meliMessages"), MeliMessagesController.deleteQuestion);
 r.get("/meli/messages/templates", requireModule("meliMessages"), MeliMessagesController.listTemplates);
 r.post("/meli/messages/templates", requireModule("meliMessages"), MeliMessagesController.createTemplate);
@@ -107,6 +107,7 @@ r.put("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessage
 r.delete("/meli/messages/templates/:id", requireModule("meliMessages"), MeliMessagesController.deleteTemplate);
 r.post("/meli/messages/sync", requireModule("meliMessages"), MeliMessagesController.sync);
 r.get("/meli/messages/unread-count", requireModule("meliMessages"), MeliMessagesController.unreadCount);
+r.get("/meli/messages/usage", requireModule("meliMessages"), MeliMessagesController.usage);
 
 // ─── Analytics ML (Business) ───────────────────────────────────
 r.post("/meli/analytics/sync",        requireModule("meliAnalytics"), MeliAnalyticsController.sync);

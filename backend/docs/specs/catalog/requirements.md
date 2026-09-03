@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Cadastro de produtos, dimensões e importação XLSX usados no cálculo de pacote.
+Cadastro de produtos, dimensões e importação XLSX usados no cálculo de pacote. Disponível em todos os planos, incluindo o Free (`MODULES.catalog.plans` inclui `free`).
 
 ## Requisitos Funcionais
 

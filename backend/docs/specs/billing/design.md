@@ -8,7 +8,8 @@ POST /stripe/portal     →  authenticate → StripeController.createPortal
 GET  /stripe/status     →  authenticate → StripeController.status
 POST /stripe/downgrade  →  authenticate → StripeController.downgrade
 POST /stripe/webhook    →  express.raw() → stripeWebhookRoute  (sem authenticate)
-GET  /plans             →  AuthController.getPlans  (público)
+GET  /plans             →  AuthController.getPlans  (público) — retorna { plans: PLANS, modules: MODULES }
+GET  /meli/messages/usage → requireModule("meliMessages") → MeliMessagesController.usage
 ```
 
 ## Fluxo de Checkout
@@ -77,6 +78,10 @@ checkMeliAccountLimit (exportada de plan.js, chamada dentro de MeliController.au
   → planConfig.maxMeliAccounts === 0 ? 403 : next()
   → Conta.exists({ user_id, ownerId }) → é reconexão? → skip check
   → Conta.countDocuments({ ownerId, disabled: {$ne:true} }) >= planConfig.maxMeliAccounts ? 403 HTML : prossegue
+
+checkMeliMessageLimit (plugada só em POST /meli/messages/questions/:questionId/reply):
+  → planConfig.maxMonthlyMessages === null ? next() (ilimitado)
+  → MeliQuestion.countDocuments({ ownerId, answered_by: {$in:["manual","template"]}, answer_date_created: {$gte: início do mês UTC} }) >= planConfig.maxMonthlyMessages ? 403 : next()
 ```
 
 ## Mapeamento de Módulos por Plano

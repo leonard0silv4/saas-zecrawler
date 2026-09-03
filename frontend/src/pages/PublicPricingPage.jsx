@@ -6,32 +6,55 @@ import SEO from "../components/SEO";
 import api from "../services/api";
 import { PLANS_META } from "../config/plansMeta";
 
-// Matriz de features para a tabela comparativa
-const FEATURE_ROWS = [
-  {
-    category: "Recursos",
-    features: [
-      { label: "Acompanhamento de Links", free: true, starter: true, pro: true, business: true },
-      { label: "Análise de Preços", free: true, starter: true, pro: true, business: true },
-      { label: "Dashboard", free: "Básico", starter: "Completo", pro: "Completo", business: "Completo" },
-      { label: "Contas Mercado Livre", free: false, starter: "1 conta", pro: "Até 3", business: "Até 10" },
-      { label: "Catálogo de Produtos", free: false, starter: false, pro: true, business: true },
-      { label: "Analytics & Vendas ML", free: false, starter: false, pro: true, business: true },
-      { label: "Insights por IA", free: false, starter: false, pro: true, business: true },
-      { label: "Mensagens Mercado Livre", free: false, starter: false, pro: false, business: true },
-    ],
-  },
-  {
-    category: "Limites",
-    features: [
-      { label: "Links monitorados", free: "5", starter: "30", pro: "50", business: "200" },
-      { label: "Sellers monitorados", free: "1", starter: "5", pro: "10", business: "20" },
-      { label: "Usuários no time", free: "1", starter: "2", pro: "6", business: "20" },
-      { label: "Times", free: "1", starter: "1", pro: "3", business: "10" },
-    ],
-  },
-];
+// Ordem de exibição dos módulos na tabela comparativa (rótulos vêm da API, de MODULES.<key>.name)
+const MODULE_ORDER = ["links", "priceAnalyze", "sellerMonitor", "catalog", "meli", "meliAnalytics", "meliCatalog", "meliMessages"];
 
+// Alguns módulos diferenciam planos por um número, não só por liberado/bloqueado —
+// essas células viram texto em vez de check/x, reaproveitando o limite numérico do plano.
+const MODULE_CELL_OVERRIDES = {
+  meli: (plan) => {
+    const n = plan?.maxMeliAccounts;
+    if (!n) return false;
+    return n === 1 ? "1 conta" : `Até ${n}`;
+  },
+  meliMessages: (plan) => {
+    const n = plan?.maxMonthlyMessages;
+    if (n === 0 || n === undefined) return false;
+    return n === null ? "Ilimitado" : `Até ${n}/mês`;
+  },
+};
+
+function buildFeatureRows(plans, modules) {
+  const planBySlug = Object.fromEntries(plans.map((p) => [p.slug, p]));
+  const moduleRows = MODULE_ORDER.filter((key) => modules[key]).map((key) => {
+    const mod = modules[key];
+    const override = MODULE_CELL_OVERRIDES[key];
+    const cell = (slug) => {
+      if (!mod.plans.includes(slug)) return false;
+      return override ? override(planBySlug[slug]) : true;
+    };
+    return { label: mod.name, free: cell("free"), starter: cell("starter"), pro: cell("pro"), business: cell("business") };
+  });
+
+  return [
+    {
+      category: "Recursos",
+      features: [
+        { label: "Dashboard", free: "Básico", starter: "Completo", pro: "Completo", business: "Completo" },
+        ...moduleRows,
+      ],
+    },
+    {
+      category: "Limites",
+      features: [
+        { label: "Links monitorados", free: String(planBySlug.free?.maxLinks ?? "-"), starter: String(planBySlug.starter?.maxLinks ?? "-"), pro: String(planBySlug.pro?.maxLinks ?? "-"), business: String(planBySlug.business?.maxLinks ?? "-") },
+        { label: "Sellers monitorados", free: String(planBySlug.free?.maxSellerMonitors ?? "-"), starter: String(planBySlug.starter?.maxSellerMonitors ?? "-"), pro: String(planBySlug.pro?.maxSellerMonitors ?? "-"), business: String(planBySlug.business?.maxSellerMonitors ?? "-") },
+        { label: "Usuários no time", free: String(planBySlug.free?.maxTeamUsers ?? "-"), starter: String(planBySlug.starter?.maxTeamUsers ?? "-"), pro: String(planBySlug.pro?.maxTeamUsers ?? "-"), business: String(planBySlug.business?.maxTeamUsers ?? "-") },
+        { label: "Times", free: String(planBySlug.free?.maxTeams ?? "-"), starter: String(planBySlug.starter?.maxTeams ?? "-"), pro: String(planBySlug.pro?.maxTeams ?? "-"), business: String(planBySlug.business?.maxTeams ?? "-") },
+      ],
+    },
+  ];
+}
 
 function CellValue({ value }) {
   if (value === true)  return <Check size={18} className="text-emerald-500 mx-auto" />;
@@ -42,10 +65,19 @@ function CellValue({ value }) {
 
 export default function PublicPricingPage() {
   const [plans, setPlans] = useState([]);
+  const [modules, setModules] = useState({});
 
   useEffect(() => {
-    api.get("/plans").then((r) => setPlans(Object.values(r.data))).catch(() => {});
+    api
+      .get("/plans")
+      .then((r) => {
+        setPlans(Object.values(r.data.plans));
+        setModules(r.data.modules);
+      })
+      .catch(() => {});
   }, []);
+
+  const featureRows = buildFeatureRows(plans, modules);
 
   return (
     <PublicLayout noPadding>
@@ -167,7 +199,7 @@ export default function PublicPricingPage() {
                 </tr>
               </thead>
               <tbody>
-                {FEATURE_ROWS.map((group) => (
+                {featureRows.map((group) => (
                   <>
                     <tr key={group.category} className="bg-gray-50">
                       <td colSpan={5} className="px-6 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">

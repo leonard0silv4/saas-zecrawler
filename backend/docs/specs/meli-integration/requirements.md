@@ -28,6 +28,8 @@ Gerencia a autenticação OAuth 2.0 com o Mercado Livre, sincronização de prod
 | Pro      | 3             |
 | Business | 10            |
 
+Como `meliAnalytics`, `meliCatalog` e `meliMessages` são liberados a partir do plano Starter e todos reusam as mesmas contas ML conectadas, `maxMeliAccounts` passou a ser o gargalo relevante também para esses módulos (não só para o módulo `meli` em si).
+
 ### RF-02 Listagem de Contas Conectadas
 - Retorna todas as contas ML ativas do owner (com `access_token` e não desabilitadas).
 

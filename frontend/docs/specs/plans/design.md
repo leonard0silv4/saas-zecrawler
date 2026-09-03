@@ -10,6 +10,8 @@
 
 `PlansPage` é a tela autenticada. `PublicPricingPage` reutiliza dados públicos. Portal e checkout retornam URL do backend e redirecionam o browser.
 
+`GET /plans` retorna `{ plans, modules }`. `PublicPricingPage` monta sua tabela comparativa (`buildFeatureRows`) iterando `modules` em vez de manter uma matriz de features hardcoded — cada linha vem de `MODULES[key].name`/`.plans`, com overrides pontuais (`meli`, `meliMessages`) que trocam o check/x por texto numérico (`plan.maxMeliAccounts`, `plan.maxMonthlyMessages`). `PlansPage` e `SettingsPlanSection` exibem `maxMeliAccounts`/`maxMonthlyMessages` nos blocos de limite, seguindo o mesmo padrão condicional já usado para `maxLinks`/`maxSellerMonitors`.
+
 ## Visual dos Cards (Sessão D — 2026-05-30)
 
 Cada card de plano tem:

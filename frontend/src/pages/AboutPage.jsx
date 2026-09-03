@@ -59,7 +59,7 @@ const DIFFERENTIALS = [
     icon: Sparkles,
     title: "Insights por IA",
     description:
-      "Com um clique, a IA analisa os dados de vendas do período e retorna recomendações priorizadas: oportunidades de crescimento, sugestões de campanha e alertas críticos de estoque. Disponível nos planos Pro e Business.",
+      "Com um clique, a IA analisa os dados de vendas do período e retorna recomendações priorizadas: oportunidades de crescimento, sugestões de campanha e alertas críticos de estoque. Disponível em todos os planos pagos.",
     color: "bg-violet-50 text-violet-600",
   },
 ];

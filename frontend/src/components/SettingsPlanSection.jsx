@@ -49,6 +49,20 @@ export default function SettingsPlanSection() {
             <strong className="text-gray-900">{planConfig.maxSellerMonitors.toLocaleString("pt-BR")}</strong>
           </p>
         )}
+        {planConfig?.maxMeliAccounts > 0 && (
+          <p className="text-sm text-gray-600">
+            Limite de contas Mercado Livre:{" "}
+            <strong className="text-gray-900">{planConfig.maxMeliAccounts.toLocaleString("pt-BR")}</strong>
+          </p>
+        )}
+        {planConfig?.maxMeliAccounts > 0 && (
+          <p className="text-sm text-gray-600">
+            Limite de mensagens ML por mês:{" "}
+            <strong className="text-gray-900">
+              {planConfig.maxMonthlyMessages == null ? "Ilimitado" : planConfig.maxMonthlyMessages.toLocaleString("pt-BR")}
+            </strong>
+          </p>
+        )}
         {subStatus?.subscription?.status === "trialing" && subStatus.subscription.currentPeriodEnd && (
           <p className="text-sm text-blue-700 bg-blue-50 rounded-lg px-3 py-2">
             Em período de teste — encerra em{" "}

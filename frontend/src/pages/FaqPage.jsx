@@ -39,19 +39,19 @@ const FAQ_GROUPS = [
       },
       {
         q: "Posso conectar mais de uma conta do Mercado Livre?",
-        a: "Sim! Nos planos Pro e Business você pode conectar múltiplas contas ML e gerenciá-las pelo mesmo painel. Ideal para operações com mais de uma loja ou marca.",
+        a: "O plano Starter já permite conectar 1 conta ML. Nos planos Pro e Business você pode conectar múltiplas contas (até 3 e até 10, respectivamente) e gerenciá-las pelo mesmo painel. Ideal para operações com mais de uma loja ou marca.",
       },
       {
         q: "Como funciona a gestão de perguntas do Mercado Livre?",
-        a: "No plano Business, o sistema sincroniza as perguntas dos compradores das suas contas ML conectadas. Você responde diretamente pela plataforma, pode criar templates de respostas e acompanhar o histórico por comprador.",
+        a: "A partir do plano Starter, o sistema sincroniza as perguntas dos compradores das suas contas ML conectadas. Você responde diretamente pela plataforma, pode criar templates de respostas e acompanhar o histórico por comprador. O limite de respostas por mês é de 100 no Starter, 200 no Pro e ilimitado no Business.",
       },
       {
         q: "O que é o módulo Analytics & Vendas ML?",
-        a: "É um painel com métricas de vendas, faturamento, histórico de pedidos, reputação e alertas de estoque das suas contas do Mercado Livre conectadas. Disponível a partir do plano Pro.",
+        a: "É um painel com métricas de vendas, faturamento, histórico de pedidos, reputação e alertas de estoque das suas contas do Mercado Livre conectadas. Disponível a partir do plano Starter.",
       },
       {
         q: "Como funcionam os Insights por IA?",
-        a: "Nos planos Pro e Business, você pode acionar a análise de IA com um clique no módulo Analytics. O sistema processa os dados do período e gera recomendações categorizadas — oportunidades de crescimento, sugestões de promoção e alertas de estoque crítico — cada uma com nível de prioridade. O resultado fica disponível durante o dia e é recuperado automaticamente ao reabrir a tela.",
+        a: "A partir do plano Starter, você pode acionar a análise de IA com um clique no módulo Analytics. O sistema processa os dados do período e gera recomendações categorizadas — oportunidades de crescimento, sugestões de promoção e alertas de estoque crítico — cada uma com nível de prioridade. O resultado fica disponível durante o dia e é recuperado automaticamente ao reabrir a tela.",
       },
     ],
   },

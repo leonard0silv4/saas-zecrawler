@@ -16,7 +16,7 @@ export default function PlansPage() {
   const [upgrading, setUpgrading] = useState(null);
 
   useEffect(() => {
-    api.get("/plans").then((r) => setPlans(r.data));
+    api.get("/plans").then((r) => setPlans(r.data.plans));
     api.get("/stripe/status").then((r) => setSubStatus(r.data)).catch(() => {});
   }, []);
 
@@ -210,6 +210,21 @@ export default function PlansPage() {
                     <p className="text-xs text-gray-500">
                       Até <strong className="text-gray-700">{plan.maxTeamUsers.toLocaleString()}</strong>{" "}
                       {plan.maxTeamUsers === 1 ? "usuário no time" : "usuários no time"}
+                    </p>
+                  )}
+                  {plan.maxMeliAccounts > 0 && (
+                    <p className="text-xs text-gray-500">
+                      Até <strong className="text-gray-700">{plan.maxMeliAccounts.toLocaleString()}</strong>{" "}
+                      {plan.maxMeliAccounts === 1 ? "conta Mercado Livre" : "contas Mercado Livre"}
+                    </p>
+                  )}
+                  {plan.maxMeliAccounts > 0 && (
+                    <p className="text-xs text-gray-500">
+                      {plan.maxMonthlyMessages == null ? (
+                        <>Mensagens ML <strong className="text-gray-700">ilimitadas</strong></>
+                      ) : (
+                        <>Até <strong className="text-gray-700">{plan.maxMonthlyMessages.toLocaleString()}</strong> mensagens ML/mês</>
+                      )}
                     </p>
                   )}
                 </div>

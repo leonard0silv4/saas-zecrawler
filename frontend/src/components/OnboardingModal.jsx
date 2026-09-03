@@ -66,9 +66,9 @@ const SLIDES = [
     id: "meliAnalytics",
     module: "meliAnalytics",
     emoji: null,
-    title: "Analytics ML — Exclusivo Business",
+    title: "Analytics ML",
     subtitle: "Vendas, estoque Full e KPIs do seu negócio",
-    body: "Monitore faturamento, liquidez do marketplace, ruptura de estoque Full e ranking de produtos — tudo em um único painel. Disponível apenas no plano Business.",
+    body: "Monitore faturamento, liquidez do marketplace, ruptura de estoque Full e ranking de produtos — tudo em um único painel. Disponível a partir do plano Starter.",
     icon: BarChart2,
     color: "bg-green-600",
     tip: "Clique em Sincronizar ao entrar no módulo para trazer os pedidos mais recentes. Acesse a aba Estoque para ver alertas de Ruptura no Full.",
@@ -82,7 +82,7 @@ const SLIDES = [
     body: "Responda perguntas de compradores diretamente pelo sistema. Use templates com hashtags, sugestões de resposta automáticas e insira links de produtos nas respostas — tudo em um único lugar.",
     icon: MessageCircle,
     color: "bg-indigo-500",
-    tip: "Crie templates de resposta com # para acionar o autocomplete e agilizar o atendimento de perguntas repetitivas.",
+    tip: "Crie templates de resposta com # para acionar o autocomplete. Limite de respostas por mês: 100 no Starter, 200 no Pro, ilimitado no Business.",
   },
 ];
 

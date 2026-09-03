@@ -1,8 +1,8 @@
-# Requisitos — Módulo de Analytics ML (Business)
+# Requisitos — Módulo de Analytics ML
 
 ## Visão Geral
 
-Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento, taxa ML, líquido) e fornece análises de vendas, top produtos e inventário. Exclusivo do plano Business.
+Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento, taxa ML, líquido) e fornece análises de vendas, top produtos e inventário. Disponível a partir do plano Starter.
 
 ---
 
@@ -44,9 +44,9 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
 - `status` filtra por status do anúncio no ML; default `active`, para bater com a visão padrão do painel do ML. `status=all` remove o filtro.
 
 ### RF-07 Sincronização Automática (Cron)
-- A cada 15 minutos, sincroniza pedidos de todos os owners Business com subscription ativa.
+- A cada 15 minutos, sincroniza pedidos de todos os owners com o módulo `meliAnalytics` liberado no plano (`MODULES.meliAnalytics.plans`, hoje Starter/Pro/Business) e subscription ativa.
 - Ignora contas com `authError` definido.
-- A cada 6 horas (`0 */6 * * *`), sincroniza todos os produtos ML de owners Business.
+- A cada 6 horas (`0 */6 * * *`), sincroniza todos os produtos ML dos mesmos owners.
 
 ### RF-08 Tratamento de Erro 403
 - Se a API ML retorna 403, força refresh do token e tenta novamente.
@@ -64,7 +64,7 @@ Sincroniza pedidos do Mercado Livre, calcula métricas financeiras (faturamento,
 
 ## Requisitos Não-Funcionais
 
-- Módulo exclusivo do plano Business (`requireModule("meliAnalytics")`).
+- Módulo disponível a partir do plano Starter (`requireModule("meliAnalytics")`).
 - Busca de taxas em batches de 5 requisições paralelas (`Promise.allSettled`).
 - Paginação da API ML limitada a 500 pedidos por sync (offset < 500).
 
