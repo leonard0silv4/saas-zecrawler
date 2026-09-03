@@ -26,7 +26,7 @@ export const PLANS = {
   starter: {
     name: "Starter",
     slug: "starter",
-    price: 99.9,
+    price: 19.9,
     trialDays: TRIAL_DAYS,
     maxLinks: 30,
     maxSellerMonitors: 5,
@@ -49,7 +49,7 @@ export const PLANS = {
   pro: {
     name: "Pro",
     slug: "pro",
-    price: 139.9,
+    price: 29.9,
     trialDays: TRIAL_DAYS,
     maxLinks: 50,
     maxSellerMonitors: 10,
@@ -69,7 +69,7 @@ export const PLANS = {
   business: {
     name: "Business",
     slug: "business",
-    price: 199.9,
+    price: 49.9,
     trialDays: TRIAL_DAYS,
     maxLinks: 200,
     maxSellerMonitors: 20,

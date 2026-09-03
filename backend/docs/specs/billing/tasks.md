@@ -21,12 +21,14 @@
 - [x] Reestruturação de planos (set/2026): `catalog`, `meliAnalytics`, `meliCatalog`, `meliMessages` liberados a partir do Starter (catalog inclusive no Free); novo `maxMonthlyMessages` (100/200/ilimitado) e `checkMeliMessageLimit`; `GET /plans` passa a expor `MODULES`; jobs de cron de Analytics ML (`services/cron.js`) atualizados para não filtrar mais só `plan: "business"`
 - [x] Script `migrateExistingSubscriptions.js` criado para migrar assinantes com proration
 - [x] Script `sendPromoCampaign.js` + `sendPromoEmail` (emailService) — campanha pontual de cupom promocional (50%) por email para usuários do plano free, com passo a passo de aplicação do cupom no Checkout
+- [x] Redução de preços (set/2026): novos preços R$19,90/29,90/49,90 (Starter/Pro/Business), atualizados em `config/plans.js`, `seedStripeProducts.js` e `landing/index.html`
 
 ## Pendente — Pós-Deploy
 
-- [ ] Rodar `seedStripeProducts.js` com novas chaves Stripe para gerar os novos price IDs
-- [ ] Atualizar `.env` com `STRIPE_PRICE_*` (novos) e `OLD_STRIPE_PRICE_*` (antigos)
+- [ ] Rodar `seedStripeProducts.js` com as novas chaves Stripe para gerar os novos price IDs (R$19,90/29,90/49,90)
+- [ ] Atualizar `.env` com `STRIPE_PRICE_*` (novos) e `OLD_STRIPE_PRICE_*` (antigos, os de R$99,90/139,90/199,90)
 - [ ] Rodar `migrateExistingSubscriptions.js` com `DRY_RUN=true`, revisar log, depois aplicar
+- [ ] Reiniciar o processo do backend em produção para recarregar `.env`
 
 ## Melhorias Identificadas
 

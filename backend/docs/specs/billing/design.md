@@ -144,9 +144,9 @@ node src/scripts/sendPromoCampaign.js                   # envia para todos com p
 |---|---|
 | `STRIPE_SECRET_KEY` | Chave secreta da API Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secret para validar assinatura do webhook |
-| `STRIPE_PRICE_STARTER` | Price ID novo do plano Starter (R$ 99,90) |
-| `STRIPE_PRICE_PRO` | Price ID novo do plano Pro (R$ 139,90) |
-| `STRIPE_PRICE_BUSINESS` | Price ID novo do plano Business (R$ 199,90) |
+| `STRIPE_PRICE_STARTER` | Price ID novo do plano Starter (R$ 19,90) |
+| `STRIPE_PRICE_PRO` | Price ID novo do plano Pro (R$ 29,90) |
+| `STRIPE_PRICE_BUSINESS` | Price ID novo do plano Business (R$ 49,90) |
 | `OLD_STRIPE_PRICE_STARTER` | Price ID antigo do Starter (migração) |
 | `OLD_STRIPE_PRICE_PRO` | Price ID antigo do Pro (migração) |
 | `OLD_STRIPE_PRICE_BUSINESS` | Price ID antigo do Business (migração) |
