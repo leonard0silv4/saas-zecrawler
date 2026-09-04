@@ -132,7 +132,7 @@ export async function checkMeliAccountLimit(req, res, next) {
  */
 export async function getMeliMessageUsage(ownerId, effectivePlan) {
   const planConfig = PLANS[effectivePlan];
-  const max = planConfig?.maxMonthlyMessages ?? 0;
+  const max = planConfig ? planConfig.maxMonthlyMessages : 0;
   if (max === null) return { current: null, max: null, plan: effectivePlan };
 
   const now = new Date();

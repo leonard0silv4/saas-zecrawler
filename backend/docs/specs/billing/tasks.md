@@ -22,6 +22,7 @@
 - [x] Script `migrateExistingSubscriptions.js` criado para migrar assinantes com proration
 - [x] Script `sendPromoCampaign.js` + `sendPromoEmail` (emailService) — campanha pontual de cupom promocional (50%) por email para usuários do plano free, com passo a passo de aplicação do cupom no Checkout
 - [x] Redução de preços (set/2026): novos preços R$19,90/29,90/49,90 (Starter/Pro/Business), atualizados em `config/plans.js`, `seedStripeProducts.js` e `landing/index.html`
+- [x] Fix (set/2026): `getMeliMessageUsage` usava `planConfig?.maxMonthlyMessages ?? 0`, que colapsava o `null` explícito do Business (ilimitado) para `0`, bloqueando com 403 qualquer resposta no plano Business (afetava owner e sub-usuários). Corrigido para `planConfig ? planConfig.maxMonthlyMessages : 0`, preservando `null` como ilimitado.
 
 ## Pendente — Pós-Deploy
 

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requireModule } from "../middleware/plan.js";
+import { requireModule, getMeliMessageUsage } from "../middleware/plan.js";
 
 function createRes() {
   return {
@@ -56,4 +56,9 @@ test("requireModule permite meliMessages no business", () => {
 
   assert.equal(calledNext, true);
   assert.equal(res.statusCode, 200);
+});
+
+test("getMeliMessageUsage retorna max: null (ilimitado) no plano business, sem contar documentos", async () => {
+  const usage = await getMeliMessageUsage("owner-id", "business");
+  assert.deepEqual(usage, { current: null, max: null, plan: "business" });
 });
