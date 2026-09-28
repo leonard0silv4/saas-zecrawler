@@ -20,10 +20,8 @@ import MeliPage from "./pages/MeliPage";
 import MeliMessagesPage from "./pages/MeliMessagesPage";
 import MeliAnalyticsPage from "./pages/MeliAnalyticsPage";
 import MeliCatalogPage from "./pages/MeliCatalogPage";
-import SetupCookiesPage from "./pages/SetupCookiesPage";
 import PriceAnalyzePage from "./pages/PriceAnalyzePage";
 import SellerMonitorPage from "./pages/SellerMonitorPage";
-import MlCookiesPage from "./pages/MlCookiesPage";
 import SettingsPage from "./pages/SettingsPage";
 import TeamPage from "./pages/TeamPage";
 import HelpPage from "./pages/HelpPage";
@@ -96,10 +94,10 @@ export default function App() {
             <Route exatc path="/meli/messages" element={<ModuleRoute module="meliMessages"><MeliMessagesPage /></ModuleRoute>} />
             <Route path="/meli/analytics" element={<ModuleRoute module="meliAnalytics"><MeliAnalyticsPage /></ModuleRoute>} />
             <Route path="/meli/catalog-ml" element={<ModuleRoute module="meliCatalog"><MeliCatalogPage /></ModuleRoute>} />
-            <Route path="/ml-cookies" element={<MlCookiesPage />} />
+            <Route path="/ml-cookies" element={<Navigate to="/meli" replace />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/team" element={<OwnerRoute><TeamPage /></OwnerRoute>} />
-            <Route path="/setup-cookies" element={<SetupCookiesPage />} />
+            <Route path="/setup-cookies" element={<Navigate to="/meli" replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

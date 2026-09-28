@@ -20,3 +20,7 @@ Ordem de resolução:
 3. Vazio — fluxo continua sem cookie (comportamento anterior)
 
 O utilitário retorna `{ cookieString, isFallback }`. O `mlPriceAnalyzeScraper` ainda mescla o resultado com `ML_COOKIE_STRING` (env var) quando disponível. O fallback é transparente ao usuário; o banner de aviso no frontend permanece para incentivar o cadastro dos próprios cookies.
+
+## Remoção (set/2026)
+
+`CookieController`, rotas `/cookies*` e `src/utils/cookieLoader.js` foram removidos. `ML_COOKIE_STRING` deixou de ser lido. O model `Cookie` permanece só para `purgeLegacyCookies.js` e para a exclusão em cascata em `AuthController`.

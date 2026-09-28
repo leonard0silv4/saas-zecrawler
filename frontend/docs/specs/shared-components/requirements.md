@@ -10,4 +10,4 @@ Componentes reutilizados por páginas.
 - `OnboardingModal` deve aparecer na primeira experiência autenticada quando aplicável.
 - `SEO` deve configurar metadados.
 - `PublicLayout` e `LandingHeader` devem estruturar páginas públicas.
-- Componentes de settings devem isolar plano, lojas e cookies.
+- Componentes de settings devem isolar plano e lojas.

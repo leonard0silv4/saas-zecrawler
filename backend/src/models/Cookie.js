@@ -1,3 +1,5 @@
+// Legado: cookies do ML não são mais usados (coleta via API oficial desde set/2026).
+// Mantido apenas para a exclusão em cascata de contas e o script purgeLegacyCookies.
 import mongoose from "mongoose";
 
 const cookieSchema = new mongoose.Schema(

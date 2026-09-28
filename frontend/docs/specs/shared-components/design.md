@@ -50,7 +50,6 @@ Todos exportados via `src/components/ui/index.js`.
 - `src/components/LandingHeader.jsx` — header para páginas de landing
 - `src/components/SettingsPlanSection.jsx` — seção de plano na página de settings
 - `src/components/SettingsStoresSection.jsx` — seção de lojas na página de settings
-- `src/components/SettingsCookiesSection.jsx` — seção de cookies ML na página de settings
 
 ## Padrões Visuais Padronizados
 

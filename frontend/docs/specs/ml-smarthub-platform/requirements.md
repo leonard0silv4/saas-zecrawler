@@ -32,7 +32,6 @@ Cada pasta de spec deve conter:
 | Planos e billing           | `frontend/docs/specs/plans/`             |
 | Time e permissões          | `frontend/docs/specs/team/`              |
 | Configurações              | `frontend/docs/specs/settings/`          |
-| Setup de cookies           | `frontend/docs/specs/setup-cookies/`     |
 | Ajuda                      | `frontend/docs/specs/help/`              |
 | Páginas públicas           | `frontend/docs/specs/public-pages/`      |
 | Painel admin               | `frontend/docs/specs/admin/`             |

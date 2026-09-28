@@ -84,12 +84,12 @@ const FAQ_GROUPS = [
     group: "Segurança e privacidade",
     items: [
       {
-        q: "Meus cookies do Mercado Livre ficam seguros?",
-        a: "Seus cookies são armazenados de forma criptografada e utilizados exclusivamente para fazer as consultas no Mercado Livre em seu nome. Nunca são compartilhados com terceiros.",
+        q: "Como o ML SmartHub acessa minha conta do Mercado Livre?",
+        a: "Pela conexão oficial (OAuth) do Mercado Livre: você autoriza o acesso na página do próprio ML e nunca informa sua senha para nós. Os tokens de acesso ficam apenas no servidor, não são exibidos no navegador e você pode desconectar a conta a qualquer momento em Contas conectadas.",
       },
       {
         q: "O ML SmartHub acessa minha conta ML para fazer compras ou alterações?",
-        a: "Não. O sistema usa os cookies apenas para leitura de dados (preços, produtos, perguntas). Nenhuma ação de compra, venda ou modificação de anúncio é realizada automaticamente.",
+        a: "Não. A conexão é usada para leitura de dados (preços, produtos, pedidos, perguntas). A única ação de escrita é responder perguntas de compradores, e somente quando você envia a resposta pela plataforma. Nenhuma compra, venda ou modificação de anúncio é realizada.",
       },
     ],
   },

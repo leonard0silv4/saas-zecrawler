@@ -59,7 +59,7 @@ Permite ao usuário cadastrar URLs de produtos do Mercado Livre para monitorar p
 
 - Todos os links são isolados por `ownerId` (multi-tenant).
 - Índices compostos: `(ownerId, storeName)` e `(ownerId, sku)` para performance.
-- O scraping respeita cookies ML do owner (passados via `ownerId`).
+- A coleta usa a API oficial do ML com o token de uma conta ML conectada do owner (`ownerId`); sem conta, o cadastro retorna 422.
 
 ---
 

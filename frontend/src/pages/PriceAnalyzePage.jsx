@@ -42,7 +42,7 @@ export default function PriceAnalyzePage() {
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState(null);
-  const [cookiesAlert, setCookiesAlert] = useState(false);
+  const [noDataAlert, setNoDataAlert] = useState(false);
 
   const [filterAlert, setFilterAlert] = useState(false);
   const [filterCompetitor, setFilterCompetitor] = useState(false);
@@ -74,7 +74,7 @@ export default function PriceAnalyzePage() {
   async function handleGenerate() {
     setGenerating(true);
     setGenerateError(null);
-    setCookiesAlert(false);
+    setNoDataAlert(false);
     try {
       const { data } = await api.post(
         "/price-analyze/generate",
@@ -82,7 +82,7 @@ export default function PriceAnalyzePage() {
         { timeout: GENERATE_TIMEOUT_MS }
       );
       if (data.urlsProcessadas > 0 && data.linhasProduto === 0) {
-        setCookiesAlert(true);
+        setNoDataAlert(true);
       }
       queryClient.invalidateQueries({ queryKey: ["price-analyze-xml"] });
     } catch (e) {
@@ -205,7 +205,7 @@ export default function PriceAnalyzePage() {
         </div>
       )}
 
-      {cookiesAlert && !generating && (
+      {noDataAlert && !generating && (
         <div className="flex items-center gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
           <AlertTriangle size={16} className="shrink-0 text-orange-500" />
           <span>

@@ -12,7 +12,6 @@ import MeliController from "../controllers/MeliController.js";
 import MeliMessagesController from "../controllers/MeliMessagesController.js";
 import MeliAnalyticsController from "../controllers/MeliAnalyticsController.js";
 import CatalogProductController from "../controllers/CatalogProductController.js";
-import CookieController from "../controllers/CookieController.js";
 import PriceAnalyzeController from "../controllers/PriceAnalyzeController.js";
 import SellerMonitorController from "../controllers/SellerMonitorController.js";
 import SettingsController from "../controllers/SettingsController.js";
@@ -126,12 +125,6 @@ r.post("/catalog", requireModule("catalog"), CatalogProductController.store);
 r.put("/catalog/:id", requireModule("catalog"), CatalogProductController.update);
 r.delete("/catalog/:id", requireModule("catalog"), CatalogProductController.destroy);
 r.post("/catalog/import", requireModule("catalog"), CatalogProductController.importFromXLS);
-
-// ─── Cookies ML ────────────────────────────────────────────────
-r.get("/cookies/status", CookieController.status); // deve vir antes de /cookies para não ser capturado como parâmetro
-r.get("/cookies", CookieController.index);
-r.post("/cookies", CookieController.update);
-r.delete("/cookies", CookieController.destroy);
 
 // ─── Time & Usuários (owner only) ──────────────────────────────
 r.get("/team/users",                        requireOwner, TeamController.listUsers);

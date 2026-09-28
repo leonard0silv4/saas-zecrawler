@@ -43,7 +43,6 @@ const NAV_GROUPS = [
 const ROUTE_TITLES = {
   ...Object.fromEntries(NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.to, i.label]))),
   "/ajuda": "Ajuda",
-  "/setup-cookies": "Configurar cookies",
 };
 
 function pageTitleFor(pathname) {

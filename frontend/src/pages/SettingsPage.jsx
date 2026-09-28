@@ -4,14 +4,12 @@ import { useSearchParams } from "react-router-dom";
 import { Settings, AlertTriangle, Trash2 } from "lucide-react";
 import SettingsPlanSection from "../components/SettingsPlanSection";
 import SettingsStoresSection from "../components/SettingsStoresSection";
-import SettingsCookiesSection from "../components/SettingsCookiesSection";
 import { useAuth } from "../contexts/AuthContext";
 import { notifyError } from "../utils/notify";
 
 const TABS = [
   { id: "plan", label: "Plano" },
   { id: "stores", label: "Minhas lojas" },
-  { id: "cookies", label: "Cookies ML" },
 ];
 
 export default function SettingsPage() {
@@ -58,7 +56,7 @@ export default function SettingsPage() {
           <Settings size={22} className="text-brand-600" />
           Configurações
         </h1>
-        <p className="text-gray-600 text-sm mt-0.5">Plano, lojas próprias e cookies do Mercado Livre.</p>
+        <p className="text-gray-600 text-sm mt-0.5">Plano e lojas próprias.</p>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
@@ -80,7 +78,6 @@ export default function SettingsPage() {
 
       {tab === "plan" && <SettingsPlanSection />}
       {tab === "stores" && <SettingsStoresSection />}
-      {tab === "cookies" && <SettingsCookiesSection />}
 
       {/* ─── Zona de perigo (somente owner) ──────────────────────── */}
       {isOwner && (

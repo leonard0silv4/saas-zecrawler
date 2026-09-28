@@ -128,14 +128,6 @@ GET /api/meli/shipment/:shipmentId
 
 Para testar chamadas reais do Mercado Livre localmente, suba o backend em `localhost:3333`, exponha-o com um túnel HTTPS (ngrok ou cloudflared) e configure temporariamente no painel do app ML a URL `https://<tunel>/api/hookmessages`. Para teste simulado, envie um `POST` com `topic: "questions"`, `resource: "/questions/<id>"` e `user_id` de uma conta conectada.
 
-### Cookies ML
-
-```
-GET    /api/cookies
-POST   /api/cookies   { cookies: [...] }
-DELETE /api/cookies
-```
-
 ### Stripe Billing
 
 ```
@@ -234,7 +226,7 @@ webhook: customer.subscription.deleted → user.plan = "free"
 | Sem controle de plano                    | `requireModule()` + `checkLinkLimit()`        |
 | 3 models de expedição em 3 arquivos      | 1 arquivo `Expedicao.js` com 3 exports        |
 | SSE global                               | SSE por `ownerId` (multi-tenant)              |
-| Depende de Python/Pickle                 | Cookies direto no MongoDB                     |
+| Depende de Python/Pickle                 | API oficial do ML via OAuth (sem cookies)     |
 | Rotas sem prefixo                        | Todas em `/api/*`                             |
 | Sem frontend                             | React + Vite + Tailwind completo              |
 
