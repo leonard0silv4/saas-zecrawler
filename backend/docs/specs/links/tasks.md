@@ -20,3 +20,4 @@
 - [ ] Validar `/sites/MLB/search` (importação em lote) com token em produção.
 - [x] Correção de cadastros (set/2026): `links:refetch` corrigiu 93 links de catálogo; 106 links `/up/MLBU` ficam sem atualização (API do ML responde 403 para anúncios de outros vendedores).
 - [ ] Definir estratégia para links fora de catálogo (`/up/MLBU…`) — API oficial não libera.
+- [x] Seletor de catálogo equivalente para links fora de catálogo (`apiBlocked`, `/links/catalog-suggestions`, `/links/:id/catalog`) — set/2026.

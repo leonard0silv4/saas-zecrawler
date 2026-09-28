@@ -6,6 +6,7 @@
 - `src/components/links/AISection.jsx` — seção de inteligência de receita (projeções)
 - `src/components/links/AddLinkModal.jsx` — modal de adição de link (usa `ui/Modal`)
 - `src/components/links/EditLinkModal.jsx` — modal de edição de preço/tags (usa `ui/Modal`)
+- `src/components/links/CatalogSuggestModal.jsx` — escolha manual de produto de catálogo para anúncios fora de catálogo (`apiBlocked`); busca editável, aviso de que o preço passa a ser o do catálogo
 
 ## Implementação
 

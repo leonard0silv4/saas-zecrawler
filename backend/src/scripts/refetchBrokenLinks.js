@@ -39,7 +39,7 @@ async function main() {
   }
   console.log(`Links incompletos: ${broken.length} (owners: ${byOwner.size})${DRY_RUN ? " [dry-run]" : ""}`);
 
-  const stats = { fixed: 0, failed: 0, noAccount: 0, sellerRestored: 0 };
+  const stats = { fixed: 0, failed: 0, noAccount: 0, sellerRestored: 0, blocked: 0 };
 
   for (const [ownerId, links] of byOwner) {
     const token = await getOwnerMeliToken(ownerId);
@@ -55,9 +55,14 @@ async function main() {
         stats.failed++;
         // API não libera este anúncio: ao menos restaura o vendedor apagado pelo refresh antigo
         const lastSeller = !link.seller && [...(link.history || [])].reverse().find((h) => h.seller)?.seller;
-        if (lastSeller) {
-          stats.sellerRestored++;
-          if (!DRY_RUN) await Link.updateOne({ _id: link._id }, { $set: { seller: lastSeller } });
+        const blocked = ["FORBIDDEN", "UNSUPPORTED_URL"].includes(scraped?.error);
+        if (lastSeller) stats.sellerRestored++;
+        if (blocked) stats.blocked++;
+        if (!DRY_RUN && (lastSeller || blocked)) {
+          await Link.updateOne(
+            { _id: link._id },
+            { $set: { ...(lastSeller ? { seller: lastSeller } : {}), ...(blocked ? { apiBlocked: true } : {}) } }
+          );
         }
         console.log(`  falhou ${link._id} ${scraped?.error || ""}${lastSeller ? ` (vendedor restaurado: ${lastSeller})` : ""} ${link.link.slice(0, 80)}`);
         continue;
@@ -73,6 +78,7 @@ async function main() {
         ratingSeller: scraped.ratingSeller ?? link.ratingSeller,
         full: scraped.full,
         catalog: scraped.catalog,
+        apiBlocked: false,
       };
       if (scraped.dateMl && !link.dateMl) updates.dateMl = scraped.dateMl;
       if (price > 0 && !link.nowPrice) {
@@ -90,7 +96,7 @@ async function main() {
     }
   }
 
-  console.log(`Resultado: corrigidos=${stats.fixed} falhas=${stats.failed} (vendedor restaurado em ${stats.sellerRestored}) sem-conta=${stats.noAccount}${DRY_RUN ? " [dry-run, nada gravado]" : ""}`);
+  console.log(`Resultado: corrigidos=${stats.fixed} falhas=${stats.failed} (vendedor restaurado em ${stats.sellerRestored}, marcados fora de catálogo ${stats.blocked}) sem-conta=${stats.noAccount}${DRY_RUN ? " [dry-run, nada gravado]" : ""}`);
   await mongoose.disconnect();
 }
 

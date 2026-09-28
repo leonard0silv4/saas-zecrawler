@@ -15,6 +15,7 @@ import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { AISection }      from "../components/links/AISection";
 import { AddLinkModal }   from "../components/links/AddLinkModal";
 import { EditLinkModal }  from "../components/links/EditLinkModal";
+import { CatalogSuggestModal } from "../components/links/CatalogSuggestModal";
 
 const QK = {
   links: (filters) => ["links", filters],
@@ -43,6 +44,8 @@ export default function LinksPage() {
   const [editTags, setEditTags] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  // Anúncio fora de catálogo: { linkId } (link existente) ou { url } (recusado no cadastro)
+  const [catalogTarget, setCatalogTarget] = useState(null);
 
   // Filtros
   const [filterStatus, setFilterStatus] = useState("all");
@@ -134,10 +137,27 @@ export default function LinksPage() {
       queryClient.invalidateQueries({ queryKey: ["links"] });
       queryClient.invalidateQueries({ queryKey: QK.stats() });
     } catch (err) {
-      notifyError(err.response?.data?.error || "Erro ao adicionar link");
+      const code = err.response?.data?.code;
+      if (code === "FORBIDDEN" || code === "UNSUPPORTED_URL") {
+        setShowAdd(false);
+        setCatalogTarget({ url: newLink.link });
+      } else {
+        notifyError(err.response?.data?.error || "Erro ao adicionar link");
+      }
     } finally {
       setAdding(false);
     }
+  }
+
+  async function handleCatalogSelect(suggestion) {
+    if (catalogTarget?.linkId) {
+      await api.post(`/links/${catalogTarget.linkId}/catalog`, { productId: suggestion.id });
+    } else {
+      await api.post("/links", { ...newLink, link: suggestion.permalink });
+      setNewLink({ link: "", myPrice: "", tag: "" });
+    }
+    queryClient.invalidateQueries({ queryKey: ["links"] });
+    queryClient.invalidateQueries({ queryKey: QK.stats() });
   }
 
   function openEdit(link) {
@@ -506,6 +526,14 @@ export default function LinksPage() {
                                   FULL
                                 </span>
                               )}
+                              {link.apiBlocked && (
+                                <button
+                                  onClick={() => setCatalogTarget({ linkId: link._id })}
+                                  title="O Mercado Livre não libera este anúncio pela API. Escolha um produto de catálogo equivalente."
+                                  className="text-xs bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded font-medium hover:bg-orange-100">
+                                  Fora de catálogo · escolher catálogo
+                                </button>
+                              )}
                               {link.tags?.map((t) => (
                                 <span key={t} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
                                   {t}
@@ -641,6 +669,14 @@ export default function LinksPage() {
           )}
         </div>
       )}
+
+      <CatalogSuggestModal
+        isOpen={!!catalogTarget}
+        onClose={() => setCatalogTarget(null)}
+        linkId={catalogTarget?.linkId}
+        url={catalogTarget?.url}
+        onSelect={handleCatalogSelect}
+      />
 
       <ConfirmDialog
         open={!!confirmDialog}

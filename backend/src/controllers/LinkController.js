@@ -1,6 +1,7 @@
 import Link from "../models/Link.js";
 import { getOwnerId } from "../middleware/auth.js";
 import { scrapeProductData, extractLinks, getOwnerMeliToken } from "../utils/scraper.js";
+import { suggestCatalogProducts, searchQueryFromUrl } from "../utils/meliProductApi.js";
 import { emitSSE } from "../utils/sse.js";
 import mongoose from "mongoose";
 
@@ -12,6 +13,9 @@ function isMercadoLivreUrl(raw) {
     return false;
   }
 }
+
+// Erros em que a API do ML nunca vai liberar o anúncio → link marcado como apiBlocked
+const API_BLOCKED_ERRORS = ["FORBIDDEN", "UNSUPPORTED_URL"];
 
 const SCRAPE_ERRORS = {
   NO_ACCOUNT: "Conecte uma conta do Mercado Livre para cadastrar links.",
@@ -83,7 +87,7 @@ export default {
 
       const scraped = await scrapeProductData(link, ownerId);
       if (scraped?.error) {
-        return res.status(422).json({ error: SCRAPE_ERRORS[scraped.error] });
+        return res.status(422).json({ error: SCRAPE_ERRORS[scraped.error], code: scraped.error });
       }
       if (!scraped?.name) return res.status(422).json({ error: "Não foi possível extrair dados do link" });
 
@@ -316,6 +320,84 @@ export default {
     }
   },
 
+  /**
+   * Produtos de catálogo parecidos com um termo (?q=), um link (?linkId=) ou uma URL (?url=),
+   * para substituir anúncios que a API do ML não libera.
+   */
+  async catalogSuggestions(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const { linkId, url } = req.query;
+
+      let q = String(req.query.q || "").trim();
+      if (q) {
+        // termo digitado pelo usuário tem prioridade
+      } else if (linkId) {
+        const link = await Link.findOne({ _id: linkId, ownerId }).lean();
+        if (!link) return res.status(404).json({ error: "Link não encontrado" });
+        q = link.name || searchQueryFromUrl(link.link);
+      } else if (url) {
+        q = searchQueryFromUrl(url);
+      }
+      if (!q) return res.status(400).json({ error: "Informe q, linkId ou url" });
+
+      const token = await getOwnerMeliToken(ownerId);
+      if (!token) return res.status(422).json({ error: SCRAPE_ERRORS.NO_ACCOUNT, code: "NO_ACCOUNT" });
+
+      const suggestions = await suggestCatalogProducts(q, token);
+      return res.json({ query: q, suggestions });
+    } catch (err) {
+      console.error("[Links] catalogSuggestions error:", err.response?.status || err.message);
+      return res.status(500).json({ error: "Erro ao buscar produtos de catálogo" });
+    }
+  },
+
+  /** Troca o link por um produto de catálogo escolhido pelo usuário ({ productId }). */
+  async convertToCatalog(req, res) {
+    try {
+      const ownerId = getOwnerId(req);
+      const { id } = req.params;
+      const productId = String(req.body?.productId || "").toUpperCase();
+      if (!/^MLB\d+$/.test(productId)) return res.status(400).json({ error: "productId inválido" });
+
+      const link = await Link.findOne({ _id: id, ownerId });
+      if (!link) return res.status(404).json({ error: "Link não encontrado" });
+
+      const duplicate = await Link.exists({ ownerId, sku: productId, _id: { $ne: link._id } });
+      if (duplicate) return res.status(409).json({ error: "Você já acompanha esse produto de catálogo" });
+
+      const catalogUrl = `https://www.mercadolivre.com.br/p/${productId}`;
+      const scraped = await scrapeProductData(catalogUrl, ownerId);
+      if (scraped?.error) return res.status(422).json({ error: SCRAPE_ERRORS[scraped.error], code: scraped.error });
+      if (!scraped?.name) return res.status(422).json({ error: "Não foi possível carregar o produto de catálogo" });
+
+      const price = Number(scraped.offers?.price || 0);
+      const updated = await Link.findByIdAndUpdate(
+        link._id,
+        {
+          $set: {
+            link: catalogUrl,
+            sku: scraped.sku,
+            name: scraped.name,
+            image: scraped.image,
+            status: scraped.offers?.availability,
+            seller: scraped.seller,
+            ratingSeller: scraped.ratingSeller,
+            full: scraped.full,
+            catalog: true,
+            apiBlocked: false,
+            ...(price > 0 ? { nowPrice: price, lastPrice: link.nowPrice || price } : {}),
+          },
+        },
+        { new: true }
+      );
+      return res.json(updated);
+    } catch (err) {
+      console.error("[Links] convertToCatalog error:", err);
+      return res.status(500).json({ error: "Erro ao converter link" });
+    }
+  },
+
   async refresh(req, res) {
     try {
       const ownerId = getOwnerId(req);
@@ -331,6 +413,9 @@ export default {
       for (let i = 0; i < links.length; i++) {
         try {
           const scraped = token && await scrapeProductData(links[i].link, ownerId, 3, token);
+          if (API_BLOCKED_ERRORS.includes(scraped?.error) && !links[i].apiBlocked) {
+            await Link.updateOne({ _id: links[i]._id }, { $set: { apiBlocked: true } });
+          }
           if (!scraped || scraped.error) continue;
 
           const newPrice = Number(scraped.offers?.price || 0);
@@ -345,6 +430,7 @@ export default {
             full: scraped.full,
             catalog: scraped.catalog,
             ratingSeller: scraped.ratingSeller,
+            apiBlocked: false,
           };
 
           // Preenche dados de links cadastrados vazios (ex.: quando o ML bloqueou o crawler)

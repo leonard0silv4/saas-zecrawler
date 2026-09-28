@@ -183,6 +183,9 @@ async function refreshUserLinks(ownerId) {
     for (const link of links) {
       try {
         const scraped = await scrapeProductData(link.link, ownerId, 3, token);
+        if (["FORBIDDEN", "UNSUPPORTED_URL"].includes(scraped?.error) && !link.apiBlocked) {
+          await Link.updateOne({ _id: link._id }, { $set: { apiBlocked: true } });
+        }
         if (!scraped || scraped.error) continue;
 
         const newPrice = Number(scraped.offers?.price || 0);

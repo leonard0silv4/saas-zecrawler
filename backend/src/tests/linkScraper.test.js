@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseMeliUrl, parseListingUrl } from "../utils/meliProductApi.js";
+import { parseMeliUrl, parseListingUrl, searchQueryFromUrl } from "../utils/meliProductApi.js";
 import { classifyMercadoLivreUrl } from "../services/mlPriceAnalyzeScraper.js";
 
 test("parseMeliUrl identifica produto de catálogo e ignora fragmento de tracking", () => {
@@ -38,4 +38,13 @@ test("classifyMercadoLivreUrl distingue catálogo, listagem e anúncio", () => {
   assert.equal(classifyMercadoLivreUrl("https://lista.mercadolivre.com.br/chuveiro"), "listing");
   assert.equal(classifyMercadoLivreUrl("https://produto.mercadolivre.com.br/MLB-4125123625-x-_JM"), "item");
   assert.equal(classifyMercadoLivreUrl("https://www.amazon.com.br/x"), "skip");
+});
+
+test("searchQueryFromUrl extrai termos do slug para buscar catálogo", () => {
+  assert.equal(
+    searchQueryFromUrl("https://www.mercadolivre.com.br/sombretela-80-sombreamento/up/MLBU3964029257?pdp_filters=item_id:MLB6781768694"),
+    "sombretela 80 sombreamento"
+  );
+  assert.equal(searchQueryFromUrl("https://produto.mercadolivre.com.br/MLB-4125123625-chuveiro-zagonel-_JM"), "chuveiro zagonel");
+  assert.equal(searchQueryFromUrl("não é url"), "");
 });

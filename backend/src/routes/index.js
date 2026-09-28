@@ -63,6 +63,8 @@ r.get("/links/tags", requireModule("links"), LinkController.getTags);
 r.get("/links/sellers", requireModule("links"), LinkController.getSellers);
 r.get("/links/stats", requireModule("links"), LinkController.getStats);
 r.get("/links/refresh/:storeName", requireModule("links"), LinkController.refresh);
+r.get("/links/catalog-suggestions", requireModule("links"), LinkController.catalogSuggestions);
+r.post("/links/:id/catalog", requireModule("links"), LinkController.convertToCatalog);
 r.post("/links", requireModule("links"), checkLinkLimit, LinkController.store);
 r.post("/links/batch", requireModule("links"), checkLinkLimit, LinkController.storeBatch);
 r.put("/links/:id", requireModule("links"), LinkController.update);

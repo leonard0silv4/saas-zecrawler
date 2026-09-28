@@ -9,3 +9,4 @@
 - [ ] Reativar AISection removendo a classe `hidden` quando feature for liberada.
 - [x] Ações da linha (editar/excluir) como botões diretos, removido menu de contexto ⋮ (set/2026).
 - [x] Aviso de conta ML obrigatória na LinksPage (set/2026).
+- [x] `CatalogSuggestModal`: badge "Fora de catálogo · escolher catálogo" na linha e fallback no cadastro quando a API do ML nega o anúncio (set/2026).

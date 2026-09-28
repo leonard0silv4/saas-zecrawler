@@ -253,3 +253,46 @@ export async function searchMeliListing(listUrl, ownerId) {
   const results = await searchMeliItems(params, token, { maxResults: 50 });
   return results.map((r) => r.permalink).filter(Boolean);
 }
+
+/** Search terms from a ML URL slug (/slug/p/…, /slug/up/…, produto.mercadolivre.com.br/MLB-123-slug-_JM). */
+export function searchQueryFromUrl(raw) {
+  let path;
+  try {
+    path = decodeURIComponent(new URL(String(raw).trim()).pathname);
+  } catch {
+    return "";
+  }
+  const seg = path.split("/").filter(Boolean);
+  const idx = seg.findIndex((s) => s === "p" || s === "up");
+  let slug = idx > 0 ? seg[idx - 1] : seg[0] || "";
+  slug = slug.replace(/^MLB-?\d+-?/i, "").replace(/-_JM$/i, "");
+  return slug.replace(/[-_]+/g, " ").trim();
+}
+
+/**
+ * Catalog products similar to `q` (/products/search), with buy box (or lowest offer) price and seller,
+ * so the user can pick one to replace a listing the API does not expose.
+ */
+export async function suggestCatalogProducts(q, token, { limit = 5 } = {}) {
+  const query = String(q || "").trim().slice(0, 120);
+  if (!query) return [];
+
+  const data = await mlGet("/products/search", token, { site_id: "MLB", q: query, status: "active", limit });
+  const suggestions = [];
+  for (const r of (data.results || []).slice(0, limit)) {
+    try {
+      const p = await fromCatalogProduct(r.id, token);
+      suggestions.push({
+        id: p.sku,
+        name: p.name,
+        image: p.image,
+        price: p.offers.price,
+        seller: p.seller,
+        permalink: `https://www.mercadolivre.com.br/p/${p.sku}`,
+      });
+    } catch {
+      /* skip product that failed to load */
+    }
+  }
+  return suggestions;
+}

@@ -16,6 +16,8 @@ const linkSchema = new mongoose.Schema(
     ratingSeller: String,
     full: Boolean,
     catalog: Boolean,
+    // true quando a API do ML não libera o anúncio (fora de catálogo) — UI sugere catálogo equivalente
+    apiBlocked: { type: Boolean, default: false },
     tags: [String],
     history: [
       {
