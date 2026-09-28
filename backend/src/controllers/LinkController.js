@@ -1,6 +1,6 @@
 import Link from "../models/Link.js";
 import { getOwnerId } from "../middleware/auth.js";
-import { scrapeProductData, extractLinks } from "../utils/scraper.js";
+import { scrapeProductData, extractLinks, getOwnerMeliToken } from "../utils/scraper.js";
 import { emitSSE } from "../utils/sse.js";
 import mongoose from "mongoose";
 
@@ -12,6 +12,12 @@ function isMercadoLivreUrl(raw) {
     return false;
   }
 }
+
+const SCRAPE_ERRORS = {
+  NO_ACCOUNT: "Conecte uma conta do Mercado Livre para cadastrar links.",
+  UNSUPPORTED_URL: "Link sem código MLB. Use o link do anúncio ou do produto (/p/MLB...).",
+  NOT_FOUND: "Produto não encontrado no Mercado Livre.",
+};
 
 export default {
   async index(req, res) {
@@ -74,7 +80,10 @@ export default {
       }
 
       const scraped = await scrapeProductData(link, ownerId);
-      if (!scraped) return res.status(422).json({ error: "Não foi possível extrair dados do link" });
+      if (scraped?.error) {
+        return res.status(422).json({ error: SCRAPE_ERRORS[scraped.error] });
+      }
+      if (!scraped?.name) return res.status(422).json({ error: "Não foi possível extrair dados do link" });
 
       const price = Number(scraped.offers?.price || 0);
       const existing = await Link.findOne({ sku: scraped.sku, ownerId, storeName: scraped.storeName });
@@ -127,12 +136,13 @@ export default {
       const links = await extractLinks(listUrl, ownerId);
       if (!links.length) return res.status(422).json({ error: "Nenhum link encontrado na URL" });
 
+      const token = await getOwnerMeliToken(ownerId);
       let created = 0;
       let updated = 0;
 
       for (const url of links) {
         try {
-          const scraped = await scrapeProductData(url, ownerId);
+          const scraped = await scrapeProductData(url, ownerId, 3, token);
           if (!scraped?.name) continue;
 
           const price = Number(scraped.offers?.price || 0);
@@ -310,6 +320,7 @@ export default {
       const { storeName } = req.params;
 
       const links = await Link.find({ ownerId, storeName }).sort({ createdAt: -1 });
+      const token = await getOwnerMeliToken(ownerId);
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -317,8 +328,8 @@ export default {
 
       for (let i = 0; i < links.length; i++) {
         try {
-          const scraped = await scrapeProductData(links[i].link, ownerId);
-          if (!scraped) continue;
+          const scraped = token && await scrapeProductData(links[i].link, ownerId, 3, token);
+          if (!scraped || scraped.error) continue;
 
           const newPrice = Number(scraped.offers?.price || 0);
           const changed =
@@ -333,6 +344,12 @@ export default {
             catalog: scraped.catalog,
             ratingSeller: scraped.ratingSeller,
           };
+
+          // Preenche dados de links cadastrados vazios (ex.: quando o ML bloqueou o crawler)
+          if (!links[i].name && scraped.name) updates.name = scraped.name;
+          if (!links[i].image && scraped.image) updates.image = scraped.image;
+          if (!links[i].sku && scraped.sku) updates.sku = scraped.sku;
+          if (!links[i].dateMl && scraped.dateMl) updates.dateMl = scraped.dateMl;
 
           if (newPrice > 0 && links[i].nowPrice !== newPrice) {
             updates.lastPrice = links[i].nowPrice;

@@ -17,6 +17,8 @@ Query keys: `["links", filters]`, `["links-tags"]`, `["links-sellers"]`, `["link
 
 **`AISection`** está com `hidden` no Tailwind — a feature de projeção de receita existe mas está desabilitada na UI; extraída para arquivo próprio para facilitar reativação futura.
 
+**Ações por linha**: botões diretos (ícones `Pencil` → editar, `Trash2` → excluir) na coluna Ações, sem menu de contexto ⋮. Abaixo dos botões aparece "Atualizado dd/MM HH:mm" (tooltip com a reputação do vendedor quando houver).
+
 ## Refactor 2026-05-30
 
 `LinksPage` reduzida de 925 → ~550 linhas. Modais inline substituídos por `AddLinkModal` e `EditLinkModal` (ambos usam `ui/Modal`). `AISection` extraída para `components/links/AISection.jsx`.

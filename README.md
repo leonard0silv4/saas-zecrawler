@@ -61,9 +61,9 @@ FRONTEND_URL=http://localhost:5173
 
 | Plano    | Preço      | Links | Sellers | Usuários | Contas ML | Módulos                                      |
 | -------- | ---------- | ----- | ------- | -------- | --------- | -------------------------------------------- |
-| Gratuito | R$ 0       | 5     | 1       | 1        | —         | Links, Análise de Preços, Seller Monitor      |
-| Starter  | R$ 19,90   | 30    | 5       | 2        | 1         | + Mercado Livre                              |
-| Pro      | R$ 29,90   | 50    | 10      | 6        | 3         | + Catálogo, Analytics & Vendas ML            |
+| Gratuito | R$ 0       | 5     | 1       | 1        | 1         | Links, Análise de Preços, Seller Monitor, Contas ML |
+| Starter  | R$ 19,90   | 30    | 5       | 2        | 2         | + Mercado Livre                              |
+| Pro      | R$ 29,90   | 50    | 10      | 6        | 4         | + Catálogo, Analytics & Vendas ML            |
 | Business | R$ 49,90   | 200   | 20      | 20       | 10        | + Mensagens ML, Central de Perguntas         |
 
 Configurados em `backend/config/plans.js`.
@@ -100,6 +100,8 @@ GET    /api/links/refresh/:storeName   (SSE)
 GET    /api/links/tags
 POST   /api/links/clear-rates/:storeName
 ```
+
+Dados dos produtos vêm da API oficial do Mercado Livre (`/products`, `/items`) usando o token de uma conta ML conectada do próprio usuário (todos os planos, inclusive o Gratuito, permitem ao menos 1). Sem conta ML conectada o cadastro retorna 422. Análise de Preços e Monitor de Sellers seguem a mesma regra.
 
 ### Catálogo (Pro+)
 

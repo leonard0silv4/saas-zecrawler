@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import Link from "../models/Link.js";
 import Conta from "../models/Conta.js";
 import { MODULES } from "../../config/plans.js";
-import { scrapeProductData } from "../utils/scraper.js";
+import { scrapeProductData, getOwnerMeliToken } from "../utils/scraper.js";
 import { resetStaleByTimeout } from "./scraperQueue.js";
 import { runAllActiveSellers } from "./sellerScraper.js";
 import { syncQuestionsForOwner } from "./meliMessagesService.js";
@@ -176,11 +176,14 @@ export function startCronJobs() {
 async function refreshUserLinks(ownerId) {
   try {
     const links = await Link.find({ ownerId }).sort({ createdAt: -1 });
+    if (!links.length) return;
+    const token = await getOwnerMeliToken(ownerId);
+    if (!token) return;
 
     for (const link of links) {
       try {
-        const scraped = await scrapeProductData(link.link, ownerId);
-        if (!scraped) continue;
+        const scraped = await scrapeProductData(link.link, ownerId, 3, token);
+        if (!scraped || scraped.error) continue;
 
         const newPrice = Number(scraped.offers?.price || 0);
         if (newPrice > 0 && link.nowPrice !== newPrice) {

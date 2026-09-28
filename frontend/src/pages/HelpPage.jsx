@@ -21,6 +21,7 @@ const MODULES = [
     to: "/links",
     what: "Adicione URLs de produtos do Mercado Livre para monitorar preços automaticamente. O sistema extrai preço atual, nome do produto, seller e mantém um histórico das últimas 20 atualizações.",
     steps: [
+      "Conecte ao menos 1 conta do Mercado Livre em Contas conectadas (disponível em todos os planos, inclusive o Gratuito) — os dados são consultados pela API oficial do ML",
       'Clique em "Novo link" e cole a URL do produto no ML (mercadolivre.com ou mercadolibre.com)',
       "Informe seu preço de referência para acompanhar a margem em relação à concorrência",
       "Adicione tags para organizar seus links por categoria, marca ou coleção",

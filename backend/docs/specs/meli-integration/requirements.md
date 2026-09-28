@@ -14,7 +14,7 @@ Gerencia a autenticação OAuth 2.0 com o Mercado Livre, sincronização de prod
 - Antes de salvar uma nova conta, verifica o limite de contas ML do plano (`planConfig.maxMeliAccounts`).
   - Reconexão de conta já existente (mesmo `user_id`) **não** é bloqueada pelo limite.
   - Limite excedido → página HTML de erro com link para `/plans`.
-  - Free plan (`maxMeliAccounts=0`) → sempre bloqueado (o módulo `meli` já é negado via `requireModule`, esta é uma segunda camada de segurança).
+  - Plano com `maxMeliAccounts=0` → sempre bloqueado (hoje nenhum plano; o Free permite 1 conta desde set/2026).
 - Salva a conta ML (`Conta`) com upsert por `user_id`.
 - Exibe página HTML de confirmação com redirect automático para `/meli` após 3 segundos.
 - Limpa `authError` ao reconectar uma conta.
@@ -23,10 +23,12 @@ Gerencia a autenticação OAuth 2.0 com o Mercado Livre, sincronização de prod
 
 | Plano    | Max. Contas ML |
 |----------|---------------|
-| Free     | 0 (bloqueado) |
-| Starter  | 1             |
-| Pro      | 3             |
+| Free     | 1             |
+| Starter  | 2             |
+| Pro      | 4             |
 | Business | 10            |
+
+Desde set/2026 Links, Análise de Preços e Monitor de Sellers usam a API oficial do ML com o token de uma conta conectada do próprio owner (`getOwnerMeliToken`, `src/utils/meliProductApi.js`) — por isso o módulo `meli` foi liberado no Free com 1 conta.
 
 Como `meliAnalytics`, `meliCatalog` e `meliMessages` são liberados a partir do plano Starter e todos reusam as mesmas contas ML conectadas, `maxMeliAccounts` passou a ser o gargalo relevante também para esses módulos (não só para o módulo `meli` em si).
 

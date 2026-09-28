@@ -206,17 +206,17 @@ export default function PriceAnalyzePage() {
       )}
 
       {cookiesAlert && !generating && (
-        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <AlertTriangle size={16} className="shrink-0 text-red-600" />
+        <div className="flex items-center gap-3 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+          <AlertTriangle size={16} className="shrink-0 text-orange-500" />
           <span>
-            Nenhum produto foi extraído. Seus cookies do Mercado Livre podem estar{" "}
-            <strong>desconfigurados ou expirados</strong>. O sistema não conseguiu buscar os dados.
+            Nenhum produto foi extraído. A análise consulta a API oficial do Mercado Livre e precisa de{" "}
+            <strong>ao menos 1 conta ML conectada</strong> com autorização válida.
           </span>
           <Link
-            to="/setup-cookies"
-            className="ml-auto shrink-0 rounded-lg bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 transition-colors"
+            to="/meli"
+            className="ml-auto shrink-0 rounded-lg bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 transition-colors"
           >
-            Configurar cookies →
+            Contas conectadas →
           </Link>
         </div>
       )}

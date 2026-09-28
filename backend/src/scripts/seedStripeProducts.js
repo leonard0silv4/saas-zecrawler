@@ -17,8 +17,8 @@ dotenv.config({ path: resolve(__dirname, "../../.env") });
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PAID_PLANS = [
-  { slug: "starter", name: "ML SmartHub Starter", price: 1990, description: "30 links, 5 sellers, 1 conta ML, analytics, catálogo ML, mensagens ML (100/mês)" },
-  { slug: "pro", name: "ML SmartHub Pro", price: 2990, description: "50 links, 10 sellers, 3 contas ML, mensagens ML (200/mês)" },
+  { slug: "starter", name: "ML SmartHub Starter", price: 1990, description: "30 links, 5 sellers, 2 contas ML, analytics, catálogo ML, mensagens ML (100/mês)" },
+  { slug: "pro", name: "ML SmartHub Pro", price: 2990, description: "50 links, 10 sellers, 4 contas ML, mensagens ML (200/mês)" },
   { slug: "business", name: "ML SmartHub Business", price: 4990, description: "200 links, 20 sellers, 10 contas ML, mensagens ML ilimitadas" },
 ];
 

@@ -11,5 +11,5 @@ Shell autenticado da aplicação.
 - Deve diferenciar bloqueio por plano e por permissão.
 - Deve exibir badge em Mensagens ML quando houver mensagens não lidas.
 - Deve exibir topbar mobile e sidebar deslizante.
-- Deve exibir banner de cookies quando owner não tem cookies ML configurados.
+- Deve exibir banner informativo (laranja) de cookies quando owner não tem cookies ML configurados.
 - Deve renderizar `OnboardingModal`.

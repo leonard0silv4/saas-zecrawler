@@ -8,9 +8,9 @@ Planos, checkout e assinatura em `/plans`.
 
 | Plano    | Preço      | Links | Sellers | Usuários | Times | Contas ML | Msgs ML/mês |
 |----------|-----------|-------|---------|----------|-------|-----------|-------------|
-| Gratuito | R$ 0      | 5     | 1       | 1        | 1     | —         | —           |
-| Starter  | R$ 19,90  | 30    | 5       | 2        | 1     | 1         | 100         |
-| Pro      | R$ 29,90 | 50    | 10      | 6        | 3     | 3         | 200         |
+| Gratuito | R$ 0      | 5     | 1       | 1        | 1     | 1         | —           |
+| Starter  | R$ 19,90  | 30    | 5       | 2        | 1     | 2         | 100         |
+| Pro      | R$ 29,90 | 50    | 10      | 6        | 3     | 4         | 200         |
 | Business | R$ 49,90 | 200   | 20      | 20       | 10    | 10        | Ilimitado   |
 
 Módulos `meliAnalytics`, `meliCatalog` e `meliMessages` disponíveis a partir do plano **Starter** (eram Pro+/exclusivo Business). Módulo `catalog` (Dimensões e Peso) disponível em **todos os planos**, incluindo o Gratuito.

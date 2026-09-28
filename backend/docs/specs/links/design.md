@@ -88,4 +88,17 @@ linkSchema.index({ ownerId: 1, sku: 1 });
 
 ## Cookies e Fallback
 
-`scrapeProductData` e `extractLinks` usam `loadCookiesWithFallback` (`src/utils/cookieLoader.js`). Se o usuário não tiver cookies, o sistema usa automaticamente o conjunto de cookies de outro usuário como fallback, evitando bloqueios de scraping.
+Cookies (`loadCookiesWithFallback`) não são mais usados pelo módulo de Links — ver seção abaixo.
+
+## Busca de produto via API oficial ML (`src/utils/meliProductApi.js`)
+
+Desde set/2026 o ML bloqueia scraping server-side: com cookies redireciona para `/captcha/wall/logged`; sem cookies devolve um desafio JS anti-bot (`/security/bot_challenge`, sem preço). Por isso `scrapeProductData`/`extractLinks` (`src/utils/scraper.js`) usam a API oficial:
+
+- **Token**: `getOwnerMeliToken(ownerId)` — contas ML conectadas do próprio owner (`Conta`, `renewToken`). Sem conta → `{ error: "NO_ACCOUNT" }` (não há fallback para contas de outros usuários).
+- **URL**: `parseMeliUrl` — `/p/MLB…` = produto de catálogo; `MLB-123…`, `?item_id=` ou `wid=` = anúncio. Fragmento `#…` é ignorado. Sem MLB → `{ error: "UNSUPPORTED_URL" }`.
+- **Catálogo**: `GET /products/{id}` (nome, fotos, `buy_box_winner` → preço/vendedor/fulfillment); sem buy box → menor preço de `GET /products/{id}/items`.
+- **Anúncio**: `GET /items/{id}` (título, fotos, preço, status, `catalog_listing`, `start_time`).
+- **Vendedor**: `GET /users/{seller_id}` → `nickname` e `seller_reputation.level_id` (`ratingSeller`).
+- **Listagem (lote)**: `GET /sites/MLB/search?q=` com o termo extraído da URL `lista.mercadolivre.com.br/<termo>`.
+- `POST /links` responde 422 com mensagem específica (`NO_ACCOUNT`, `UNSUPPORTED_URL`, `NOT_FOUND`) ou genérica; nunca cria link vazio.
+- `refresh`, `storeBatch` e o cron obtêm o token uma vez e reutilizam em todos os links. `refresh` preenche `name`, `image`, `sku` e `dateMl` quando vazios.

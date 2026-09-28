@@ -13,3 +13,8 @@
 - [ ]* 6. Adicionar campo `priceAlert` para notificar quando preço cai abaixo de um threshold
 - [ ]* 7. Exportar links para CSV/XLS
 - [ ]* 8. Adicionar suporte a links de outros marketplaces além do ML
+
+## Fixes
+
+- [x] Fix (set/2026): links cadastrados vazios (sem foto/preço/nome). ML passou a bloquear scraping (captcha wall com cookies, bot challenge sem cookies). Cadastro/refresh/cron migrados para a API oficial (`src/utils/meliProductApi.js`) com token de conta ML conectada do próprio owner. Testes de `parseMeliUrl` em `src/tests/linkScraper.test.js`.
+- [ ] Validar `/sites/MLB/search` (importação em lote) com token em produção.

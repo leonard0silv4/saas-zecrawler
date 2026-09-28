@@ -16,3 +16,5 @@
 - [ ]* 5. Adicionar webhook ML para receber notificações de mudanças em anúncios em tempo real
 - [ ]* 6. Exibir `authError` na UI para alertar o usuário sobre contas que precisam ser reconectadas
 - [ ]* 7. Suporte a múltiplas contas ML com seleção na UI (atualmente usa a primeira conta disponível em algumas operações)
+
+- [x] Módulo `meli` liberado no Free (1 conta); limites Starter 2, Pro 4 (set/2026).

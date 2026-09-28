@@ -6,3 +6,4 @@
 - [x] Fix: overlay mobile `bg-black/50` (era `bg-gray-900/40`).
 - [ ] Adicionar teste visual/manual para estados mobile.
 - [ ] Avaliar topbar desktop comentada — reativar se necessário.
+- [x] Banner de cookies laranja (`bg-orange-500`, ícone `Info`) — apenas informativo (set/2026).

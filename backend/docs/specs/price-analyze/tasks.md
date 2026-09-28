@@ -11,3 +11,6 @@
 - [ ]* 4. Adicionar progresso via SSE durante a geração do XML (atualmente só loga no console)
 - [ ]* 5. Histórico de snapshots (atualmente só guarda o último)
 - [ ]* 6. Exportar análise em formato CSV além de XML
+
+- [x] Fix (set/2026): coleta migrada de scraping (bloqueado por captcha/bot challenge do ML) para a API oficial (`/products`, `/products/{id}/items`, `/items`, `/sites/MLB/search`) com token de conta ML conectada.
+- [ ] Validar `/sites/MLB/search` com token em produção (URLs de listagem).

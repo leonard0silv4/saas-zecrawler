@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Pencil, RefreshCw, Trash2, Tag, TrendingUp, TrendingDown, Minus,
-  Search, X, Link2, MoreVertical, ExternalLink, ChevronUp, ChevronDown,
+  Search, X, Link2, ExternalLink, ChevronUp, ChevronDown, Info,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import api from "../services/api";
@@ -19,6 +20,7 @@ const QK = {
   tags: () => ["links-tags"],
   sellers: () => ["links-sellers"],
   stats: () => ["links-stats"],
+  meliAccounts: () => ["meli-accounts"],
 };
 
 // ─── Página principal ────────────────────────────────────────────────────────
@@ -53,10 +55,6 @@ export default function LinksPage() {
   // Ordenação
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", dir: "desc" });
 
-  // Menu dropdown por linha
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const menuRef = useRef(null);
-
   // IA
   const [scenario, setScenario] = useState("conservative");
   const [winableSkus, setWinableSkus] = useState(1);
@@ -75,18 +73,6 @@ export default function LinksPage() {
     const t = setTimeout(() => setDebouncedSku(filterSku), 400);
     return () => clearTimeout(t);
   }, [filterSku]);
-
-  // Fechar menu ao clicar fora
-  useEffect(() => {
-    if (!openMenuId) return;
-    function handleClick(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpenMenuId(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [openMenuId]);
 
   const filters = { page, perPage, storeName, sortBy: sortConfig.key, sortDir: sortConfig.dir,
     tag: filterTag || undefined, search: debouncedSearch || undefined, sku: debouncedSku || undefined,
@@ -112,6 +98,14 @@ export default function LinksPage() {
     queryFn: () => api.get("/links/sellers").then(r => r.data),
     staleTime: 10 * 60 * 1000,
   });
+
+  // Cadastro/atualização de links usa a API do ML → exige ao menos 1 conta conectada
+  const { data: meliAccounts, isError: meliAccountsError } = useQuery({
+    queryKey: QK.meliAccounts(),
+    queryFn: () => api.get("/meli/accounts").then(r => r.data),
+    retry: false,
+  });
+  const noMeliAccount = !meliAccountsError && Array.isArray(meliAccounts) && meliAccounts.length === 0;
 
   const { data: aiData } = useQuery({
     queryKey: QK.stats(),
@@ -155,7 +149,6 @@ export default function LinksPage() {
     setEditMyPrice(link.myPrice != null ? String(link.myPrice) : "");
     setEditTags(link.tags?.join(", ") || "");
     setEditOpen(true);
-    setOpenMenuId(null);
   }
 
   async function handleEditSave() {
@@ -178,7 +171,6 @@ export default function LinksPage() {
   }
 
   function handleDelete(id) {
-    setOpenMenuId(null);
     setConfirmDialog({
       title: "Remover link",
       message: "O link será removido permanentemente.",
@@ -271,6 +263,21 @@ export default function LinksPage() {
           </button>
         </div>
       </div>
+
+      {/* Aviso: conta ML necessária */}
+      {noMeliAccount && (
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+          <Info size={16} className="shrink-0 text-orange-500" />
+          <span>
+            É necessário ter <strong>ao menos 1 conta do Mercado Livre conectada</strong> para cadastrar e atualizar links.
+            Os dados dos produtos são consultados pela API oficial do Mercado Livre.
+          </span>
+          <Link to="/meli"
+            className="sm:ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors">
+            Conectar conta
+          </Link>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="mb-4">
@@ -588,47 +595,28 @@ export default function LinksPage() {
                         </span>
                       </td>
 
-                      {/* Ações — menu ⋮ */}
+                      {/* Ações */}
                       <td className="px-4 py-3 text-right">
-                        <div className="relative inline-block" ref={openMenuId === link._id ? menuRef : null}>
+                        <div className="inline-flex items-center gap-1">
                           <button
-                            onClick={() => setOpenMenuId((prev) => prev === link._id ? null : link._id)}
+                            onClick={() => openEdit(link)}
+                            title="Editar SKU / Preço"
                             className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700">
-                            <MoreVertical size={15} />
+                            <Pencil size={15} />
                           </button>
-
-                          {openMenuId === link._id && (
-                            <div className="absolute right-0 top-full mt-1 z-30 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 text-left">
-                              {/* Info */}
-                              <div className="px-3 py-2 border-b border-gray-50">
-                                {link.updatedAt && (
-                                  <p className="text-xs text-gray-400">
-                                    Atualizado: {format(new Date(link.updatedAt), "dd/MM/yy HH:mm")}
-                                  </p>
-                                )}
-                                {link.sku && (
-                                  <p className="text-xs text-gray-500 font-mono mt-0.5">MLB: {link.sku}</p>
-                                )}
-                                {link.ratingSeller && (
-                                  <p className="text-xs text-gray-400 mt-0.5">Reputação: {link.ratingSeller}</p>
-                                )}
-                              </div>
-                              {/* Ações */}
-                              <button
-                                onClick={() => openEdit(link)}
-                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                <Pencil size={13} className="text-gray-400" />
-                                Editar SKU / Preço
-                              </button>
-                              <button
-                                onClick={() => handleDelete(link._id)}
-                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50">
-                                <Trash2 size={13} />
-                                Excluir do acompanhamento
-                              </button>
-                            </div>
-                          )}
+                          <button
+                            onClick={() => handleDelete(link._id)}
+                            title="Excluir do acompanhamento"
+                            className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500">
+                            <Trash2 size={15} />
+                          </button>
                         </div>
+                        {link.updatedAt && (
+                          <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap"
+                            title={link.ratingSeller ? `Reputação: ${link.ratingSeller}` : undefined}>
+                            Atualizado {format(new Date(link.updatedAt), "dd/MM HH:mm")}
+                          </p>
+                        )}
                       </td>
                     </tr>
                   );

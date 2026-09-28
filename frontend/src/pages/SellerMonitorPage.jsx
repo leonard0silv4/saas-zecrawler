@@ -255,7 +255,7 @@ export default function SellerMonitorPage() {
           <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
             <Package size={40} className="opacity-30 mb-3" />
             <p className="font-medium text-gray-700">Selecione um seller</p>
-            <p className="text-sm text-center mt-1">URLs de listagem do Mercado Livre (página da loja).</p>
+            <p className="text-sm text-center mt-1">Listagem do vendedor no Mercado Livre (URL com _CustId_ ou /perfil/NICK). Requer conta ML conectada.</p>
           </div>
         ) : (
           <>

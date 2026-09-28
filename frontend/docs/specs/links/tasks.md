@@ -7,3 +7,5 @@
 - [x] LinksPage reduzida de 925 → ~550 linhas.
 - [ ] Adicionar teste de cálculo das projeções (AISection).
 - [ ] Reativar AISection removendo a classe `hidden` quando feature for liberada.
+- [x] Ações da linha (editar/excluir) como botões diretos, removido menu de contexto ⋮ (set/2026).
+- [x] Aviso de conta ML obrigatória na LinksPage (set/2026).

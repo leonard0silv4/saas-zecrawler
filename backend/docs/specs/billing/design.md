@@ -75,7 +75,7 @@ checkTeamLimit:
   → Team.countDocuments({ ownerId }) >= planConfig.maxTeams ? 403 : next()
 
 checkMeliAccountLimit (exportada de plan.js, chamada dentro de MeliController.authCallback):
-  → planConfig.maxMeliAccounts === 0 ? 403 : next()
+  → planConfig.maxMeliAccounts === 0 ? 403 : next()   (hoje todos os planos têm ≥ 1)
   → Conta.exists({ user_id, ownerId }) → é reconexão? → skip check
   → Conta.countDocuments({ ownerId, disabled: {$ne:true} }) >= planConfig.maxMeliAccounts ? 403 HTML : prossegue
 

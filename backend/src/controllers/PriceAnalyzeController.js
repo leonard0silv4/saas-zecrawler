@@ -48,8 +48,8 @@ export default {
   },
 
   /**
-   * Gera XML a partir dos links cadastrados (fluxo do script Python, em Node).
-   * Envia cookies ML (tela de cookies + opcional ML_COOKIE_STRING no .env).
+   * Gera XML a partir dos links cadastrados, consultando a API oficial do ML
+   * com o token de uma conta ML conectada do próprio owner.
    */
   async generate(req, res) {
     try {
@@ -101,6 +101,7 @@ export default {
           "XML salvo. Use GET /price-analyze/xml ou recarregue a tela de análise.",
       });
     } catch (err) {
+      if (err.code === "NO_ACCOUNT") return res.status(422).json({ error: err.message });
       console.error("[PriceAnalyze] generate:", err);
       return res.status(500).json({ error: "Erro ao gerar XML", details: err.message });
     }

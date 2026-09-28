@@ -10,12 +10,12 @@ Gerencia planos de assinatura (Free, Starter, Pro, Business), integração com S
 
 | Plano    | Preço      | Links | Sellers | Usuários Time | Times | Contas ML | Msgs ML/mês | Módulos Adicionais          |
 |----------|-----------|-------|---------|---------------|-------|-----------|-------------|-----------------------------|
-| Free     | R$ 0      | 5     | 1       | 1             | 1     | 0         | 0           | links, priceAnalyze, sellerMonitor, catalog |
-| Starter  | R$ 19,90  | 30    | 5       | 2             | 1     | 1         | 100         | + meli, meliAnalytics, meliCatalog, meliMessages |
-| Pro      | R$ 29,90 | 50    | 10      | 6             | 3     | 3         | 200         | (mesmos módulos do Starter) |
+| Free     | R$ 0      | 5     | 1       | 1             | 1     | 1         | 0           | links, priceAnalyze, sellerMonitor, catalog, meli |
+| Starter  | R$ 19,90  | 30    | 5       | 2             | 1     | 2         | 100         | + meliAnalytics, meliCatalog, meliMessages |
+| Pro      | R$ 29,90 | 50    | 10      | 6             | 3     | 4         | 200         | (mesmos módulos do Starter) |
 | Business | R$ 49,90 | 200   | 20      | 20            | 10    | 10        | ilimitado   | (mesmos módulos do Starter) |
 
-Todo módulo é liberado a partir de qualquer plano pago (Starter+); `catalog` (Dimensões e Peso) é liberado inclusive no Free. A diferenciação entre planos pagos passa a ser por limite numérico (`maxMeliAccounts`, `maxMonthlyMessages`), não por bloqueio de módulo.
+Todo módulo é liberado a partir de qualquer plano pago (Starter+); `catalog` (Dimensões e Peso) e `meli` (conexão de contas ML, 1 conta) são liberados inclusive no Free — Links, Análise de Preços e Monitor de Sellers consultam a API oficial do ML e exigem ao menos 1 conta conectada. A diferenciação entre planos pagos passa a ser por limite numérico (`maxMeliAccounts`, `maxMonthlyMessages`), não por bloqueio de módulo.
 
 ---
 

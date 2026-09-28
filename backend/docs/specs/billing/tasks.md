@@ -36,3 +36,4 @@
 - [ ]* 5. Adicionar endpoint para listar histórico de faturas via Stripe API
 - [ ]* 6. Implementar notificação por email quando subscription entra em `past_due`
 - [ ]* 7. Adicionar suporte a cupons de desconto no checkout (já tem `allow_promotion_codes: true`, mas sem UI dedicada)
+- [x] Limites de contas ML (set/2026): Free 1 (módulo `meli` liberado no Free), Starter 2, Pro 4, Business 10 — necessário porque Links/Análise de Preços/Monitor de Sellers passaram a usar a API oficial do ML com token da conta do próprio usuário.

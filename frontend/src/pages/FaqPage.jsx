@@ -39,7 +39,7 @@ const FAQ_GROUPS = [
       },
       {
         q: "Posso conectar mais de uma conta do Mercado Livre?",
-        a: "O plano Starter já permite conectar 1 conta ML. Nos planos Pro e Business você pode conectar múltiplas contas (até 3 e até 10, respectivamente) e gerenciá-las pelo mesmo painel. Ideal para operações com mais de uma loja ou marca.",
+        a: "Sim. O plano Gratuito permite conectar 1 conta ML, o Starter até 2, o Pro até 4 e o Business até 10 contas e gerenciá-las pelo mesmo painel. Ideal para operações com mais de uma loja ou marca.",
       },
       {
         q: "Como funciona a gestão de perguntas do Mercado Livre?",

@@ -5,6 +5,10 @@ import SellerAlert from "../models/SellerAlert.js";
 import { getOwnerId } from "../middleware/auth.js";
 import { runScraperForSeller } from "../services/sellerScraper.js";
 import { enqueueSellerScrape, isSellerPending } from "../services/scraperQueue.js";
+import { parseListingUrl } from "../utils/meliProductApi.js";
+
+const INVALID_SELLER_URL =
+  "URL não reconhecida. Use a listagem do vendedor (com _CustId_), o perfil (/perfil/NICK) ou uma busca (lista.mercadolivre.com.br/termo).";
 
 const oid = (id) => new mongoose.Types.ObjectId(String(id));
 
@@ -34,6 +38,7 @@ export default {
       const ownerId = oid(getOwnerId(req));
       const { url, name } = req.body;
       if (!url) return res.status(400).json({ error: "URL é obrigatória" });
+      if (!parseListingUrl(url)) return res.status(400).json({ error: INVALID_SELLER_URL });
 
       const exists = await SellerPage.findOne({ url, ownerId });
       if (exists) return res.status(409).json({ error: "Seller já cadastrado" });
@@ -59,6 +64,9 @@ export default {
 
       const urlChanged = url && url.trim() !== seller.url;
 
+      if (urlChanged && !parseListingUrl(url)) {
+        return res.status(400).json({ error: INVALID_SELLER_URL });
+      }
       if (urlChanged) {
         const conflict = await SellerPage.findOne({ url: url.trim(), ownerId, _id: { $ne: seller._id } });
         if (conflict) return res.status(409).json({ error: "URL já cadastrada para outro seller" });

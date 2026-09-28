@@ -4,7 +4,7 @@ import api from "../services/api";
 /**
  * Retorna a lista combinada e deduplicada de "minhas lojas" (uppercase) do cliente logado:
  * - mySellerNames salvo em Settings (GET /settings)
- * - nicknames das contas ML conectadas (GET /meli/accounts) — 403 silenciado (free plan)
+ * - nicknames das contas ML conectadas (GET /meli/accounts) — 403 silenciado (sem permissão do módulo)
  *
  * @returns {{ myStores: string[], loading: boolean }}
  */

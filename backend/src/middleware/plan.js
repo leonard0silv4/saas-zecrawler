@@ -89,7 +89,7 @@ export async function checkSellerMonitorLimit(req, res, next) {
 
 /**
  * Checks if owner can connect more ML accounts based on plan limits.
- * Free plan (maxMeliAccounts=0) is always blocked.
+ * A plan with maxMeliAccounts=0 is always blocked.
  * Pass isReconnect=true to skip the check when updating an existing account.
  */
 export async function checkMeliAccountLimit(req, res, next) {

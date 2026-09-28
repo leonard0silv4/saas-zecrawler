@@ -6,3 +6,4 @@
 - [ ] Revisar mensagens para estados de assinatura vencida/manual.
 - [ ] Aplicar mesmas melhorias visuais em PublicPricingPage.
 - [x] Reestruturação de planos (set/2026): `catalog`/`meliAnalytics`/`meliCatalog`/`meliMessages` liberados a partir do Starter (catalog inclusive Free); `GET /plans` passa a expor `modules`; `PublicPricingPage` gera a tabela comparativa dinamicamente em vez de `FEATURE_ROWS` hardcoded; `PlansPage`/`SettingsPlanSection` exibem `maxMeliAccounts`/`maxMonthlyMessages`; `AuthContext` perdeu o `moduleMap` de fallback.
+- [x] Limites de contas ML (set/2026): Free 1, Starter 2, Pro 4, Business 10; módulo `meli` liberado no Free. Landing (`landing/index.html`), FAQ e Ajuda atualizados.

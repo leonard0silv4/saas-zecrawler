@@ -1,29 +1,14 @@
-import superagent from "superagent";
-import * as cheerio from "cheerio";
 import { format } from "date-fns";
 
 import SellerPage from "../models/SellerPage.js";
 import SellerProduct from "../models/SellerProduct.js";
 import SellerAlert from "../models/SellerAlert.js";
-import { loadCookiesWithFallback } from "../utils/cookieLoader.js";
-
-function extractSkuFromUrl(url) {
-  // Universal listing: /up/MLBU123456789 or /up/MLBP...
-  const upMatch = url.match(/\/up\/(MLB[A-Z0-9]+)/i);
-  if (upMatch) return upMatch[1].toUpperCase();
-  // Standard item: MLB-123456789 or MLB123456789 in path
-  const stdMatch = url.match(/MLB-?(\d+)/i);
-  return stdMatch ? `MLB${stdMatch[1]}` : "";
-}
-
-function cleanUrl(url) {
-  try {
-    const parsed = new URL(url);
-    return `${parsed.origin}${parsed.pathname}`;
-  } catch {
-    return url.split("#")[0].split("?")[0];
-  }
-}
+import {
+  getOwnerMeliToken,
+  parseListingUrl,
+  searchMeliItems,
+  itemPermalink,
+} from "../utils/meliProductApi.js";
 
 const MIN_PRICE_CHANGE_ALERT_RATIO = 0.01;
 
@@ -34,142 +19,33 @@ function isSignificantPriceChangeForAlert(oldPrice, newPrice) {
   return Math.abs(newPrice - oldPrice) / oldPrice > MIN_PRICE_CHANGE_ALERT_RATIO;
 }
 
-const ML_PAGE_SIZE = 48;
-
-function buildPageUrl(baseUrl, pageNumber) {
-  if (pageNumber <= 1) return baseUrl;
-  const offset = 1 + (pageNumber - 1) * ML_PAGE_SIZE;
-  // Strip hash fragments, existing _Desde_ and _NoIndex_True before rebuilding
-  const cleanBase = baseUrl
-    .split("#")[0]
-    .replace(/_Desde_\d+_NoIndex_True/gi, "")
-    .replace(/_Desde_\d+/gi, "")
-    .replace(/\/_NoIndex_True/gi, "")
-    .replace(/\/$/, "");
-  // ML URLs whose last path segment starts with "_" (e.g. _CustId_, _OrderId_) use
-  // underscore-concatenated params — no slash before _Desde_.
-  const lastSegment = cleanBase.split("/").pop() || "";
-  const sep = lastSegment.startsWith("_") ? "" : "/";
-  return `${cleanBase}${sep}_Desde_${offset}_NoIndex_True`;
-}
-
-function parseTotalCount($) {
-  const candidates = [
-    $(".ui-search-search-result__quantity-results").text(),
-    $('[class*="quantity-results"]').text(),
-    $('[class*="result-info"]').text(),
-  ];
-  for (const text of candidates) {
-    const match = text.match(/([\d.,]+)\s*resultado/i);
-    if (match) return parseInt(match[1].replace(/[.,]/g, ""), 10);
+/**
+ * Lista os anúncios do vendedor via /sites/MLB/search (API oficial).
+ * O scraping da página de listagem foi abandonado em set/2026 (captcha / bot challenge).
+ */
+async function fetchSellerProducts(sellerUrl, ownerId) {
+  const params = parseListingUrl(sellerUrl);
+  if (!params) {
+    throw Object.assign(new Error("URL do vendedor sem _CustId_, perfil ou termo de busca"), { code: "UNSUPPORTED_URL" });
   }
-  return null;
-}
+  const token = await getOwnerMeliToken(ownerId);
+  if (!token) throw Object.assign(new Error("Nenhuma conta ML conectada"), { code: "NO_ACCOUNT" });
 
-const ML_USER_AGENT =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
-
-function isBotBlockPage(html) {
-  return html.includes("suspicious-traffic-frontend") || html.includes("robot_icon");
-}
-
-async function extractProductsFromPage(url, ownerId) {
-  const { cookieString } = await loadCookiesWithFallback(ownerId);
-  const request = superagent
-    .get(url)
-    .set("User-Agent", ML_USER_AGENT)
-    .timeout({ response: 10000, deadline: 15000 });
-  if (cookieString) request.set("Cookie", cookieString);
-
-  const response = await request;
-
-  if (isBotBlockPage(response.text)) {
-    console.warn(`[SellerScraper] Bloqueio bot detection em ${url} — configure cookies válidos do ML`);
-    return { products: [], totalCount: null };
-  }
-  const $ = cheerio.load(response.text);
-  const products = [];
+  const results = await searchMeliItems(params, token);
   const seen = new Set();
-
-  // Support both ML search pages (.ui-search-layout__item) and Mercado Shops pages ([class*='poly-card'])
-  const itemSelector =
-    $(".ui-search-layout__item").length > 0 ? ".ui-search-layout__item" : "[class*='poly-card']";
-
-  $(itemSelector).each((_, el) => {
-    if ($(el).find('[class*="ads-promotions"], [class*="pub-label"], [class*="ads-label"]').length > 0) return;
-    const linkEl = $(el)
-      .find(
-        "a.poly-component__title, .poly-component__title a, .ui-search-item__group__element, .ui-search-result__wrapper a"
-      )
-      .first();
-    const href = linkEl.attr("href");
-    if (!href || href === "#") return;
-    const productUrl = cleanUrl(href);
-    if (!productUrl || seen.has(productUrl)) return;
-    const sku = extractSkuFromUrl(productUrl);
-    if (!sku) return;
-    seen.add(productUrl);
-    const name = $(el).find(".poly-component__title, .ui-search-item__title").first().text().trim();
-    const imgEl = $(el).find("img").first();
-    const image =
-      imgEl.attr("src") || imgEl.attr("data-src") || imgEl.attr("data-lazy") || "";
-    // Use .poly-price__current to get the "por" (selling) price and avoid the
-    // "de" (original/strikethrough) price that appears first in the DOM on discounted items.
-    const priceWrapper = $(el).find(".poly-price__current").length
-      ? $(el).find(".poly-price__current")
-      : $(el);
-    const fractionText = priceWrapper
-      .find(".andes-money-amount__fraction")
-      .first()
-      .text()
-      .trim()
-      .replace(/\./g, "")
-      .replace(/,/g, "");
-    const centsText = priceWrapper.find(".andes-money-amount__cents").first().text().trim();
-    const price = fractionText ? parseFloat(`${fractionText}.${centsText || "00"}`) : 0;
-    if (productUrl && name) products.push({ url: productUrl, name, image, price, sku });
-  });
-
-  return { products, totalCount: parseTotalCount($) };
-}
-
-async function scrapeAllPages(baseUrl, ownerId) {
-  const allProducts = [];
-  const globalSeen = new Set();
-  const MAX_PAGES = 200;
-
-  const addProducts = (products) => {
-    for (const p of products) {
-      if (!globalSeen.has(p.url)) {
-        globalSeen.add(p.url);
-        allProducts.push(p);
-      }
-    }
-  };
-
-  const firstResult = await extractProductsFromPage(baseUrl, ownerId);
-  addProducts(firstResult.products);
-  const totalCount = firstResult.totalCount;
-  const totalPages = totalCount ? Math.min(Math.ceil(totalCount / ML_PAGE_SIZE), MAX_PAGES) : MAX_PAGES;
-
-  if (firstResult.products.length === 0) return allProducts;
-
-  for (let page = 2; page <= totalPages; page++) {
-    const pageUrl = buildPageUrl(baseUrl, page);
-    await new Promise((r) => setTimeout(r, 600));
-    let result;
-    try {
-      result = await extractProductsFromPage(pageUrl, ownerId);
-    } catch (err) {
-      console.error(`[SellerScraper] Erro na página ${page}:`, err.message);
-      break;
-    }
-    if (result.products.length === 0) break;
-    addProducts(result.products);
-    if (!totalCount && result.products.length < ML_PAGE_SIZE) break;
+  const products = [];
+  for (const r of results) {
+    if (!r.id || seen.has(r.id)) continue;
+    seen.add(r.id);
+    products.push({
+      url: (r.permalink || itemPermalink(r.id)).split("?")[0].split("#")[0],
+      name: r.title || "",
+      image: (r.thumbnail || "").replace(/^http:/, "https:"),
+      price: Number(r.price) || 0,
+      sku: r.id,
+    });
   }
-
-  return allProducts;
+  return products;
 }
 
 export async function runScraperForSeller(seller) {
@@ -184,9 +60,10 @@ export async function runScraperForSeller(seller) {
   try {
     let scrapedProducts;
     try {
-      scrapedProducts = await scrapeAllPages(seller.url, ownerId);
+      scrapedProducts = await fetchSellerProducts(seller.url, ownerId);
     } catch (err) {
-      console.error(`[SellerScraper] Erro ao scrape seller ${seller._id}:`, err.message);
+      const detail = err.response ? `${err.response.status} ${JSON.stringify(err.response.data)}` : err.message;
+      console.error(`[SellerScraper] Erro ao buscar seller ${seller._id}: ${detail}`);
       return;
     }
 
@@ -198,7 +75,11 @@ export async function runScraperForSeller(seller) {
     await SellerProduct.updateMany({ sellerId: seller._id }, { $set: { isNew: false, priceChanged: false } });
 
     for (const scraped of scrapedProducts) {
-      const existing = await SellerProduct.findOne({ sellerId: seller._id, url: scraped.url });
+      // Casa também por SKU: URLs antigas (scraping) podem diferir do permalink da API
+      const existing = await SellerProduct.findOne({
+        sellerId: seller._id,
+        $or: [{ url: scraped.url }, { sku: scraped.sku }],
+      });
 
       if (!existing) {
         let newProduct;
@@ -241,6 +122,8 @@ export async function runScraperForSeller(seller) {
 
         await SellerProduct.findByIdAndUpdate(existing._id, {
           $set: {
+            url: scraped.url,
+            sku: scraped.sku,
             name: scraped.name,
             image: scraped.image || existing.image,
             currentPrice: scraped.price,

@@ -12,3 +12,6 @@
 - [ ]* 5. Adicionar filtro de alertas por tipo (price_change / new_product) e por data
 - [ ]* 6. Configurar intervalo de scraping por seller (atualmente só diário via cron)
 - [ ]* 7. Notificação por email quando novos alertas são gerados
+
+- [x] Fix (set/2026): coleta migrada de scraping HTML para `GET /sites/MLB/search` (API oficial) com token de conta ML conectada; validação de URL do seller no cadastro.
+- [ ] Validar `/sites/MLB/search?seller_id=` com token em produção.

@@ -15,7 +15,7 @@ POST /price-analyze/generate { storeName?, limit? }
   → req.setTimeout(0)  // sem timeout
   → Link.find({ ownerId, storeName? }).limit(limit)
   → scrapePriceAnalyzeFromLinks(links, ownerId, { onProgress })
-      → para cada link: scraping ML + extração de dados de preço
+      → para cada link: consulta API oficial ML (catálogo / anúncio / busca)
       → retorna rows: [{ sku, nome, preco, vendedor, ... }]
   → buildPriceAnalyzeXml(rows, now)
   → PriceAnalyzeSnapshot.findOneAndUpdate({ ownerId }, { xml, extractionDate, rowCount, sourceUrlCount }, { upsert: true })
@@ -45,10 +45,18 @@ GET /price-analyze { storeName? }
 - Compatível com ferramentas de precificação externas.
 
 ### `scrapePriceAnalyzeFromLinks(links, ownerId, options)`
-- Faz scraping de cada link usando cookies ML do owner.
+- Consulta a **API oficial do ML** com token de conta conectada do próprio owner (`getOwnerMeliToken`). Sem conta → erro `NO_ACCOUNT` → `POST /price-analyze/generate` responde 422.
 - Chama `options.onProgress({ current, total, url })` a cada iteração.
-- Retorna array de rows com dados de preço.
+- Retorna rows `{ nome, preco, vendedor, id_produto, url, url_original, grupo, status }` com `preco > 0`.
 
-## Configuração de Cookies
+## Coleta via API oficial (set/2026)
 
-O scraping usa `loadCookiesWithFallback` (`src/utils/cookieLoader.js`) para resolver os cookies ML do owner. Se o owner não tiver cookies cadastrados, o sistema usa automaticamente cookies de outro usuário como fallback. O `mlPriceAnalyzeScraper` ainda mescla o resultado com `ML_COOKIE_STRING` (env var) quando disponível.
+O scraping de HTML foi removido: o ML passou a responder com captcha wall (com cookies) e bot challenge (sem cookies). `classifyMercadoLivreUrl` decide o fluxo:
+
+| Tipo | URL | Endpoints | grupo |
+|---|---|---|---|
+| `catalog` | `/p/MLB…` (com ou sem `/s`) | `GET /products/{id}` + `GET /products/{id}/items` (todas as ofertas, paginado); fallback `buy_box_winner` | id do produto |
+| `item` | `produto.mercadolivre.com.br/MLB-…`, `?item_id=` | `GET /items/{id}` | `catalog_product_id` ou id |
+| `listing` | `lista.mercadolivre…`, `?q=`, `_CustId_`, `/perfil/` | `GET /sites/MLB/search` (até 200 resultados) | `catalog_product_id` ou id |
+
+Nickname do vendedor via `GET /users/{id}` (cache em memória em `fetchSeller`). Helpers em `src/utils/meliProductApi.js`.

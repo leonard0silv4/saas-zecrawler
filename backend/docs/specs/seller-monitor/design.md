@@ -19,8 +19,9 @@ PUT    /seller-monitor/alerts/:alertId/read     →  requireModule("sellerMonito
 
 ```
 runScraperForSeller(seller):
-  → sellerScraper.js: faz HTTP request para seller.url
-  → Cheerio: extrai lista de produtos (url, name, image, sku, price)
+  → sellerScraper.js: parseListingUrl(seller.url) → params de busca (seller_id / nickname / q)
+  → fetchSellerProducts: GET /sites/MLB/search paginado (50/pg, até 1000) com token de conta ML conectada
+  → produtos { url: permalink, name: title, image: thumbnail, sku: item id, price }
   → para cada produto:
       SellerProduct.findOne({ sellerId, url })
       → não existe: cria com isNew=true → SellerAlert.create({ type: "new_product" })
@@ -56,42 +57,12 @@ sellerPageSchema.index({ ownerId: 1, url: 1 }, { unique: true });
 sellerProductSchema.index({ sellerId: 1, url: 1 }, { unique: true });
 ```
 
-## Cookies e Fallback
+## Coleta via API oficial (set/2026)
 
-`extractProductsFromPage` usa `loadCookiesWithFallback` (`src/utils/cookieLoader.js`). Se o owner não tiver cookies configurados, o sistema usa automaticamente cookies de outro usuário como fallback para manter o scraping funcional.
+O scraping HTML (cookies + Cheerio + paginação `_Desde_`) foi removido: o ML passou a bloquear requisições server-side com captcha wall / bot challenge.
 
-## Paginação
-
-`buildPageUrl(baseUrl, pageNumber)` gera a URL de cada página. Regras:
-
-- URLs cujo último segmento de path começa com `_` (ex.: `_CustId_474495032`) usam
-  concatenação direta sem barra: `_CustId_474495032_Desde_49_NoIndex_True`
-- Demais URLs usam barra: `/televisores/_Desde_49_NoIndex_True`
-- `_NoIndex_True` é sempre adicionado nas páginas 2+ (formato canônico do ML para paginação)
-
-Essa distinção é necessária porque `/_CustId_XXX/_Desde_N` aponta para uma página diferente
-do ML (sem contexto de seller), causando falsos positivos e contagem errada de resultados.
-
-## Extração de SKU
-
-`extractSkuFromUrl` suporta dois formatos de URL do ML:
-
-| Formato | Exemplo | SKU extraído |
-|---|---|---|
-| Item padrão | `.../p/MLB123456789` | `MLB123456789` |
-| Listagem universal | `.../up/MLBU3496682231` | `MLBU3496682231` |
-
-## Filtragem de Produtos (HTML scraping)
-
-Três critérios aplicados em `extractProductsFromPage` para aceitar um item como produto:
-
-1. **Skip de patrocinados**: itens com classes `*ads-promotions*`, `*pub-label*` ou `*ads-label*`
-   são descartados — correspondem ao badge "Patrocinado" do ML (Poly e layout legado).
-   Na página `_CustId_`, resultados orgânicos = apenas produtos do seller monitorado;
-   apenas os patrocinados são de outros vendors.
-
-2. **Seletor raiz**: apenas `.ui-search-layout__item` — elemento específico da grade de
-   resultados ML. O seletor `.andes-card` foi removido por ser genérico demais.
-
-3. **URL com identificador MLB**: `extractSkuFromUrl` deve retornar SKU não-vazio.
-   URLs sem `MLB` ou `/up/MLB` no path são descartadas.
+- **Token**: `getOwnerMeliToken(ownerId)` (`src/utils/meliProductApi.js`) — conta ML conectada do próprio owner (obrigatória).
+- **URL do seller** → `parseListingUrl`: `_CustId_123` → `seller_id`; `/perfil/NICK` ou `/pagina/NICK` → `nickname`; `?q=` ou `lista.mercadolivre.com.br/<termo>` → `q` (combináveis). URL sem nada disso é rejeitada com 400 no cadastro/edição.
+- **Busca**: `searchMeliItems` pagina `GET /sites/MLB/search` (50 por página; a busca pública limita offset a 1000 itens).
+- **Casamento de produtos**: `SellerProduct` existente é encontrado por `url` **ou** `sku`; no update `url`/`sku` são migrados para o permalink/id da API, evitando alertas falsos de "novo produto" na primeira execução após a migração (itens antigos com SKU `MLBU…` de `/up/` ainda podem gerar um alerta único).
+- Patrocinados não aparecem na busca por `seller_id`, então o filtro de ads do HTML não é mais necessário.
