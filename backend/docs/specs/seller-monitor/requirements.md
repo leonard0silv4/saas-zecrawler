@@ -2,14 +2,15 @@
 
 ## Visão Geral
 
-Monitora páginas de vendedores concorrentes via scraping, detecta novos produtos e mudanças de preço, e gera alertas em tempo real via SSE.
+Monitora vendedores concorrentes dentro dos produtos de catálogo varridos pela API oficial do ML (anúncios, links e mais vendidos de categorias do owner), detecta novos produtos e mudanças de preço e gera alertas. Ver `design.md` → "Coleta via varredura de catálogos".
 
 ---
 
 ## Requisitos Funcionais
 
 ### RF-01 Cadastro de Seller
-- Aceita `url` (obrigatória) e `name` (opcional).
+- Aceita `{ mlSellerId, nickname }` (concorrente escolhido da varredura) **ou** `url` que identifique o vendedor (`/pagina/NICK`, `/perfil/NICK`, `_CustId_`), e `name` (opcional).
+- Vendedor não encontrado nos catálogos varridos → `noData = true`.
 - URL deve ser única por owner.
 - Ao cadastrar, inicia scraping inicial em background (não-bloqueante).
 - Respeita limite de sellers do plano (`checkSellerMonitorLimit`).
@@ -97,3 +98,10 @@ Monitora páginas de vendedores concorrentes via scraping, detecta novos produto
 - **P2**: Ao atualizar a URL de um seller, produtos e alertas antigos devem ser removidos antes do novo scraping.
 - **P3**: `runScrape` deve retornar 409 se `seller.scraping === true` ou `isSellerPending(seller._id) === true`.
 - **P4**: Alertas de um seller não devem ser visíveis para owners diferentes do dono do seller.
+
+### RF-08 Varredura de catálogos (set/2026)
+- `GET /seller-monitor/scan` retorna estado (`running`, `lastRunAt`, `catalogCount`, `sellerCount`, `categories`, `lastError`).
+- `POST /seller-monitor/scan` dispara varredura + atualização de todos os sellers do owner (409 se rodando, 429 se < 15 min da anterior).
+- `PUT /seller-monitor/scan/categories` salva até 5 categorias `[{ id, name }]` para incluir os mais vendidos.
+- `GET /seller-monitor/categories` lista categorias do ML (raiz ou filhas via `?parent=`).
+- `GET /seller-monitor/competitors` lista concorrentes encontrados (`sellerId`, `nickname`, `catalogCount`, `cheapest`, `monitored`).

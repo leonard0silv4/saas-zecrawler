@@ -103,6 +103,25 @@ POST   /api/links/clear-rates/:storeName
 
 Dados dos produtos vêm da API oficial do Mercado Livre (`/products`, `/items`) usando o token de uma conta ML conectada do próprio usuário (todos os planos, inclusive o Gratuito, permitem ao menos 1). Sem conta ML conectada o cadastro retorna 422. Análise de Preços e Monitor de Sellers seguem a mesma regra.
 
+### Monitor de Sellers (todos os planos)
+
+```
+GET    /api/seller-monitor
+POST   /api/seller-monitor                 { mlSellerId, nickname } | { url, name }
+PUT    /api/seller-monitor/:id
+DELETE /api/seller-monitor/:id
+GET    /api/seller-monitor/:id/products
+POST   /api/seller-monitor/:id/run
+GET    /api/seller-monitor/:id/alerts
+GET    /api/seller-monitor/scan            estado da varredura de catálogos
+POST   /api/seller-monitor/scan            dispara varredura (1x a cada 15 min)
+PUT    /api/seller-monitor/scan/categories { categories: [{ id, name }] }  (máx. 5)
+GET    /api/seller-monitor/categories      ?parent=MLBxxx
+GET    /api/seller-monitor/competitors
+```
+
+A API oficial do ML não lista anúncios de outros vendedores; o monitor varre os produtos de catálogo do usuário (anúncios da conta conectada, Links de catálogo e mais vendidos das categorias escolhidas) via `/products/{id}/items` e mostra os concorrentes dentro deles.
+
 ### Catálogo (Pro+)
 
 ```

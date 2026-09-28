@@ -4,6 +4,11 @@
 
 ```
 GET    /seller-monitor                          →  requireModule("sellerMonitor") → index
+GET    /seller-monitor/scan                     →  requireModule("sellerMonitor") → scanStatus
+POST   /seller-monitor/scan                     →  requireModule("sellerMonitor") → runScan (202; 409 rodando; 429 < 15 min)
+PUT    /seller-monitor/scan/categories          →  requireModule("sellerMonitor") → updateCategories ([{ id, name }], máx 5)
+GET    /seller-monitor/categories[?parent=MLBx] →  requireModule("sellerMonitor") → categories (raiz em cache 24h)
+GET    /seller-monitor/competitors              →  requireModule("sellerMonitor") → competitors
 POST   /seller-monitor                          →  requireModule + checkSellerMonitorLimit → store
 PUT    /seller-monitor/:id                      →  requireModule("sellerMonitor") → update
 DELETE /seller-monitor/:id                      →  requireModule("sellerMonitor") → destroy
@@ -57,12 +62,19 @@ sellerPageSchema.index({ ownerId: 1, url: 1 }, { unique: true });
 sellerProductSchema.index({ sellerId: 1, url: 1 }, { unique: true });
 ```
 
-## Coleta via API oficial (set/2026)
+## Coleta via varredura de catálogos (set/2026)
 
-O scraping HTML (cookies + Cheerio + paginação `_Desde_`) foi removido: o ML passou a bloquear requisições server-side com captcha wall / bot challenge.
+A API oficial do ML **não** permite listar anúncios de outro vendedor: `/users/{id}/items/search` ("Searching another user items is restricted") e `/sites/MLB/search` respondem 403 (validado em produção). Ela permite listar **todos os vendedores de um produto de catálogo** (`/products/{id}/items`). O monitor passou a funcionar sobre uma varredura de catálogos por owner (`src/services/catalogScanner.js`):
 
-- **Token**: `getOwnerMeliToken(ownerId)` (`src/utils/meliProductApi.js`) — conta ML conectada do próprio owner (obrigatória).
-- **URL do seller** → `parseListingUrl`: `_CustId_123` → `seller_id`; `/perfil/NICK` ou `/pagina/NICK` → `nickname`; `?q=` ou `lista.mercadolivre.com.br/<termo>` → `q` (combináveis). URL sem nada disso é rejeitada com 400 no cadastro/edição.
-- **Busca**: `searchMeliItems` pagina `GET /sites/MLB/search` (50 por página; a busca pública limita offset a 1000 itens).
-- **Casamento de produtos**: `SellerProduct` existente é encontrado por `url` **ou** `sku`; no update `url`/`sku` são migrados para o permalink/id da API, evitando alertas falsos de "novo produto" na primeira execução após a migração (itens antigos com SKU `MLBU…` de `/up/` ainda podem gerar um alerta único).
-- Patrocinados não aparecem na busca por `seller_id`, então o filtro de ads do HTML não é mais necessário.
+1. **Universo de catálogos** (máx. `MAX_CATALOGS_PER_SCAN` = 300, nesta prioridade):
+   - `own`: `catalog_product_id` dos anúncios ativos das contas ML conectadas (`/users/{id}/items/search?search_type=scan` + multiget `/items?ids=`, até 1000 anúncios por conta);
+   - `link`: produtos `/p/MLB…` cadastrados em Links;
+   - `category`: `/highlights/MLB/category/{id}` (mais vendidos, só `type: PRODUCT`) das categorias escolhidas (máx. 5, `CatalogScanState.categories`).
+2. Para cada catálogo: `/products/{id}` (nome, foto) + `fetchCatalogOffers` (até 100 ofertas) → `CatalogScan { productId, name, image, sources, offers[{ sellerId, nickname, itemId, price, full }] }`. Nicknames via multiget `/users?ids=` (20 por chamada). 429 → espera e nova tentativa; 250 ms entre chamadas (≈ 6 min para 300 catálogos).
+3. **Seller monitorado** → `resolveSellerId`: `mlSellerId` salvo; `_CustId_` da URL; ou nickname de `/pagina/NICK` / `/perfil/NICK` encontrado nas ofertas varridas (case-insensitive). Não encontrado ou sem ofertas → `SellerPage.noData = true` ("Sem dados" na UI).
+4. **Produtos do seller** = ofertas dele nos catálogos varridos → mesmo fluxo de `SellerProduct`/`SellerAlert` de antes (novo produto, mudança de preço > 1%).
+5. **Concorrentes** (`listCompetitors`): agregação das ofertas por vendedor, excluindo as contas do próprio owner; `catalogCount` e `cheapest` (catálogos em que tem a menor oferta). `buy_box_winner` quase nunca vem em `/products`, por isso não é usado.
+
+- **Cron diário** (`runAllActiveSellers`): uma varredura por owner, depois atualiza todos os sellers dele. `runScraperForSeller` (cadastro, botão atualizar) só varre de novo se a última varredura tiver mais de 20 h.
+- **Cadastro**: por concorrente (`{ mlSellerId, nickname }` → URL `/perfil/NICK`) ou por URL que identifique o vendedor (id ou nickname). Termo de busca sozinho não é mais aceito.
+- **Limitação**: só aparecem anúncios de catálogo dentro do universo varrido; anúncios fora de catálogo do concorrente não são visíveis pela API.

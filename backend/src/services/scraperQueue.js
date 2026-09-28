@@ -1,5 +1,6 @@
 import Bottleneck from "bottleneck";
 import SellerPage from "../models/SellerPage.js";
+import CatalogScanState from "../models/CatalogScanState.js";
 
 const limiter = new Bottleneck({
   maxConcurrent: 2,
@@ -40,6 +41,8 @@ export async function resetStaleScrapingFlags() {
   if (result.modifiedCount > 0) {
     console.log(`[ScraperQueue] ${result.modifiedCount} seller(s) com scraping resetado no boot.`);
   }
+  // Varreduras de catálogo interrompidas por restart
+  await CatalogScanState.updateMany({ running: true }, { $set: { running: false, startedAt: null } });
 }
 
 export async function resetStaleByTimeout(timeoutMinutes = 30) {

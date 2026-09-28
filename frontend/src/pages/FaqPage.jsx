@@ -31,7 +31,7 @@ const FAQ_GROUPS = [
       },
       {
         q: "O que é o Monitor de Sellers?",
-        a: "É uma funcionalidade que acompanha todos os produtos de um vendedor específico no Mercado Livre. Quando um novo produto aparece ou o preço de um existente muda, você recebe um alerta. Ideal para ficar de olho nos concorrentes estratégicos.",
+        a: "Acompanha os preços dos seus concorrentes nos produtos de catálogo do Mercado Livre em que você compete (seus anúncios, seus links e os mais vendidos das categorias que você escolher). Quando um concorrente monitorado muda o preço ou entra em um novo catálogo, você recebe um alerta.",
       },
       {
         q: "Como funciona a Análise de Preços?",

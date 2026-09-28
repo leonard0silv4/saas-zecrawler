@@ -3,12 +3,10 @@ import { format } from "date-fns";
 import SellerPage from "../models/SellerPage.js";
 import SellerProduct from "../models/SellerProduct.js";
 import SellerAlert from "../models/SellerAlert.js";
-import {
-  getOwnerMeliToken,
-  parseListingUrl,
-  searchMeliItems,
-  itemPermalink,
-} from "../utils/meliProductApi.js";
+import CatalogScan from "../models/CatalogScan.js";
+import CatalogScanState from "../models/CatalogScanState.js";
+import { parseListingUrl, itemPermalink } from "../utils/meliProductApi.js";
+import { scanOwnerCatalogs } from "./catalogScanner.js";
 
 const MIN_PRICE_CHANGE_ALERT_RATIO = 0.01;
 
@@ -19,36 +17,58 @@ function isSignificantPriceChangeForAlert(oldPrice, newPrice) {
   return Math.abs(newPrice - oldPrice) / oldPrice > MIN_PRICE_CHANGE_ALERT_RATIO;
 }
 
-/**
- * Lista os anúncios do vendedor via /sites/MLB/search (API oficial).
- * O scraping da página de listagem foi abandonado em set/2026 (captcha / bot challenge).
- */
-async function fetchSellerProducts(sellerUrl, ownerId) {
-  const params = parseListingUrl(sellerUrl);
-  if (!params) {
-    throw Object.assign(new Error("URL do vendedor sem _CustId_, perfil ou termo de busca"), { code: "UNSUPPORTED_URL" });
-  }
-  const token = await getOwnerMeliToken(ownerId);
-  if (!token) throw Object.assign(new Error("Nenhuma conta ML conectada"), { code: "NO_ACCOUNT" });
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-  const results = await searchMeliItems(params, token);
-  const seen = new Set();
+/**
+ * Descobre o id ML do vendedor: mlSellerId salvo, _CustId_ da URL ou nickname
+ * (/pagina/NICK, /perfil/NICK) encontrado nas ofertas da varredura de catálogos.
+ */
+async function resolveSellerId(seller) {
+  if (seller.mlSellerId) return { sellerId: seller.mlSellerId, nickname: seller.nickname };
+
+  const params = parseListingUrl(seller.url) || {};
+  if (params.seller_id) return { sellerId: Number(params.seller_id), nickname: seller.nickname };
+
+  const nickname = params.nickname || seller.nickname;
+  if (!nickname) return null;
+
+  const doc = await CatalogScan.findOne(
+    { ownerId: seller.ownerId, "offers.nickname": new RegExp(`^${escapeRegex(nickname)}$`, "i") },
+    { "offers.$": 1 }
+  ).lean();
+  const offer = doc?.offers?.[0];
+  return offer ? { sellerId: offer.sellerId, nickname: offer.nickname } : null;
+}
+
+/**
+ * Anúncios do vendedor nos catálogos varridos (API oficial não permite listar a loja inteira).
+ */
+async function fetchSellerProducts(seller, sellerId) {
+  const docs = await CatalogScan.find({ ownerId: seller.ownerId, "offers.sellerId": sellerId }).lean();
   const products = [];
-  for (const r of results) {
-    if (!r.id || seen.has(r.id)) continue;
-    seen.add(r.id);
-    products.push({
-      url: (r.permalink || itemPermalink(r.id)).split("?")[0].split("#")[0],
-      name: r.title || "",
-      image: (r.thumbnail || "").replace(/^http:/, "https:"),
-      price: Number(r.price) || 0,
-      sku: r.id,
-    });
+  const seen = new Set();
+  for (const doc of docs) {
+    for (const o of doc.offers) {
+      if (o.sellerId !== sellerId || seen.has(o.itemId)) continue;
+      seen.add(o.itemId);
+      products.push({ url: itemPermalink(o.itemId), name: doc.name, image: doc.image, price: o.price, sku: o.itemId });
+    }
   }
   return products;
 }
 
-export async function runScraperForSeller(seller) {
+const SCAN_MAX_AGE_MS = 20 * 60 * 60 * 1000;
+
+/** Varre os catálogos do owner se a última varredura for mais velha que maxAgeMs. */
+export async function ensureFreshScan(ownerId, maxAgeMs = SCAN_MAX_AGE_MS) {
+  const state = await CatalogScanState.findOne({ ownerId }).lean();
+  const age = state?.lastRunAt ? Date.now() - new Date(state.lastRunAt).getTime() : Infinity;
+  if (age > maxAgeMs) await scanOwnerCatalogs(ownerId);
+}
+
+export async function runScraperForSeller(seller, { scanMaxAgeMs = SCAN_MAX_AGE_MS } = {}) {
   const today = format(new Date(), "yyyy-MM-dd");
   const alertsToCreate = [];
   const ownerId = seller.ownerId;
@@ -60,7 +80,15 @@ export async function runScraperForSeller(seller) {
   try {
     let scrapedProducts;
     try {
-      scrapedProducts = await fetchSellerProducts(seller.url, ownerId);
+      await ensureFreshScan(ownerId, scanMaxAgeMs);
+      const resolved = await resolveSellerId(seller);
+      scrapedProducts = resolved ? await fetchSellerProducts(seller, resolved.sellerId) : [];
+      await SellerPage.findByIdAndUpdate(seller._id, {
+        $set: {
+          noData: scrapedProducts.length === 0,
+          ...(resolved ? { mlSellerId: resolved.sellerId, nickname: resolved.nickname || seller.nickname } : {}),
+        },
+      });
     } catch (err) {
       const detail = err.response ? `${err.response.status} ${JSON.stringify(err.response.data)}` : err.message;
       console.error(`[SellerScraper] Erro ao buscar seller ${seller._id}: ${detail}`);
@@ -68,7 +96,8 @@ export async function runScraperForSeller(seller) {
     }
 
     if (!scrapedProducts.length) {
-      console.warn(`[SellerScraper] Nenhum produto para seller ${seller._id}`);
+      console.warn(`[SellerScraper] Seller ${seller._id} sem dados nos catálogos varridos`);
+      await SellerPage.findByIdAndUpdate(seller._id, { $set: { lastRunAt: new Date() } });
       return;
     }
 
@@ -156,10 +185,24 @@ export async function runScraperForSeller(seller) {
   }
 }
 
+/**
+ * Cron diário: varre os catálogos de cada owner uma vez e depois atualiza todos os sellers dele.
+ */
 export async function runAllActiveSellers() {
-  const { enqueueSellerScrape } = await import("./scraperQueue.js");
   const sellers = await SellerPage.find({ active: true, scraping: false });
-  for (const seller of sellers) {
-    enqueueSellerScrape(seller, runScraperForSeller);
+  const byOwner = new Map();
+  for (const s of sellers) {
+    const k = String(s.ownerId);
+    if (!byOwner.has(k)) byOwner.set(k, []);
+    byOwner.get(k).push(s);
+  }
+
+  for (const [ownerId, list] of byOwner) {
+    try {
+      await scanOwnerCatalogs(ownerId);
+      for (const seller of list) await runScraperForSeller(seller, { scanMaxAgeMs: Infinity });
+    } catch (err) {
+      console.error(`[SellerScraper] owner ${ownerId}:`, err.message);
+    }
   }
 }

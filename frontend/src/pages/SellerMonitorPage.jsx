@@ -7,6 +7,8 @@ import { notifyError, notifyWarning } from "../utils/notify.js";
 import { format } from "date-fns";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import { CatalogScanPanel } from "../components/seller-monitor/CatalogScanPanel";
+import { AddSellerModal } from "../components/seller-monitor/AddSellerModal";
 
 const QK = {
   sellers: () => ["seller-monitor"],
@@ -31,9 +33,6 @@ export default function SellerMonitorPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [tab, setTab] = useState("products");
   const [addOpen, setAddOpen] = useState(false);
-  const [newUrl, setNewUrl] = useState("");
-  const [newName, setNewName] = useState("");
-  const [adding, setAdding] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editSeller, setEditSeller] = useState(null);
   const [editName, setEditName] = useState("");
@@ -64,20 +63,11 @@ export default function SellerMonitorPage() {
     setTab("products");
   }
 
-  async function handleAdd(e) {
-    e.preventDefault();
-    if (!newUrl.trim()) return;
-    setAdding(true);
-    try {
-      await api.post("/seller-monitor", { url: newUrl.trim(), name: newName.trim() });
-      queryClient.invalidateQueries({ queryKey: QK.sellers() });
-      setAddOpen(false);
-      setNewUrl("");
-      setNewName("");
-    } catch (err) {
-      notifyError(err.response?.data?.error || "Erro ao cadastrar");
-    } finally {
-      setAdding(false);
+  function refreshAll() {
+    queryClient.invalidateQueries({ queryKey: QK.sellers() });
+    if (selectedId) {
+      queryClient.invalidateQueries({ queryKey: QK.products(selectedId) });
+      queryClient.invalidateQueries({ queryKey: QK.alerts(selectedId) });
     }
   }
 
@@ -86,7 +76,7 @@ export default function SellerMonitorPage() {
       await api.post(`/seller-monitor/${s._id}/run`);
       queryClient.invalidateQueries({ queryKey: QK.sellers() });
     } catch (err) {
-      if (err.response?.status === 409) notifyWarning("Scraping já em andamento");
+      if (err.response?.status === 409) notifyWarning("Atualização já em andamento");
       else notifyError("Erro ao iniciar");
     }
   }
@@ -158,8 +148,10 @@ export default function SellerMonitorPage() {
           <Store size={22} className="text-brand-600" />
           Monitor de Sellers
         </h1>
-        <p className="text-gray-500 mt-1 text-sm">Monitore preços e produtos de concorrentes no Mercado Livre.</p>
+        <p className="text-gray-500 mt-1 text-sm">Monitore preços de concorrentes nos produtos de catálogo do Mercado Livre.</p>
       </div>
+
+      <CatalogScanPanel onScanFinished={refreshAll} />
 
       <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-12rem)]">
       <aside className="lg:w-72 shrink-0 bg-white rounded-xl border border-gray-100 flex flex-col max-h-[40vh] lg:sticky lg:top-0 lg:self-start lg:h-[calc(100vh-4rem)] lg:max-h-none">
@@ -198,11 +190,20 @@ export default function SellerMonitorPage() {
                 }`}
                 onClick={() => selectSeller(s)}
               >
-                <div className="font-medium text-gray-900 truncate">{s.name || "Sem nome"}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-900 truncate">{s.name || s.nickname || "Sem nome"}</span>
+                  {s.noData && !s.scraping && (
+                    <span
+                      title="Vendedor não encontrado nos catálogos varridos. Adicione categorias ou links de catálogo em que ele vende."
+                      className="shrink-0 text-[10px] font-medium bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded">
+                      Sem dados
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-gray-500 truncate">{s.url}</div>
                 <div className="flex items-center justify-between mt-2 gap-1">
                   <span className="text-xs text-gray-500">
-                    {s.scraping ? "Scraping…" : `${s.totalProducts || 0} itens · ${fmtAgo(s.lastRunAt)}`}
+                    {s.scraping ? "Atualizando…" : `${s.totalProducts || 0} itens · ${fmtAgo(s.lastRunAt)}`}
                   </span>
                   <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
                     <button
@@ -255,7 +256,10 @@ export default function SellerMonitorPage() {
           <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
             <Package size={40} className="opacity-30 mb-3" />
             <p className="font-medium text-gray-700">Selecione um seller</p>
-            <p className="text-sm text-center mt-1">Listagem do vendedor no Mercado Livre (URL com _CustId_ ou /perfil/NICK). Requer conta ML conectada.</p>
+            <p className="text-sm text-center mt-1 max-w-md">
+              Os produtos de cada seller vêm dos catálogos varridos (seus anúncios, seus Links e os mais vendidos das
+              categorias escolhidas). Requer conta ML conectada.
+            </p>
           </div>
         ) : (
           <>
@@ -315,7 +319,11 @@ export default function SellerMonitorPage() {
                     </ul>
                   )}
                   {!loadingDetail && products.length === 0 && (
-                    <p className="text-gray-500 text-sm text-center py-8">Nenhum produto ainda. Rode o scraping.</p>
+                    <p className="text-gray-500 text-sm text-center py-8">
+                      {selected?.noData
+                        ? "Este vendedor não apareceu nos catálogos varridos. Adicione categorias ou links de catálogo em que ele vende e rode a varredura."
+                        : "Nenhum produto ainda. Aguarde a varredura ou clique em atualizar."}
+                    </p>
                   )}
                 </>
               )}
@@ -371,7 +379,7 @@ export default function SellerMonitorPage() {
               />
             </div>
             <div>
-              <label className="text-sm text-gray-600">URL da listagem</label>
+              <label className="text-sm text-gray-600">Página do vendedor</label>
               <input
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
                 value={editUrl}
@@ -380,7 +388,7 @@ export default function SellerMonitorPage() {
               />
               {editUrl.trim() !== (editSeller?.url || "") && (
                 <p className="text-xs text-amber-600 mt-1">
-                  ⚠️ Alterar a URL irá apagar todos os produtos e alertas deste seller e reiniciar o scraping.
+                  ⚠️ Alterar a URL irá apagar todos os produtos e alertas deste seller e reiniciar a busca.
                 </p>
               )}
             </div>
@@ -402,47 +410,11 @@ export default function SellerMonitorPage() {
         document.body
       )}
 
-      {addOpen && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setAddOpen(false)}>
-          <form
-            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={handleAdd}
-          >
-            <h3 className="font-semibold text-lg">Cadastrar seller</h3>
-            <div>
-              <label className="text-sm text-gray-600">URL da listagem *</label>
-              <input
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-                placeholder="https://lista.mercadolivre.com.br/..."
-              />
-            </div>
-            <div>
-              <label className="text-sm text-gray-600">Nome (opcional)</label>
-              <input
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => setAddOpen(false)}>
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={adding}
-                className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
-              >
-                {adding ? "Salvando…" : "Cadastrar"}
-              </button>
-            </div>
-          </form>
-        </div>,
-        document.body
-      )}
+      <AddSellerModal
+        isOpen={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={() => queryClient.invalidateQueries({ queryKey: QK.sellers() })}
+      />
       </div>
 
       <ConfirmDialog

@@ -7,6 +7,8 @@ import Team from "../models/Team.js";
 import Link from "../models/Link.js";
 import Conta from "../models/Conta.js";
 import Cookie from "../models/Cookie.js";
+import CatalogScan from "../models/CatalogScan.js";
+import CatalogScanState from "../models/CatalogScanState.js";
 import MeliQuestion from "../models/MeliQuestion.js";
 import MeliProduct from "../models/MeliProduct.js";
 import MeliMessageTemplate from "../models/MeliMessageTemplate.js";
@@ -222,6 +224,8 @@ export default {
       // 4. Demais dados do owner
       await Link.deleteMany({ ownerId });
       await Cookie.deleteMany({ ownerId });
+      await CatalogScan.deleteMany({ ownerId });
+      await CatalogScanState.deleteMany({ ownerId });
       await CatalogProduct.deleteMany({ ownerId });
       await Nf.deleteMany({ ownerId });
       await PriceAnalyzeSnapshot.deleteMany({ ownerId });

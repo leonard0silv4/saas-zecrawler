@@ -16,3 +16,4 @@
 - [x] Fix (set/2026): coleta migrada de scraping HTML para `GET /sites/MLB/search` (API oficial) com token de conta ML conectada; validação de URL do seller no cadastro.
 - [x] Validado em produção: `/sites/MLB/search` responde **403** para o app (set/2026) → Monitor de Sellers sem fonte de dados.
 - [ ] Definir fonte alternativa para o Monitor de Sellers.
+- [x] Monitor reescrito sobre varredura de catálogos (`catalogScanner.js`, `CatalogScan`, `CatalogScanState`), cadastro por concorrente, categorias de mais vendidos e marcação "Sem dados" para sellers não encontrados (set/2026).

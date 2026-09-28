@@ -46,7 +46,7 @@ const SLIDES = [
     emoji: null,
     title: "Monitor de Sellers",
     subtitle: "Vigilância completa de um concorrente",
-    body: "Adicione a URL da página de um vendedor e o sistema monitora todos os produtos da vitrine — alertando quando novos produtos aparecem ou preços mudam.",
+    body: "Descubra quais concorrentes vendem nos mesmos catálogos que você e acompanhe os preços deles — com alertas quando mudam de preço ou entram em novos produtos.",
     icon: Store,
     color: "bg-teal-500",
     tip: "Ideal para acompanhar concorrentes estratégicos completos, não apenas produtos pontuais.",

@@ -17,7 +17,7 @@ const DIFFERENTIALS = [
     icon: TrendingUp,
     title: "Monitor de concorrentes",
     description:
-      "Rastreie sellers estratégicos, receba alertas quando novos produtos aparecerem ou preços mudarem. Tome decisões antes da concorrência.",
+      "Descubra quem disputa os mesmos catálogos que você e receba alertas quando concorrentes mudarem preços ou entrarem em novos produtos.",
     color: "bg-purple-50 text-purple-600",
   },
   {
