@@ -18,3 +18,5 @@
 
 - [x] Fix (set/2026): links cadastrados vazios (sem foto/preço/nome). ML passou a bloquear scraping (captcha wall com cookies, bot challenge sem cookies). Cadastro/refresh/cron migrados para a API oficial (`src/utils/meliProductApi.js`) com token de conta ML conectada do próprio owner. Testes de `parseMeliUrl` em `src/tests/linkScraper.test.js`.
 - [ ] Validar `/sites/MLB/search` (importação em lote) com token em produção.
+- [x] Correção de cadastros (set/2026): `links:refetch` corrigiu 93 links de catálogo; 106 links `/up/MLBU` ficam sem atualização (API do ML responde 403 para anúncios de outros vendedores).
+- [ ] Definir estratégia para links fora de catálogo (`/up/MLBU…`) — API oficial não libera.

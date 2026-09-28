@@ -7,6 +7,7 @@
     "start": "node src/index.js",
     "seed:plans": "node src/scripts/seedPlans.js",
     "purge:cookies": "node src/scripts/purgeLegacyCookies.js",
+    "links:refetch": "node src/scripts/refetchBrokenLinks.js",
     "promo:campaign": "node src/scripts/sendPromoCampaign.js",
     "test": "node --test src/tests/**/*.test.js"
   },
@@ -14,7 +15,6 @@
     "axios": "^1.9.0",
     "bcrypt": "^5.1.1",
     "bottleneck": "^2.19.5",
-    "cheerio": "^1.0.0-rc.12",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
@@ -27,7 +27,6 @@
     "nodemailer": "^8.0.8",
     "resend": "^6.12.3",
     "stripe": "^17.5.0",
-    "superagent": "^8.1.2",
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2"
   },

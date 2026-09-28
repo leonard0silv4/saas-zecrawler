@@ -17,6 +17,8 @@ const SCRAPE_ERRORS = {
   NO_ACCOUNT: "Conecte uma conta do Mercado Livre para cadastrar links.",
   UNSUPPORTED_URL: "Link sem código MLB. Use o link do anúncio ou do produto (/p/MLB...).",
   NOT_FOUND: "Produto não encontrado no Mercado Livre.",
+  FORBIDDEN:
+    "O Mercado Livre não libera os dados deste anúncio pela API. Use o link do produto de catálogo (www.mercadolivre.com.br/.../p/MLB...).",
 };
 
 export default {

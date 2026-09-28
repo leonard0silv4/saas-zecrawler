@@ -7,7 +7,7 @@ export { getOwnerMeliToken } from "./meliProductApi.js";
  * (HTML scraping is blocked by captcha / bot challenge since set/2026).
  * Retries up to maxRetries times on transient failures.
  *
- * Returns the product, null on failure, or { error: "NO_ACCOUNT" | "UNSUPPORTED_URL" | "NOT_FOUND" }.
+ * Returns the product, null on failure, or { error: "NO_ACCOUNT" | "UNSUPPORTED_URL" | "NOT_FOUND" | "FORBIDDEN" }.
  * Pass `token` to reuse one access token across many calls (refresh/cron).
  */
 export async function scrapeProductData(url, ownerId, maxRetries = 3, token) {
@@ -19,6 +19,8 @@ export async function scrapeProductData(url, ownerId, maxRetries = 3, token) {
     } catch (err) {
       if (err.code === "NO_ACCOUNT" || err.code === "UNSUPPORTED_URL") return { error: err.code };
       if (err.response?.status === 404) return { error: "NOT_FOUND" };
+      // ML não libera /items de anúncios de outros vendedores nem /user-products (só catálogo /products)
+      if (err.response?.status === 403) return { error: "FORBIDDEN" };
 
       attempt++;
       if (attempt >= maxRetries) {

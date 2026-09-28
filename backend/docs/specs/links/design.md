@@ -100,5 +100,7 @@ Desde set/2026 o ML bloqueia scraping server-side: com cookies redireciona para 
 - **Anúncio**: `GET /items/{id}` (título, fotos, preço, status, `catalog_listing`, `start_time`).
 - **Vendedor**: `GET /users/{seller_id}` → `nickname` e `seller_reputation.level_id` (`ratingSeller`).
 - **Listagem (lote)**: `GET /sites/MLB/search?q=` com o termo extraído da URL `lista.mercadolivre.com.br/<termo>`.
-- `POST /links` responde 422 com mensagem específica (`NO_ACCOUNT`, `UNSUPPORTED_URL`, `NOT_FOUND`) ou genérica; nunca cria link vazio.
+- **Limitação confirmada em produção (set/2026)**: `/products/{id}` funciona; `/items/{id}` de anúncio de outro vendedor, `/user-products/{MLBU}` e `/sites/MLB/search` respondem **403**. Links `/up/MLBU…` (fora de catálogo) não são atualizáveis pela API → `{ error: "FORBIDDEN" }` (sem retry).
+- Script `npm run links:refetch [-- --dry-run]` (`src/scripts/refetchBrokenLinks.js`) refaz a busca de links com nome/imagem/preço/SKU/vendedor vazios; quando a API nega, restaura o vendedor a partir do histórico.
+- `POST /links` responde 422 com mensagem específica (`NO_ACCOUNT`, `UNSUPPORTED_URL`, `NOT_FOUND`, `FORBIDDEN`) ou genérica; nunca cria link vazio.
 - `refresh`, `storeBatch` e o cron obtêm o token uma vez e reutilizam em todos os links. `refresh` preenche `name`, `image`, `sku` e `dateMl` quando vazios.
