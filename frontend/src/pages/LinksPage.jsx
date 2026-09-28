@@ -10,6 +10,7 @@ import { ptBR } from "date-fns/locale";
 import api from "../services/api";
 import { notifyError } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { AISection }      from "../components/links/AISection";
 import { AddLinkModal }   from "../components/links/AddLinkModal";
@@ -20,13 +21,13 @@ const QK = {
   tags: () => ["links-tags"],
   sellers: () => ["links-sellers"],
   stats: () => ["links-stats"],
-  meliAccounts: () => ["meli-accounts"],
 };
 
 // ─── Página principal ────────────────────────────────────────────────────────
 
 export default function LinksPage() {
   const { user } = useAuth();
+  const { hasMeliAccount } = useNotifications();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const storeName = "mercadolivre";
@@ -100,12 +101,7 @@ export default function LinksPage() {
   });
 
   // Cadastro/atualização de links usa a API do ML → exige ao menos 1 conta conectada
-  const { data: meliAccounts, isError: meliAccountsError } = useQuery({
-    queryKey: QK.meliAccounts(),
-    queryFn: () => api.get("/meli/accounts").then(r => r.data),
-    retry: false,
-  });
-  const noMeliAccount = !meliAccountsError && Array.isArray(meliAccounts) && meliAccounts.length === 0;
+  const noMeliAccount = !hasMeliAccount;
 
   const { data: aiData } = useQuery({
     queryKey: QK.stats(),

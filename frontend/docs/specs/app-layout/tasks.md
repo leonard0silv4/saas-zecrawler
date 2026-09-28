@@ -7,3 +7,4 @@
 - [ ] Adicionar teste visual/manual para estados mobile.
 - [ ] Avaliar topbar desktop comentada — reativar se necessário.
 - [x] Banner de cookies laranja (`bg-orange-500`, ícone `Info`) — apenas informativo (set/2026).
+- [x] Banner de cookies substituído por banner de conta ML obrigatória (`hasMeliAccount` / `refreshMeliAccountStatus` no NotificationContext) — cookies não são mais usados pela coleta (set/2026).

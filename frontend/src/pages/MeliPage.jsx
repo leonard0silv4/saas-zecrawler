@@ -3,10 +3,12 @@ import { AlertTriangle, ExternalLink, Package, Truck, Unlink, Unplug } from "luc
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function MeliPage() {
   const { isOwner, user } = useAuth();
+  const { refreshMeliAccountStatus } = useNotifications();
   const maxMeliAccounts = user?.planConfig?.maxMeliAccounts ?? 0;
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +60,7 @@ export default function MeliPage() {
             setProducts([]);
           }
           await loadAccounts();
+          refreshMeliAccountStatus();
         } catch (err) {
           notifyError(err.response?.data?.error || "Erro ao desconectar");
         } finally {

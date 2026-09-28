@@ -65,7 +65,7 @@ const planColors = {
 
 export default function AppLayout() {
   const { user, logout, canAccess, isBlockedByPlan, manageBilling, isOwner } = useAuth();
-  const { hasAnyDot, hasCookies } = useNotifications();
+  const { hasAnyDot, hasMeliAccount } = useNotifications();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -221,16 +221,16 @@ export default function AppLayout() {
           <img src="/logo.png" alt="ML SmartHub" className="ml-3 h-7 w-auto" />
         </header>
 
-        {/* Cookie banner */}
-        {isOwner && !hasCookies && (
+        {/* Conta ML banner (informativo) */}
+        {isOwner && !hasMeliAccount && (
           <div className="shrink-0 bg-orange-500 px-4 py-2.5 flex items-center gap-3 text-sm text-white">
             <Info size={15} className="shrink-0" />
-            <span>Seus cookies do Mercado Livre não estão configurados. O sistema pode não funcionar corretamente.</span>
+            <span>Conecte ao menos 1 conta do Mercado Livre para usar Links, Análise de Preços e Monitor de Sellers.</span>
             <Link
-              to="/setup-cookies"
+              to="/meli"
               className="ml-auto shrink-0 px-3 py-1 rounded-lg bg-white text-orange-600 text-xs font-semibold hover:bg-orange-50 transition-colors"
             >
-              Configurar agora →
+              Conectar conta →
             </Link>
           </div>
         )}

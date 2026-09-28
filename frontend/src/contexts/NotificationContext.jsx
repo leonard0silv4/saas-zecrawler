@@ -9,7 +9,7 @@ const NotificationContext = createContext(null);
 export function NotificationProvider({ children }) {
   const { user } = useAuth();
   const [unreadCounts, setUnreadCounts] = useState({});
-  const [hasCookies, setHasCookies] = useState(true); // true por default para não piscar na carga inicial
+  const [hasMeliAccount, setHasMeliAccount] = useState(true); // true por default para não piscar na carga inicial
   const [lastMeliQuestionEvent, setLastMeliQuestionEvent] = useState(null);
   const timerRef = useRef(null);
   const eventSourceRef = useRef(null);
@@ -24,30 +24,31 @@ export function NotificationProvider({ children }) {
     }
   }, [user]);
 
-  const fetchCookieStatus = useCallback(async () => {
+  // Links, Análise de Preços e Monitor de Sellers usam a API oficial do ML → exigem conta conectada
+  const fetchMeliAccountStatus = useCallback(async () => {
     if (!user) return;
     try {
-      const { data } = await api.get("/cookies/status");
-      setHasCookies(data.hasCookies);
+      const { data } = await api.get("/meli/accounts");
+      setHasMeliAccount(Array.isArray(data) && data.length > 0);
     } catch {
-      // silencioso — banner não é crítico
+      // silencioso — banner não é crítico (ex.: membro sem permissão do módulo)
     }
   }, [user]);
 
   useEffect(() => {
     if (!user) {
       setUnreadCounts({});
-      setHasCookies(true);
+      setHasMeliAccount(true);
       setLastMeliQuestionEvent(null);
       return;
     }
     fetchUnread();
-    fetchCookieStatus();
+    fetchMeliAccountStatus();
     timerRef.current = setInterval(() => {
       if (!document.hidden) fetchUnread();
     }, POLL_MS);
     return () => clearInterval(timerRef.current);
-  }, [user, fetchUnread, fetchCookieStatus]);
+  }, [user, fetchUnread, fetchMeliAccountStatus]);
 
   useEffect(() => {
     if (!user) return;
@@ -92,8 +93,8 @@ export function NotificationProvider({ children }) {
         hasDotForUserId,
         hasAnyDot,
         fetchUnread,
-        hasCookies,
-        refreshCookieStatus: fetchCookieStatus,
+        hasMeliAccount,
+        refreshMeliAccountStatus: fetchMeliAccountStatus,
         lastMeliQuestionEvent,
       }}
     >

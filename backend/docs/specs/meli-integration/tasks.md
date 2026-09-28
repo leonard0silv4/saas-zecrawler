@@ -18,3 +18,4 @@
 - [ ]* 7. Suporte a múltiplas contas ML com seleção na UI (atualmente usa a primeira conta disponível em algumas operações)
 
 - [x] Módulo `meli` liberado no Free (1 conta); limites Starter 2, Pro 4 (set/2026).
+- [x] Segurança: `GET /meli/accounts` deixou de expor `access_token`/`refresh_token` ao frontend (set/2026).

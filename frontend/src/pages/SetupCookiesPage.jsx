@@ -12,7 +12,6 @@ import {
   ClipboardPaste,
 } from "lucide-react";
 import api from "../services/api";
-import { useNotifications } from "../contexts/NotificationContext";
 
 const CHROME_STORE_URL =
   "https://chromewebstore.google.com/detail/hlkenndednhfkekhgcdicdfddnkalmdm";
@@ -55,7 +54,6 @@ function Step({ number, icon: Icon, title, children, done }) {
 
 export default function SetupCookiesPage() {
   const navigate = useNavigate();
-  const { refreshCookieStatus } = useNotifications();
 
   const [jsonText, setJsonText] = useState("");
   const [saving, setSaving] = useState(false);
@@ -92,7 +90,6 @@ export default function SetupCookiesPage() {
     try {
       await api.post("/cookies", { cookies });
       setSuccess(true);
-      refreshCookieStatus();
       setTimeout(() => navigate("/dashboard"), 1800);
     } catch (e) {
       setError(e.response?.data?.error || e.message || "Erro ao salvar cookies");

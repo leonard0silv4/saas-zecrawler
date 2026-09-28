@@ -20,7 +20,7 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-async function getActiveContas(ownerId) {
+function getActiveContas(ownerId) {
   return Conta.find({
     ownerId,
     access_token: { $exists: true },
@@ -573,7 +573,8 @@ export default {
   async getAccounts(req, res) {
     try {
       const ownerId = getOwnerId(req);
-      const contas = await getActiveContas(ownerId);
+      // Nunca expor tokens OAuth ao frontend
+      const contas = await getActiveContas(ownerId).select("-access_token -refresh_token").lean();
       return res.json(contas);
     } catch (err) {
       return res.status(500).json({ error: "Erro ao buscar contas" });
