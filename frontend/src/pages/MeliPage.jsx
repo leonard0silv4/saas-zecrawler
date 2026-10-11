@@ -105,19 +105,23 @@ export default function MeliPage() {
   return (
     <div className="space-y-6 mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Unplug size={22} className="text-yellow-500" />
-          Contas conectadas
-        </h1>
-        <p className="text-gray-500 mt-1 text-sm">Conecte contas OAuth e consulte produtos indexados.</p>
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brandSolid-400/30 bg-brandSolid-500/10 text-brandSolid-300 shadow-[0_0_20px_-6px_rgb(30_123_255/0.7)]">
+            <Unplug size={19} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-fg">Contas conectadas</h1>
+            <p className="mt-1 text-sm text-fg-muted">Conecte contas OAuth e consulte produtos indexados.</p>
+          </div>
+        </div>
       </div>
 
-      <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
+      <section className="glass rounded-xl border border-line/10 p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="font-semibold text-gray-900">Contas conectadas</h2>
+            <h2 className="font-semibold text-fg">Contas conectadas</h2>
             {maxMeliAccounts > 0 && (
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-fg-muted mt-0.5">
                 {accounts.length} de {maxMeliAccounts} {maxMeliAccounts === 1 ? "conta utilizada" : "contas utilizadas"}
               </p>
             )}
@@ -126,38 +130,44 @@ export default function MeliPage() {
             <button
               type="button"
               onClick={connectAccount}
-              className="px-4 py-2 rounded-lg bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-medium"
+              className="px-4 py-2 rounded-lg bg-[#ffe600] hover:bg-[#fff159] text-[#2d3277] text-sm font-semibold shadow-[0_0_20px_-6px_rgb(255_230_0/0.8)]"
             >
               Conectar nova conta
             </button>
           )}
         </div>
         {loading ? (
-          <p className="text-sm text-gray-500">Carregando…</p>
+          <p className="text-sm text-fg-muted">Carregando…</p>
         ) : accounts.length === 0 ? (
-          <p className="text-sm text-gray-500">Nenhuma conta. Use o botão acima e autorize no Mercado Livre.</p>
+          <p className="text-sm text-fg-muted">Nenhuma conta. Use o botão acima e autorize no Mercado Livre.</p>
         ) : (
-          <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+          <ul className="divide-y divide-line/[0.07] border border-line/10 rounded-xl bg-ink/[0.02]">
             {accounts.map((a) => (
               <li key={a.user_id} className="px-4 py-3 flex flex-wrap items-center gap-3 justify-between text-sm">
-                <div className="min-w-0 flex-1">
-                  <span className="font-medium">{a.nickname || `User ${a.user_id}`}</span>
-                  <span className="text-gray-500 font-mono text-xs ml-2">ID {a.user_id}</span>
+                <div className="min-w-0 flex-1 flex items-center gap-3">
+                  <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-brandSolid-400/30 bg-brandSolid-500/10 text-xs font-semibold text-brandSolid-300">
+                    {(a.nickname || "?").slice(0, 2).toUpperCase()}
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-neon ring-2 ring-[rgb(var(--surface))] shadow-[0_0_6px_rgb(var(--neon))]" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-fg truncate">{a.nickname || `User ${a.user_id}`}</p>
+                    <p className="text-fg-dim text-xs num">ID {a.user_id}</p>
+                  </div>
                 </div>
                 {isOwner && (
                   <button
                     type="button"
                     onClick={() => disconnectAccount(a.user_id)}
                     disabled={disconnectingId !== null}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 text-xs font-medium hover:bg-red-50 disabled:opacity-50"
+                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-danger/30 text-danger text-xs font-medium hover:bg-danger/10 disabled:opacity-50"
                   >
                     <Unlink size={14} />
                     {disconnectingId === a.user_id ? "Desconectando…" : "Desconectar"}
                   </button>
                 )}
                 {a.authError && (
-                  <div className="w-full mt-1 flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-xs text-yellow-800">
-                    <AlertTriangle size={14} className="shrink-0 text-yellow-600" />
+                  <div className="w-full mt-1 flex items-center gap-2 bg-warn/10 border border-warn/30 rounded-lg px-3 py-2 text-xs text-warn">
+                    <AlertTriangle size={14} className="shrink-0 text-warn" />
                     <span className="flex-1">
                       Autorização expirada ou sem permissão. Reconecte para restaurar a sincronização de pedidos.
                     </span>
@@ -165,7 +175,7 @@ export default function MeliPage() {
                       <button
                         type="button"
                         onClick={connectAccount}
-                        className="shrink-0 px-2.5 py-1 rounded-md bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium"
+                        className="shrink-0 px-2.5 py-1 rounded-md bg-yellow-400 hover:bg-yellow-500 text-fg font-medium"
                       >
                         Reconectar
                       </button>
@@ -178,16 +188,16 @@ export default function MeliPage() {
         )}
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4">
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+      <section className="glass rounded-xl border border-line/10 p-6 space-y-4">
+        <h2 className="font-semibold text-fg flex items-center gap-2">
           <Package size={18} />
           Produtos 
         </h2>
         <div className="flex flex-wrap gap-2 items-end">
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Conta </label>
+            <label className="text-xs text-fg-muted block mb-1">Conta </label>
             <select
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm min-w-[200px]"
+              className="field min-w-[200px]"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
             >
@@ -202,36 +212,36 @@ export default function MeliPage() {
             type="button"
             onClick={loadProducts}
             disabled={loadingProd || !userId}
-            className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand"
           >
             {loadingProd ? "Carregando…" : "Listar"}
           </button>
         </div>
         {products.length > 0 && (
-          <div className="max-h-72 overflow-y-auto border border-gray-100 rounded-lg text-sm">
+          <div className="max-h-72 overflow-y-auto border border-line/10 rounded-lg text-sm">
             {products.slice(0, 50).map((p) => (
-              <div key={p._id || p.id} className="px-3 py-2 border-b border-gray-50 flex justify-between gap-2">
+              <div key={p._id || p.id} className="px-3 py-2 border-b border-line/[0.06] flex justify-between gap-2">
                 <span className="truncate flex-1">{p.title || p.SKU}</span>
                 {p.permalink && (
-                  <a href={p.permalink} target="_blank" rel="noreferrer" className="text-brand-600 shrink-0">
+                  <a href={p.permalink} target="_blank" rel="noreferrer" className="text-brandSolid-300 shrink-0">
                     <ExternalLink size={14} />
                   </a>
                 )}
               </div>
             ))}
-            {products.length > 50 && <p className="text-xs text-gray-500 p-2">Mostrando 50 de {products.length}</p>}
+            {products.length > 50 && <p className="text-xs text-fg-muted p-2">Mostrando 50 de {products.length}</p>}
           </div>
         )}
       </section>
 
-      <section className="bg-white rounded-xl border border-gray-100 p-6 space-y-4 hidden">
-        <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+      <section className="glass rounded-xl border border-line/10 p-6 space-y-4 hidden">
+        <h2 className="font-semibold text-fg flex items-center gap-2">
           <Truck size={18} />
           Consultar envio
         </h2>
         <div className="flex flex-wrap gap-2">
           <input
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm flex-1 min-w-[160px]"
+            className="field flex-1 min-w-[160px]"
             placeholder="ID do shipment (apenas números)"
             value={shipmentId}
             onChange={(e) => setShipmentId(e.target.value)}
@@ -240,13 +250,13 @@ export default function MeliPage() {
             type="button"
             onClick={loadShipment}
             disabled={loadingShip}
-            className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-medium disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-brandSolid-500 hover:bg-brandSolid-400 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand"
           >
             {loadingShip ? "…" : "Buscar"}
           </button>
         </div>
         {shipment && (
-          <div className="text-sm space-y-2 border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+          <div className="text-sm space-y-2 border border-line/10 rounded-lg p-4 bg-ink/[0.02]">
             <p>
               <strong>Status:</strong> {shipment.status} · <strong>Logística:</strong> {shipment.logistic_type || "—"}
             </p>
@@ -254,7 +264,7 @@ export default function MeliPage() {
               <strong>Pedido:</strong> {shipment.order_id ?? "—"} · <strong>Loja:</strong> {shipment.seller_nickname}
             </p>
             {shipment.dimensions && (
-              <p className="text-gray-600">
+              <p className="text-fg-muted">
                 Dimensões: {shipment.dimensions.height_cm}×{shipment.dimensions.width_cm}×
                 {shipment.dimensions.length_cm} cm · {shipment.dimensions.weight_g} g
               </p>
@@ -262,7 +272,7 @@ export default function MeliPage() {
             {shipment.order_items?.length > 0 && (
               <ul className="mt-2 space-y-1">
                 {shipment.order_items.map((i) => (
-                  <li key={i.id} className="text-xs text-gray-700">
+                  <li key={i.id} className="text-xs text-fg/90">
                     {i.quantity}× {i.title} — R$ {i.unit_price}
                   </li>
                 ))}

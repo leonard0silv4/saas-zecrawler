@@ -1,18 +1,20 @@
 const variants = {
-  default: "bg-white border border-gray-200 shadow-sm",
-  elevated: "bg-white border border-gray-100 shadow-md",
-  bordered: "bg-white border-2 border-brand-300",
+  default: "glass",
+  elevated: "glass glow-top",
+  bordered: "glass hud-corners",
 };
 
-export function Card({ variant = "default", className = "", children, onClick }) {
+/** Painel de vidro. `elevated` ganha linha de luz no topo; `bordered` ganha cantos HUD. */
+export function Card({ variant = "default", className = "", children, onClick, padded = true }) {
   const interactive = !!onClick;
   return (
     <div
       onClick={onClick}
       className={[
-        "rounded-xl p-6",
+        "rounded-2xl",
+        padded ? "p-5 md:p-6" : "",
         variants[variant] ?? variants.default,
-        interactive ? "cursor-pointer hover:shadow-md transition-shadow duration-150" : "",
+        interactive ? "cursor-pointer transition-colors duration-150 hover:border-line/25" : "",
         className,
       ].join(" ")}
     >
@@ -20,3 +22,5 @@ export function Card({ variant = "default", className = "", children, onClick })
     </div>
   );
 }
+
+export const Panel = Card;

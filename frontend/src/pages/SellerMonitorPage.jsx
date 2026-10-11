@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
-import { Bell, Loader2, Package, Pencil, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
+import { Bell, Loader2, Pencil, Plus, RefreshCw, Store, Trash2, Play } from "lucide-react";
 import api from "../services/api";
 import { notifyError, notifyWarning } from "../utils/notify.js";
 import { format } from "date-fns";
@@ -9,6 +9,8 @@ import { useAuth } from "../contexts/AuthContext";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import { CatalogScanPanel } from "../components/seller-monitor/CatalogScanPanel";
 import { AddSellerModal } from "../components/seller-monitor/AddSellerModal";
+import { PageHeader } from "../components/ui";
+import { Radar } from "../components/fx";
 
 const QK = {
   sellers: () => ["seller-monitor"],
@@ -141,75 +143,74 @@ export default function SellerMonitorPage() {
   const canAddSeller = sellers.length < maxSellerMonitors;
 
   return (
-    <div className="space-y-4 mx-auto">
+    <div className="space-y-4 mx-auto max-w-[1400px]">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Store size={22} className="text-brand-600" />
-          Monitor de Sellers
-        </h1>
-        <p className="text-gray-500 mt-1 text-sm">Monitore preços de concorrentes nos produtos de catálogo do Mercado Livre.</p>
-      </div>
+      <PageHeader
+        icon={Store}
+        title="Monitor de Sellers"
+        description="Monitore preços de concorrentes nos produtos de catálogo do Mercado Livre."
+        className="!mb-2"
+      />
 
       <CatalogScanPanel onScanFinished={refreshAll} />
 
       <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-12rem)]">
-      <aside className="lg:w-72 shrink-0 bg-white rounded-xl border border-gray-100 flex flex-col max-h-[40vh] lg:sticky lg:top-0 lg:self-start lg:h-[calc(100vh-4rem)] lg:max-h-none">
-        <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+      <aside className="lg:w-72 shrink-0 glass rounded-xl border border-line/10 flex flex-col max-h-[40vh] lg:sticky lg:top-0 lg:self-start lg:h-[calc(100vh-4rem)] lg:max-h-none">
+        <div className="p-3 border-b border-line/10 flex items-center justify-between">
           <div>
-            <span className="font-semibold text-gray-900 flex items-center gap-2">
-              <Store size={18} className="text-brand-600" />
+            <span className="font-semibold text-fg flex items-center gap-2">
+              <Store size={18} className="text-brandSolid-300" />
               Sellers
               {unread > 0 && (
-                <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                <span className="text-xs bg-danger/20 text-danger ring-1 ring-inset ring-danger/40 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-[0_0_10px_-2px_rgb(var(--danger)/0.7)]">
                   <Bell size={10} /> {unread}
                 </span>
               )}
             </span>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-fg-muted mt-0.5">
               {sellers.length} de {maxSellerMonitors} utilizados
             </p>
           </div>
-          <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: QK.sellers() })} className="p-1.5 text-gray-500 hover:bg-gray-50 rounded-lg">
+          <button type="button" onClick={() => queryClient.invalidateQueries({ queryKey: QK.sellers() })} className="p-1.5 text-fg-muted hover:bg-ink/[0.03] rounded-lg">
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {loading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="animate-spin text-gray-400" />
+              <Loader2 className="animate-spin text-fg-dim" />
             </div>
           ) : sellers.length === 0 ? (
-            <p className="text-sm text-gray-500 p-3">Nenhum seller. Cadastre um.</p>
+            <p className="text-sm text-fg-muted p-3">Nenhum seller. Cadastre um.</p>
           ) : (
             sellers.map((s) => (
               <div
                 key={s._id}
                 className={`rounded-lg border p-2 text-sm cursor-pointer transition-colors ${
-                  selectedId === s._id ? "border-brand-500 bg-brand-50" : "border-gray-100 hover:bg-gray-50"
+                  selectedId === s._id ? "border-brand-500 bg-brandSolid-500/10" : "border-line/10 hover:bg-ink/[0.03]"
                 }`}
                 onClick={() => selectSeller(s)}
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="font-medium text-gray-900 truncate">{s.name || s.nickname || "Sem nome"}</span>
+                  <span className="font-medium text-fg truncate">{s.name || s.nickname || "Sem nome"}</span>
                   {s.noData && !s.scraping && (
                     <span
                       title="Vendedor não encontrado nos catálogos varridos. Adicione categorias ou links de catálogo em que ele vende."
-                      className="shrink-0 text-[10px] font-medium bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded">
+                      className="shrink-0 text-[10px] font-medium bg-warn/10 text-warn border border-warn/30 px-1.5 py-0.5 rounded">
                       Sem dados
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-500 truncate">{s.url}</div>
+                <div className="text-xs text-fg-muted truncate">{s.url}</div>
                 <div className="flex items-center justify-between mt-2 gap-1">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-fg-muted">
                     {s.scraping ? "Atualizando…" : `${s.totalProducts || 0} itens · ${fmtAgo(s.lastRunAt)}`}
                   </span>
                   <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => handleRun(s)}
-                      className="p-1 text-brand-600 hover:bg-brand-100 rounded"
+                      className="p-1 text-brandSolid-300 hover:bg-brandSolid-500/15 rounded"
                       title="Atualizar"
                     >
                       <Play size={14} />
@@ -217,7 +218,7 @@ export default function SellerMonitorPage() {
                     <button
                       type="button"
                       onClick={() => openEditSeller(s)}
-                      className="p-1 text-brand-600 hover:bg-brand-100 rounded"
+                      className="p-1 text-brandSolid-300 hover:bg-brandSolid-500/15 rounded"
                       title="Editar"
                     >
                       <Pencil size={14} />
@@ -225,7 +226,7 @@ export default function SellerMonitorPage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(s)}
-                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      className="p-1 text-danger hover:bg-danger/10 rounded"
                       title="Excluir"
                     >
                       <Trash2 size={14} />
@@ -240,22 +241,22 @@ export default function SellerMonitorPage() {
           type="button"
           onClick={() => setAddOpen(true)}
           disabled={!canAddSeller}
-          className="m-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="m-2 flex items-center justify-center gap-2 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium hover:bg-brandSolid-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-brand"
         >
           <Plus size={16} /> Novo seller
         </button>
         {!canAddSeller && (
-          <p className="px-3 pb-3 text-xs text-amber-700">
+          <p className="px-3 pb-3 text-xs text-warn">
             Você atingiu o limite do seu plano para sellers monitorados.
           </p>
         )}
       </aside>
 
-      <main className="flex-1 bg-white rounded-xl border border-gray-100 flex flex-col min-h-[320px]">
+      <main className="flex-1 glass rounded-xl border border-line/10 flex flex-col min-h-[320px]">
         {!selectedId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
-            <Package size={40} className="opacity-30 mb-3" />
-            <p className="font-medium text-gray-700">Selecione um seller</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-fg-muted p-8">
+            <Radar size={150} className="mb-6" />
+            <p className="font-medium text-fg">Selecione um seller</p>
             <p className="text-sm text-center mt-1 max-w-md">
               Os produtos de cada seller vêm dos catálogos varridos (seus anúncios, seus Links e os mais vendidos das
               categorias escolhidas). Requer conta ML conectada.
@@ -263,15 +264,15 @@ export default function SellerMonitorPage() {
           </div>
         ) : (
           <>
-            <div className="border-b border-gray-100 px-4 py-3">
-              <h2 className="font-semibold text-gray-900">{selected?.name || "Seller"}</h2>
-              <p className="text-xs text-gray-500 truncate">{selected?.url}</p>
+            <div className="border-b border-line/10 px-4 py-3">
+              <h2 className="font-semibold text-fg">{selected?.name || "Seller"}</h2>
+              <p className="text-xs text-fg-muted truncate">{selected?.url}</p>
               <div className="flex gap-2 mt-3">
                 <button
                   type="button"
                   onClick={() => setTab("products")}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                    tab === "products" ? "bg-brand-100 text-brand-800" : "text-gray-600"
+                    tab === "products" ? "bg-brandSolid-500/15 text-brandSolid-300" : "text-fg-muted"
                   }`}
                 >
                   Produtos ({products.length})
@@ -280,13 +281,13 @@ export default function SellerMonitorPage() {
                   type="button"
                   onClick={() => setTab("alerts")}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                    tab === "alerts" ? "bg-brand-100 text-brand-800" : "text-gray-600"
+                    tab === "alerts" ? "bg-brandSolid-500/15 text-brandSolid-300" : "text-fg-muted"
                   }`}
                 >
                   Alertas ({alerts.filter((a) => !a.read).length} novos)
                 </button>
                 {tab === "alerts" && alerts.some((a) => !a.read) && (
-                  <button type="button" onClick={markAllRead} className="text-xs text-brand-600 ml-auto">
+                  <button type="button" onClick={markAllRead} className="text-xs text-brandSolid-300 ml-auto">
                     Marcar todos lidos
                   </button>
                 )}
@@ -296,19 +297,19 @@ export default function SellerMonitorPage() {
               {tab === "products" && (
                 <>
                   {loadingDetail ? (
-                    <Loader2 className="animate-spin text-gray-400 mx-auto block mt-8" />
+                    <Loader2 className="animate-spin text-fg-dim mx-auto block mt-8" />
                   ) : (
                     <ul className="space-y-2">
                       {products.map((p) => (
-                        <li key={p._id} className="flex gap-3 text-sm border border-gray-100 rounded-lg p-2">
-                          {p.image && <img src={p.image} alt="" className="w-14 h-14 object-cover rounded bg-gray-100" />}
+                        <li key={p._id} className="flex gap-3 text-sm border border-line/10 rounded-lg p-2">
+                          {p.image && <img src={p.image} alt="" className="w-14 h-14 object-cover rounded bg-ink/[0.06]" />}
                           <div className="min-w-0 flex-1">
-                            <a href={p.url} target="_blank" rel="noreferrer" className="font-medium text-gray-900 hover:text-brand-600 line-clamp-2">
+                            <a href={p.url} target="_blank" rel="noreferrer" className="font-medium text-fg hover:text-brandSolid-300 line-clamp-2">
                               {p.name}
                             </a>
-                            <div className="text-emerald-600 font-semibold mt-1">R$ {Number(p.currentPrice).toFixed(2)}</div>
+                            <div className="text-neon font-semibold mt-1">R$ {Number(p.currentPrice).toFixed(2)}</div>
                             {(p.isNew || p.priceChanged) && (
-                              <span className="text-[10px] text-amber-700 bg-amber-50 px-1 rounded">
+                              <span className="text-[10px] text-warn bg-warn/10 px-1 rounded">
                                 {p.isNew ? "Novo" : ""}
                                 {p.priceChanged ? "Preço alterado" : ""}
                               </span>
@@ -319,7 +320,7 @@ export default function SellerMonitorPage() {
                     </ul>
                   )}
                   {!loadingDetail && products.length === 0 && (
-                    <p className="text-gray-500 text-sm text-center py-8">
+                    <p className="text-fg-muted text-sm text-center py-8">
                       {selected?.noData
                         ? "Este vendedor não apareceu nos catálogos varridos. Adicione categorias ou links de catálogo em que ele vende e rode a varredura."
                         : "Nenhum produto ainda. Aguarde a varredura ou clique em atualizar."}
@@ -332,29 +333,29 @@ export default function SellerMonitorPage() {
                   {alerts.map((a) => (
                     <li
                       key={a._id}
-                      className={`text-sm border rounded-lg p-3 ${a.read ? "border-gray-100 bg-gray-50" : "border-amber-200 bg-amber-50/50"}`}
+                      className={`text-sm border rounded-lg p-3 ${a.read ? "border-line/10 bg-ink/[0.03]" : "border-warn/30 bg-warn/10"}`}
                     >
                       <div className="font-medium">{format(a.createdAt, "dd/MM/yy - ")} {a.type === "new_product" ? "Produto novo" : "Mudança de preço"}
                         
 
                       </div>
-                      <a href={a.productUrl} target="_blank" rel="noreferrer" className="text-brand-600 text-xs line-clamp-2">
+                      <a href={a.productUrl} target="_blank" rel="noreferrer" className="text-brandSolid-300 text-xs line-clamp-2">
                         {a.productName} 
                       </a>
                       
                       {a.type === "price_change" && (
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="text-xs text-fg-muted mt-1">
                           R$ {a.oldPrice?.toFixed(2)} → R$ {a.newPrice?.toFixed(2)}
                         </div>
                       )}
                       {!a.read && (
-                        <button type="button" onClick={() => markRead(a._id)} className="text-xs text-brand-600 mt-2">
+                        <button type="button" onClick={() => markRead(a._id)} className="text-xs text-brandSolid-300 mt-2">
                           Marcar lido
                         </button>
                       )}
                     </li>
                   ))}
-                  {alerts.length === 0 && <p className="text-gray-500 text-sm text-center py-8">Sem alertas.</p>}
+                  {alerts.length === 0 && <p className="text-fg-muted text-sm text-center py-8">Sem alertas.</p>}
                 </ul>
               )}
             </div>
@@ -363,44 +364,44 @@ export default function SellerMonitorPage() {
       </main>
 
       {editOpen && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setEditOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/70 backdrop-blur-md p-4" onClick={() => setEditOpen(false)}>
           <div
-            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-4"
+            className="glass glow-top !bg-surface-2/95 rounded-2xl p-6 max-w-md w-full space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-semibold text-lg">Editar seller</h3>
             <div>
-              <label className="text-sm text-gray-600">Nome</label>
+              <label className="text-sm text-fg-muted">Nome</label>
               <input
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="field w-full mt-1"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="Nome do seller"
               />
             </div>
             <div>
-              <label className="text-sm text-gray-600">Página do vendedor</label>
+              <label className="text-sm text-fg-muted">Página do vendedor</label>
               <input
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                className="field w-full mt-1"
                 value={editUrl}
                 onChange={(e) => setEditUrl(e.target.value)}
                 placeholder="https://lista.mercadolivre.com.br/..."
               />
               {editUrl.trim() !== (editSeller?.url || "") && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-warn mt-1">
                   ⚠️ Alterar a URL irá apagar todos os produtos e alertas deste seller e reiniciar a busca.
                 </p>
               )}
             </div>
             <div className="flex gap-2 justify-end">
-              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => setEditOpen(false)}>
+              <button type="button" className="px-4 py-2 text-sm text-fg-muted" onClick={() => setEditOpen(false)}>
                 Cancelar
               </button>
               <button
                 type="button"
                 disabled={editSaving}
                 onClick={handleEditSave}
-                className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand"
               >
                 {editSaving ? "Salvando…" : "Salvar"}
               </button>

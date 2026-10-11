@@ -11,11 +11,11 @@ export function TeamMembersPanel({ team, allUsers, onAddMember, onRemoveMember }
   );
 
   return (
-    <div className="mt-2 border border-gray-100 rounded-lg overflow-hidden">
+    <div className="mt-2 border border-line/10 rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 text-xs text-gray-600 font-medium hover:bg-gray-100"
+        className="w-full flex items-center justify-between px-3 py-2 bg-ink/[0.03] text-xs text-fg-muted font-medium hover:bg-ink/[0.06]"
       >
         <span>Membros ({members.length})</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -23,18 +23,18 @@ export function TeamMembersPanel({ team, allUsers, onAddMember, onRemoveMember }
       {open && (
         <div className="p-3 space-y-2">
           {members.length === 0 && (
-            <p className="text-xs text-gray-400">Nenhum membro neste time.</p>
+            <p className="text-xs text-fg-dim">Nenhum membro neste time.</p>
           )}
           {members.map((u) => (
             <div key={u._id} className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-800">{u.name}</p>
-                <p className="text-xs text-gray-400">{u.email}</p>
+                <p className="text-sm font-medium text-fg">{u.name}</p>
+                <p className="text-xs text-fg-dim">{u.email}</p>
               </div>
               <button
                 type="button"
                 onClick={() => onRemoveMember(team._id, u._id)}
-                className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50"
+                className="p-1.5 rounded text-fg-dim hover:text-danger hover:bg-danger/10"
                 title="Remover do time"
               >
                 <X size={14} />
@@ -42,17 +42,17 @@ export function TeamMembersPanel({ team, allUsers, onAddMember, onRemoveMember }
             </div>
           ))}
           {nonMembers.length > 0 && (
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-1">Adicionar usuário:</p>
+            <div className="pt-2 border-t border-line/10">
+              <p className="text-xs text-fg-muted mb-1">Adicionar usuário:</p>
               {nonMembers.map((u) => (
                 <button
                   key={u._id}
                   type="button"
                   onClick={() => onAddMember(team._id, u._id)}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-brand-50 text-left"
+                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-brandSolid-500/10 text-left"
                 >
-                  <UserPlus size={13} className="text-brand-600 shrink-0" />
-                  <span className="text-sm text-gray-700">{u.name}</span>
+                  <UserPlus size={13} className="text-brandSolid-300 shrink-0" />
+                  <span className="text-sm text-fg/90">{u.name}</span>
                 </button>
               ))}
             </div>

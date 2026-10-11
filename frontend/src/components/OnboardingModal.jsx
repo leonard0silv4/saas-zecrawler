@@ -26,7 +26,7 @@ const SLIDES = [
     subtitle: "A base de todo o sistema",
     body: "Adicione URLs de produtos do Mercado Livre que você quer monitorar. O sistema coleta preço, seller e mantém histórico automático.",
     icon: Link2,
-    color: "bg-blue-500",
+    color: "bg-brandSolid-500",
     tip: "Configure seus sellers em Configurações → Meus Sellers para que o sistema reconheça seus produtos na Análise de Preços.",
   },
   {
@@ -70,7 +70,7 @@ const SLIDES = [
     subtitle: "Vendas, estoque Full e KPIs do seu negócio",
     body: "Monitore faturamento, liquidez do marketplace, ruptura de estoque Full e ranking de produtos — tudo em um único painel. Disponível a partir do plano Starter.",
     icon: BarChart2,
-    color: "bg-green-600",
+    color: "bg-brandSolid-500",
     tip: "Clique em Sincronizar ao entrar no módulo para trazer os pedidos mais recentes. Acesse a aba Estoque para ver alertas de Ruptura no Full.",
   },
   {
@@ -119,14 +119,14 @@ export default function OnboardingModal() {
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="glass rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Barra de progresso */}
         <div className="flex gap-1 p-4 pb-0">
           {visibleSlides.map((_, i) => (
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                i <= step ? "bg-brand-600" : "bg-gray-200"
+                i <= step ? "bg-brandSolid-500" : "bg-ink/10"
               }`}
             />
           ))}
@@ -136,7 +136,7 @@ export default function OnboardingModal() {
         <div className="flex justify-end px-4 pt-3">
           <button
             onClick={finish}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-lg text-fg-dim hover:text-fg-muted hover:bg-ink/[0.06] transition-colors"
             title="Fechar e não mostrar novamente"
           >
             <X size={18} />
@@ -155,17 +155,17 @@ export default function OnboardingModal() {
                 <Icon size={28} className="text-white" />
               </div>
             )}
-            <h2 className="text-xl font-bold text-gray-900">{slide.title}</h2>
-            <p className="text-sm text-brand-600 font-medium mt-1">{slide.subtitle}</p>
+            <h2 className="text-xl font-bold text-fg">{slide.title}</h2>
+            <p className="text-sm text-brandSolid-300 font-medium mt-1">{slide.subtitle}</p>
           </div>
 
           {/* Texto */}
-          <p className="text-sm text-gray-600 leading-relaxed text-center">{slide.body}</p>
+          <p className="text-sm text-fg-muted leading-relaxed text-center">{slide.body}</p>
 
           {/* Dica */}
           {slide.tip && (
-            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-              <p className="text-xs text-amber-800 leading-relaxed">
+            <div className="mt-4 bg-warn/10 border border-warn/30 rounded-lg px-4 py-3">
+              <p className="text-xs text-warn leading-relaxed">
                 <span className="font-semibold">💡 Dica: </span>
                 {slide.tip}
               </p>
@@ -178,7 +178,7 @@ export default function OnboardingModal() {
             {!isFirst ? (
               <button
                 onClick={() => setStep((s) => s - 1)}
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg transition-colors"
               >
                 <ArrowLeft size={15} />
                 Voltar
@@ -186,7 +186,7 @@ export default function OnboardingModal() {
             ) : (
               <button
                 onClick={goToHelp}
-                className="text-xs text-gray-400 hover:text-brand-600 hover:underline transition-colors"
+                className="text-xs text-fg-dim hover:text-brandSolid-300 hover:underline transition-colors"
               >
                 Ver guia completo
               </button>
@@ -196,7 +196,7 @@ export default function OnboardingModal() {
             {isLast ? (
               <button
                 onClick={finish}
-                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-brandSolid-500 hover:bg-brandSolid-400 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors shadow-glow-brand"
               >
                 Começar a usar
                 <ArrowRight size={15} />
@@ -204,7 +204,7 @@ export default function OnboardingModal() {
             ) : (
               <button
                 onClick={() => setStep((s) => s + 1)}
-                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-brandSolid-500 hover:bg-brandSolid-400 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors shadow-glow-brand"
               >
                 {isFirst ? "Conhecer o sistema" : "Próximo"}
                 <ArrowRight size={15} />
@@ -213,7 +213,7 @@ export default function OnboardingModal() {
           </div>
 
           {/* Contador discreto */}
-          <p className="text-center text-xs text-gray-400 mt-4">
+          <p className="text-center text-xs text-fg-dim mt-4">
             {step + 1} de {visibleSlides.length}
           </p>
         </div>

@@ -18,7 +18,10 @@ npm install
 npm run build
 
 echo "==> [4/5] landing page"
+# index.html + assets/ (vídeo do hero, poster, logo, favicon)
+mkdir -p "$LANDING_TARGET/assets"
 cp "$REPO_DIR/landing/index.html" "$LANDING_TARGET/index.html"
+cp -R "$REPO_DIR/landing/assets/." "$LANDING_TARGET/assets/"
 
 echo "==> [5/5] pm2 restart"
 pm2 restart 0 --update-env

@@ -10,9 +10,9 @@ export function ModuleCheckbox({ module, checked, onChange, disabled }) {
         checked={checked}
         onChange={(e) => !disabled && onChange(module, e.target.checked)}
         disabled={disabled}
-        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+        className="w-4 h-4 rounded border-line/25 text-brandSolid-300 focus:ring-brandSolid-500/25"
       />
-      <span className="text-sm text-gray-700">{MODULE_LABELS[module] || module}</span>
+      <span className="text-sm text-fg/90">{MODULE_LABELS[module] || module}</span>
     </label>
   );
 }

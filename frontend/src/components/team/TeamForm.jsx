@@ -26,9 +26,9 @@ export function TeamForm({ initial, planModules, onSave, onCancel, isEdit }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Nome do time *</label>
+        <label className="text-xs text-fg-muted block mb-1">Nome do time *</label>
         <input
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          className="field w-full"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex: Comercial, Suporte…"
@@ -37,7 +37,7 @@ export function TeamForm({ initial, planModules, onSave, onCancel, isEdit }) {
       </div>
 
       <div>
-        <p className="text-xs text-gray-500 mb-2 font-medium">Permissões do time</p>
+        <p className="text-xs text-fg-muted mb-2 font-medium">Permissões do time</p>
         <div className="grid grid-cols-2 gap-2">
           {Object.keys(MODULE_LABELS).map((mod) => (
             <ModuleCheckbox
@@ -49,14 +49,14 @@ export function TeamForm({ initial, planModules, onSave, onCancel, isEdit }) {
             />
           ))}
         </div>
-        <p className="text-[10px] text-gray-400 mt-1">Módulos desabilitados não estão disponíveis no plano atual.</p>
+        <p className="text-[10px] text-fg-dim mt-1">Módulos desabilitados não estão disponíveis no plano atual.</p>
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border border-line/15 text-sm text-fg/90 hover:bg-ink/[0.03]">
           Cancelar
         </button>
-        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50 shadow-glow-brand">
           <Check size={14} />
           {saving ? "Salvando..." : isEdit ? "Salvar" : "Criar time"}
         </button>

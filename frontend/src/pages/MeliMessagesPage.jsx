@@ -6,6 +6,7 @@ import { apiErrorMessage, notifyError, notifyWarning } from "../utils/notify.js"
 import { useNotifications } from "../contexts/NotificationContext";
 import { useSmartSuggestions } from "../hooks/useSmartSuggestions";
 import ConfirmDialog from "../components/ConfirmDialog";
+import { PageHeader, Button } from "../components/ui";
 import { AccountSelector } from "../components/meli-messages/AccountSelector";
 import { ConversationList } from "../components/meli-messages/ConversationList";
 import { ChatThread } from "../components/meli-messages/ChatThread";
@@ -516,35 +517,27 @@ export default function MeliMessagesPage() {
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:h-full gap-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <MessageCircle size={22} className="text-brand-600" />
-            Mensagens ML
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">Gerencie perguntas, respostas e templates.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) })}
-            disabled={loadingQuestions || !selectedUserId}
-            className="px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-medium disabled:opacity-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200"
-          >
-            {loadingQuestions ? "Carregando..." : "Atualizar"}
-          </button>
-          <button
-            type="button"
-            onClick={syncNow}
-            disabled={syncing}
-            className="px-4 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-bold disabled:opacity-50 flex items-center gap-2.5 hover:bg-brand-700 active:bg-brand-800 transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <RefreshCcw size={16} className={syncing ? "animate-spin" : ""} />
-            {syncing ? "Sincronizando..." : "Sincronizar"}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={MessageCircle}
+        title="Mensagens ML"
+        description="Responda perguntas dos compradores com templates, sugestões e links de anúncios."
+        className="!mb-0 shrink-0"
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => queryClient.invalidateQueries({ queryKey: QK.questions(selectedUserId, statusFilter) })}
+              disabled={loadingQuestions || !selectedUserId}
+            >
+              {loadingQuestions ? "Carregando..." : "Atualizar"}
+            </Button>
+            <Button onClick={syncNow} disabled={syncing}>
+              <RefreshCcw size={15} className={syncing ? "animate-spin" : ""} />
+              {syncing ? "Sincronizando..." : "Sincronizar"}
+            </Button>
+          </>
+        }
+      />
 
       {/* Account selector row */}
       <AccountSelector
@@ -558,7 +551,7 @@ export default function MeliMessagesPage() {
       />
 
       {/* Chat grid */}
-      <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 lg:flex-1 lg:min-h-0">
+      <div className="flex flex-col lg:grid lg:grid-cols-5 gap-4 lg:flex-1 lg:min-h-[560px]">
         <ConversationList
           conversations={displayConversations}
           selectedConversationFromId={selectedConversationFromId}

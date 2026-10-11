@@ -1,5 +1,7 @@
-export function WinLossBar({ winning, losing, total, winColor = "#10b981", loseColor = "#ef4444" }) {
-  if (!total) return <p className="text-xs text-gray-400">Nenhum dado disponível</p>;
+import { chartColors } from "../../lib/chartTheme";
+
+export function WinLossBar({ winning, losing, total, winColor = chartColors.neon, loseColor = chartColors.danger }) {
+  if (!total) return <p className="text-xs text-fg-dim">Nenhum dado disponível</p>;
   const winPct = (winning / total) * 100;
   const losePct = (losing / total) * 100;
   const neutralPct = Math.max(0, 100 - winPct - losePct);
@@ -7,45 +9,37 @@ export function WinLossBar({ winning, losing, total, winColor = "#10b981", loseC
 
   return (
     <div>
-      <div className="flex h-8 gap-px overflow-hidden rounded-xl">
+      <div className="flex h-3 gap-1 rounded-full">
         {winPct > 0 && (
           <div
-            className="flex items-center justify-center transition-all"
-            style={{ width: `${winPct}%`, background: winColor }}
-          >
-            {winPct >= 12 && (
-              <span className="text-white text-xs font-semibold">{winPct.toFixed(0)}%</span>
-            )}
-          </div>
+            className="rounded-full transition-all"
+            style={{ width: `${winPct}%`, background: winColor, boxShadow: `0 0 14px -2px ${winColor}` }}
+          />
         )}
-        {neutralPct > 0 && (
-          <div className="bg-gray-200/80" style={{ width: `${neutralPct}%` }} />
-        )}
+        {neutralPct > 0 && <div className="rounded-full bg-ink/10" style={{ width: `${neutralPct}%` }} />}
         {losePct > 0 && (
           <div
-            className="flex items-center justify-center transition-all"
-            style={{ width: `${losePct}%`, background: loseColor }}
-          >
-            {losePct >= 12 && (
-              <span className="text-white text-xs font-semibold">{losePct.toFixed(0)}%</span>
-            )}
-          </div>
+            className="rounded-full transition-all"
+            style={{ width: `${losePct}%`, background: loseColor, boxShadow: `0 0 14px -2px ${loseColor}` }}
+          />
         )}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm" style={{ background: winColor }} />
-          <span>Ganhando: <strong className="text-gray-700">{winning}</strong></span>
+      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-fg-muted">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full" style={{ background: winColor, boxShadow: `0 0 6px ${winColor}` }} />
+          Ganhando <strong className="num text-sm text-fg">{winning}</strong>
+          <span className="text-fg-dim">{winPct.toFixed(0)}%</span>
         </div>
         {neutral > 0 && (
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-sm bg-gray-300" />
-            <span>Sem comparação: <strong className="text-gray-700">{neutral}</strong></span>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-ink/25" />
+            Sem comparação <strong className="num text-sm text-fg">{neutral}</strong>
           </div>
         )}
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm" style={{ background: loseColor }} />
-          <span>Perdendo: <strong className="text-gray-700">{losing}</strong></span>
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full" style={{ background: loseColor, boxShadow: `0 0 6px ${loseColor}` }} />
+          Perdendo <strong className="num text-sm text-fg">{losing}</strong>
+          <span className="text-fg-dim">{losePct.toFixed(0)}%</span>
         </div>
       </div>
     </div>

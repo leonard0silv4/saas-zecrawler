@@ -16,8 +16,8 @@ const STATUS_FILTERS = [
 ];
 
 const ALERT_FILTERS = [
-  { label: "Ruptura", value: "ruptura", icon: AlertTriangle, iconColor: "text-red-500" },
-  { label: "Crítico", value: "critico", icon: AlertCircle,   iconColor: "text-orange-500" },
+  { label: "Ruptura", value: "ruptura", icon: AlertTriangle, iconColor: "text-danger" },
+  { label: "Crítico", value: "critico", icon: AlertCircle,   iconColor: "text-warn" },
 ];
 
 const SORT_OPTIONS = [
@@ -73,19 +73,19 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim pointer-events-none" />
         <input
           type="text"
           value={searchInput}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Buscar por nome ou SKU..."
-          className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+          className="field !pl-8"
         />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <RupturaAlert count={rupturaCount} />
         <div className="flex flex-wrap gap-2 ml-auto items-center">
-          <div className="flex bg-gray-100 rounded-lg p-0.5 text-xs">
+          <div className="seg !p-0.5 text-xs">
             {SORT_OPTIONS.map((s) => {
               const isActive = inventorySort.field === s.value;
               const dir = isActive ? inventorySort.dir : null;
@@ -94,7 +94,7 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                   key={s.value}
                   onClick={() => handleSortClick(s.value)}
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all font-semibold ${
-                    isActive ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    isActive ? "seg-btn-active" : "text-fg-muted hover:text-fg/90"
                   }`}
                 >
                   {s.label}
@@ -111,8 +111,8 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                 onClick={() => setInventoryType(f.value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   inventoryType === f.value
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-brandSolid-500/20 text-fg ring-1 ring-inset ring-brandSolid-400/50 shadow-[0_0_14px_-6px_rgb(30_123_255/0.9)]"
+                    : "bg-ink/[0.06] text-fg-muted hover:bg-ink/10"
                 }`}
               >
                 {f.label}
@@ -126,8 +126,8 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                 onClick={() => setInventoryStatus(f.value)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   inventoryStatus === f.value
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-brandSolid-500/20 text-fg ring-1 ring-inset ring-brandSolid-400/50 shadow-[0_0_14px_-6px_rgb(30_123_255/0.9)]"
+                    : "bg-ink/[0.06] text-fg-muted hover:bg-ink/10"
                 }`}
               >
                 {f.label}
@@ -144,11 +144,11 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                   onClick={() => setInventoryAlert(isActive ? "" : f.value)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     isActive
-                      ? "bg-green-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-brandSolid-500/20 text-fg ring-1 ring-inset ring-brandSolid-400/50 shadow-[0_0_14px_-6px_rgb(30_123_255/0.9)]"
+                      : "bg-ink/[0.06] text-fg-muted hover:bg-ink/10"
                   }`}
                 >
-                  <Icon size={12} className={isActive ? "text-white" : f.iconColor} />
+                  <Icon size={12} className={isActive ? "text-fg" : f.iconColor} />
                   {f.label}
                 </button>
               );
@@ -158,11 +158,11 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
       </div>
 
       {inventory.length === 0 && loading ? (
-        <p className="text-sm text-gray-400">Carregando…</p>
+        <p className="text-sm text-fg-dim">Carregando…</p>
       ) : inventory.length === 0 ? (
-        <p className="text-sm text-gray-400">Nenhum produto encontrado. Clique em Sincronizar para importar seus anúncios.</p>
+        <p className="text-sm text-fg-dim">Nenhum produto encontrado. Clique em Sincronizar para importar seus anúncios.</p>
       ) : filteredInventory.length === 0 ? (
-        <p className="text-sm text-gray-400">Nenhum produto encontrado para "{debouncedSearch}".</p>
+        <p className="text-sm text-fg-dim">Nenhum produto encontrado para "{debouncedSearch}".</p>
       ) : (
         <div
           ref={parentRef}
@@ -170,8 +170,8 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
           style={{ height: "520px" }}
         >
           <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-white">
-              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+            <thead className="sticky top-0 z-10 bg-surface-2">
+              <tr className="border-b border-line/10 text-xs text-fg-dim">
                 <th className="text-left py-2 pr-4 font-semibold">Produto</th>
                 <th className="text-left py-2 pr-4 font-semibold">SKU</th>
                 <th className="text-left py-2 pr-4 font-semibold">Loja</th>
@@ -183,7 +183,7 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                 <th className="text-center py-2 font-semibold">Alerta</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line/[0.07]">
               {virtualizer.getVirtualItems()[0]?.start > 0 && (
                 <tr><td colSpan={9} style={{ height: virtualizer.getVirtualItems()[0].start }} /></tr>
               )}
@@ -195,37 +195,37 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                     ref={virtualizer.measureElement}
                     data-index={vRow.index}
                     onClick={() => onProductSelect(p)}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="hover:bg-ink/[0.03] cursor-pointer transition-colors"
                   >
                     <td className="py-2.5 pr-4">
                       <div className="flex items-center gap-2.5">
                         {p.thumbnail ? (
-                          <img src={p.thumbnail} alt="" className="w-8 h-8 rounded-lg object-contain shrink-0 border border-gray-100" />
+                          <img src={p.thumbnail} alt="" className="w-8 h-8 rounded-lg object-contain shrink-0 border border-line/10" />
                         ) : (
-                          <div className="w-8 h-8 rounded-lg bg-gray-100 shrink-0 flex items-center justify-center">
-                            <Package size={12} className="text-gray-400" />
+                          <div className="w-8 h-8 rounded-lg bg-ink/[0.06] shrink-0 flex items-center justify-center">
+                            <Package size={12} className="text-fg-dim" />
                           </div>
                         )}
                         <span className="max-w-[200px] font-medium">{p.title}</span>
                       </div>
                     </td>
-                    <td className="py-2.5 pr-4 text-gray-400 font-mono text-xs">{p.SKU || "—"}</td>
-                    <td className="py-2.5 pr-4 text-xs text-gray-500 max-w-[120px] truncate">{p.nickname || "—"}</td>
+                    <td className="py-2.5 pr-4 text-fg-dim font-mono text-xs">{p.SKU || "—"}</td>
+                    <td className="py-2.5 pr-4 text-xs text-fg-muted max-w-[120px] truncate">{p.nickname || "—"}</td>
                     <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(p.price)}</td>
-                    <td className="py-2.5 pr-4 text-right font-semibold text-gray-700">{p.sold_quantity ?? "—"}</td>
-                    <td className="py-2.5 pr-4 text-right text-xs text-gray-500">
+                    <td className="py-2.5 pr-4 text-right font-semibold text-fg/90">{p.sold_quantity ?? "—"}</td>
+                    <td className="py-2.5 pr-4 text-right text-xs text-fg-muted">
                       {p.averageSellDay > 0 ? p.averageSellDay.toFixed(1) : "—"}
                     </td>
                     <td className="py-2.5 pr-4 text-right">
                       {p.isFull ? (
                         <span className="inline-flex items-center gap-1 justify-end">
-                          <span className={p.estoque_full === 0 ? "text-red-600 font-bold" : "font-medium"}>
+                          <span className={p.estoque_full === 0 ? "text-danger font-bold" : "font-medium"}>
                             {p.estoque_full ?? "—"}
                           </span>
                           {p.estoqueFullSource === "fallback_item" && (
                             <HelpCircle
                               size={12}
-                              className="text-amber-500 shrink-0"
+                              className="text-warn shrink-0"
                               title="Estoque Full estimado — API de fulfillment indisponível para este item"
                             />
                           )}
@@ -236,7 +236,7 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                     </td>
                     <td className="py-2.5 pr-4 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        p.isFull ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                        p.isFull ? "bg-neon/15 text-neon" : "bg-ink/[0.06] text-fg-muted"
                       }`}>
                         {p.isFull ? "Full" : "Normal"}
                       </span>
@@ -244,14 +244,14 @@ export function InventoryTab({ inventory, loading, inventoryType, setInventoryTy
                     <td className="py-2.5 text-center">
                       {p.alertRuptura ? (
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          p.alertRuptura === "RUPTURA"  ? "bg-red-100 text-red-700" :
-                          p.alertRuptura === "CRÍTICO"  ? "bg-orange-100 text-orange-700" :
-                                                          "bg-yellow-100 text-yellow-700"
+                          p.alertRuptura === "RUPTURA"  ? "bg-danger/15 text-danger" :
+                          p.alertRuptura === "CRÍTICO"  ? "bg-warn/15 text-warn" :
+                                                          "bg-warn/15 text-warn"
                         }`}>
                           {p.alertRuptura}
                         </span>
                       ) : (
-                        <span className="text-gray-200">—</span>
+                        <span className="text-fg-dim/40">—</span>
                       )}
                     </td>
                   </tr>

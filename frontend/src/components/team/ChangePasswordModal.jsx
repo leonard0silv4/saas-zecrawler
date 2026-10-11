@@ -31,13 +31,13 @@ export function ChangePasswordModal({ open, user, onClose }) {
       size="sm"
       footer={
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-line/15 text-sm text-fg/90">
             Cancelar
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand"
           >
             {saving ? "Salvando..." : "Alterar senha"}
           </button>
@@ -45,11 +45,11 @@ export function ChangePasswordModal({ open, user, onClose }) {
       }
     >
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Nova senha</label>
+        <label className="text-xs text-fg-muted block mb-1">Nova senha</label>
         <div className="relative">
           <input
             type={showPass ? "text" : "password"}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-10"
+            className="field w-full !pr-10"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Mínimo 6 caracteres"
@@ -57,7 +57,7 @@ export function ChangePasswordModal({ open, user, onClose }) {
           <button
             type="button"
             onClick={() => setShowPass((v) => !v)}
-            className="absolute right-2 top-2 text-gray-400 hover:text-gray-700"
+            className="absolute right-2 top-2 text-fg-dim hover:text-fg/90"
           >
             {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>

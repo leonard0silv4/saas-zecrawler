@@ -1,36 +1,42 @@
+import { Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 
 import AppLayout from "./components/AppLayout";
-import AdminPage from "./pages/AdminPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import PublicPricingPage from "./pages/PublicPricingPage";
-import AboutPage from "./pages/AboutPage";
-import FaqPage from "./pages/FaqPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import DashboardPage from "./pages/DashboardPage";
-import PlansPage from "./pages/PlansPage";
-import LinksPage from "./pages/LinksPage";
-import CatalogPage from "./pages/CatalogPage";
-import MeliPage from "./pages/MeliPage";
-import MeliMessagesPage from "./pages/MeliMessagesPage";
-import MeliAnalyticsPage from "./pages/MeliAnalyticsPage";
-import MeliCatalogPage from "./pages/MeliCatalogPage";
-import PriceAnalyzePage from "./pages/PriceAnalyzePage";
-import SellerMonitorPage from "./pages/SellerMonitorPage";
-import SettingsPage from "./pages/SettingsPage";
-import TeamPage from "./pages/TeamPage";
-import HelpPage from "./pages/HelpPage";
+import PageLoader from "./components/PageLoader";
+import { lazyPage } from "./lib/lazyPage";
+
+// Cada página vira um arquivo separado, baixado só quando a rota é aberta.
+const AdminPage = lazyPage(() => import("./pages/AdminPage"));
+const LoginPage = lazyPage(() => import("./pages/LoginPage"));
+const RegisterPage = lazyPage(() => import("./pages/RegisterPage"));
+const PublicPricingPage = lazyPage(() => import("./pages/PublicPricingPage"));
+const AboutPage = lazyPage(() => import("./pages/AboutPage"));
+const FaqPage = lazyPage(() => import("./pages/FaqPage"));
+const ForgotPasswordPage = lazyPage(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazyPage(() => import("./pages/ResetPasswordPage"));
+const DashboardPage = lazyPage(() => import("./pages/DashboardPage"));
+const PlansPage = lazyPage(() => import("./pages/PlansPage"));
+const LinksPage = lazyPage(() => import("./pages/LinksPage"));
+const CatalogPage = lazyPage(() => import("./pages/CatalogPage"));
+const MeliPage = lazyPage(() => import("./pages/MeliPage"));
+const MeliMessagesPage = lazyPage(() => import("./pages/MeliMessagesPage"));
+const MeliAnalyticsPage = lazyPage(() => import("./pages/MeliAnalyticsPage"));
+const MeliCatalogPage = lazyPage(() => import("./pages/MeliCatalogPage"));
+const PriceAnalyzePage = lazyPage(() => import("./pages/PriceAnalyzePage"));
+const SellerMonitorPage = lazyPage(() => import("./pages/SellerMonitorPage"));
+const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
+const TeamPage = lazyPage(() => import("./pages/TeamPage"));
+const HelpPage = lazyPage(() => import("./pages/HelpPage"));
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-void">
+      <div className="w-9 h-9 rounded-full border-2 border-glow/15 border-t-glow animate-spin shadow-[0_0_24px_-4px_rgb(var(--glow)/0.7)]" />
     </div>
   );
   if (!user) return <Navigate to="/login" replace />;
@@ -58,11 +64,18 @@ function OwnerRoute({ children }) {
   return children;
 }
 
+function ThemedToaster() {
+  const { theme } = useTheme();
+  return <Toaster position="bottom-right" theme={theme} richColors closeButton duration={5000} />;
+}
+
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <AuthProvider>
-        <Toaster position="bottom-right" richColors closeButton duration={5000} />
+        <ThemedToaster />
+        <Suspense fallback={<PageLoader fullScreen />}>
         <Routes>
           {/* Home → login (URL canônica limpa para o Google) */}
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -102,7 +115,9 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }

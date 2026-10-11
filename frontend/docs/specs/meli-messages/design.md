@@ -62,3 +62,10 @@ O estado completo permanece em `MeliMessagesPage` — os componentes filhos rece
 - `sortOrder` adicionado à ordenação de conversas
 - `threadSortOrder` adicionado para ordenar mensagens dentro do thread (independente do `sortOrder` da lista de conversas)
 - Update otimista em `sendManualReply`
+
+## Redesign Holo (2026-10)
+
+- `AccountSelector.jsx`: até 5 lojas viram abas com ponto de não lidas; acima disso, dropdown. Filtro Pendentes/Respondidas em controle segmentado.
+- `ConversationList.jsx`: selo de tempo de espera da pergunta pendente mais antiga (≤1h ciano, ≤12h âmbar, >12h vermelho) e skeleton de carregamento.
+- `ChatThread.jsx`: linha "Respondendo:" com a pergunta ativa, até 3 sugestões inline, contador `x/2000`, envio por ⌘/Ctrl+Enter (abre a revisão), bolhas com gradiente da marca.
+- `ConfirmReplyModal.jsx`: contagem de 5 s com barra de progresso no botão; "Editar resposta" fecha sem enviar.

@@ -1,12 +1,12 @@
 const variants = {
-  blue:   "bg-blue-50 text-blue-700",
-  green:  "bg-emerald-50 text-emerald-700",
-  red:    "bg-red-50 text-red-700",
-  gray:   "bg-gray-100 text-gray-600",
-  amber:  "bg-amber-50 text-amber-700",
-  purple: "bg-violet-50 text-violet-700",
-  pink:   "bg-pink-50 text-pink-700",
-  brand:  "bg-brand-50 text-brand-700",
+  blue:   "bg-brandSolid-500/15 text-brandSolid-300 ring-brandSolid-400/25",
+  brand:  "bg-brandSolid-500/15 text-brandSolid-300 ring-brandSolid-400/25",
+  green:  "bg-neon/10 text-neon ring-neon/25",
+  red:    "bg-danger/10 text-danger ring-danger/25",
+  amber:  "bg-warn/10 text-warn ring-warn/25",
+  gray:   "bg-ink/5 text-fg-muted ring-ink/10",
+  purple: "bg-violet-500/15 text-violet-300 ring-violet-400/25",
+  pink:   "bg-pink-500/15 text-pink-300 ring-pink-400/25",
 };
 
 const sizes = {
@@ -18,7 +18,7 @@ export function Badge({ variant = "gray", size = "sm", className = "", children 
   return (
     <span
       className={[
-        "inline-flex items-center font-medium rounded-full",
+        "inline-flex items-center gap-1 font-medium rounded-full ring-1 ring-inset",
         variants[variant] ?? variants.gray,
         sizes[size] ?? sizes.sm,
         className,

@@ -99,20 +99,20 @@ function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`border border-gray-100 rounded-xl overflow-hidden transition-all ${open ? "shadow-sm" : ""}`}>
+    <div className={`border border-line/10 rounded-xl overflow-hidden transition-all ${open ? "shadow-sm" : ""}`}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left bg-white hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left bg-surface-2 hover:bg-ink/[0.03] transition-colors"
       >
-        <span className="text-sm font-semibold text-gray-800">{q}</span>
+        <span className="text-sm font-semibold text-fg">{q}</span>
         <ChevronDown
           size={18}
-          className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`shrink-0 text-fg-dim transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <div className="px-5 pb-5 bg-white">
-          <p className="text-sm text-gray-600 leading-relaxed">{a}</p>
+        <div className="px-5 pb-5 bg-surface-2">
+          <p className="text-sm text-fg-muted leading-relaxed">{a}</p>
         </div>
       )}
     </div>
@@ -131,11 +131,11 @@ export default function FaqPage() {
 
         {/* Hero */}
         <div className="text-center mb-12">
-          <span className="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-semibold rounded-full mb-4 uppercase tracking-wider">
+          <span className="inline-block px-3 py-1 bg-brandSolid-500/15 text-brandSolid-300 text-xs font-semibold rounded-full mb-4">
             FAQ
           </span>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Perguntas frequentes</h1>
-          <p className="text-gray-500 text-lg">
+          <h1 className="text-4xl sm:text-5xl font-semibold text-fg mb-3">Perguntas frequentes</h1>
+          <p className="text-fg-muted text-lg">
             Tudo que você precisa saber antes de começar.
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function FaqPage() {
         <div className="space-y-8">
           {FAQ_GROUPS.map((group) => (
             <div key={group.group}>
-              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">
+              <h2 className="text-xs font-semibold text-fg-dim mb-3 px-1">
                 {group.group}
               </h2>
               <div className="space-y-2">
@@ -157,18 +157,18 @@ export default function FaqPage() {
         </div>
 
         {/* Ainda com dúvidas? */}
-        <div className="mt-14 bg-gradient-to-br from-brand-50 to-white rounded-2xl border border-brand-100 p-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-100 mb-4">
-            <MessageCircle size={22} className="text-brand-600" />
+        <div className="mt-14 glass glow-top rounded-2xl bg-gradient-to-br from-brandSolid-500/15 to-transparent p-8 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brandSolid-500/15 mb-4">
+            <MessageCircle size={22} className="text-brandSolid-300" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Ainda tem dúvidas?</h3>
-          <p className="text-gray-500 text-sm mb-5">
+          <h3 className="text-lg font-bold text-fg mb-2">Ainda tem dúvidas?</h3>
+          <p className="text-fg-muted text-sm mb-5">
             Crie sua conta gratuitamente e explore a plataforma por conta própria.
             O plano gratuito não tem limite de tempo.
           </p>
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-brandSolid-500 hover:bg-brandSolid-400 text-white text-sm font-medium rounded-xl transition-colors shadow-glow-brand"
           >
             <Zap size={16} />
             Criar conta grátis

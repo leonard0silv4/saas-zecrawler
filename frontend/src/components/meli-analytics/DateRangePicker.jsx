@@ -7,10 +7,16 @@ import "react-day-picker/style.css";
 
 const calendarStyles = `
   .drp-root {
-    --rdp-accent-color: #16a34a;
-    --rdp-accent-background-color: #dcfce7;
-    --rdp-selected-color: #ffffff;
-    --rdp-today-color: #16a34a;
+    --rdp-accent-color: rgb(var(--glow));
+    --rdp-accent-background-color: rgb(30 123 255 / 0.22);
+    --rdp-selected-color: rgb(var(--surface));
+    --rdp-today-color: rgb(var(--neon));
+    --rdp-range_start-color: rgb(var(--surface));
+    --rdp-range_end-color: rgb(var(--surface));
+    --rdp-range_start-date-background-color: rgb(var(--glow));
+    --rdp-range_end-date-background-color: rgb(var(--glow));
+    --rdp-range_middle-background-color: rgb(30 123 255 / 0.22);
+    color: rgb(var(--fg));
   }
   .drp-root .rdp-root {
     --rdp-day-width: 36px;
@@ -21,17 +27,17 @@ const calendarStyles = `
     font-size: 13px;
   }
   .drp-root .rdp-range_middle .rdp-day_button {
-    background-color: #dcfce7;
-    color: #15803d;
+    color: rgb(var(--fg));
   }
   .drp-root .rdp-caption_label {
     font-size: 14px;
     font-weight: 600;
   }
+  .drp-root .rdp-chevron { fill: rgb(var(--glow)); }
   .drp-root .rdp-weekday {
     font-size: 11px;
     font-weight: 600;
-    color: #9ca3af;
+    color: rgb(var(--fg-dim));
   }
 `;
 
@@ -79,20 +85,15 @@ export function DateRangePicker({ value, onChange }) {
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className={`px-3 py-1.5 rounded-lg transition-all font-medium flex items-center gap-1.5 text-sm ${
-            isActive
-              ? "bg-white text-green-700 shadow-sm"
-              : open
-              ? "bg-white text-gray-700 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
+          aria-pressed={isActive}
+          className={`seg-btn flex items-center gap-1.5 ${open && !isActive ? "!text-fg bg-ink/[0.06]" : ""}`}
         >
           <CalendarRange size={13} />
           <span>{label}</span>
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-2 z-50 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+          <div className="popover absolute right-0 top-full mt-2 z-50">
             <div className="p-3 drp-root">
               <DayPicker
                 mode="range"
@@ -102,7 +103,7 @@ export function DateRangePicker({ value, onChange }) {
                 numberOfMonths={1}
               />
             </div>
-            <div className="px-4 pb-3 text-xs text-gray-400 text-center">
+            <div className="px-4 pb-3 text-xs text-fg-dim text-center">
               Clique na data inicial e depois na data final
             </div>
           </div>

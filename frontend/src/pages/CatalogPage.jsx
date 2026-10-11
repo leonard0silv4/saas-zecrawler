@@ -226,14 +226,18 @@ export default function CatalogPage() {
     <div className="space-y-6 mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Ruler size={22} className="text-brand-600" />
-            Dimensões e Peso
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">Dimensões e peso cúbico por SKU.</p>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brandSolid-400/30 bg-brandSolid-500/10 text-brandSolid-300 shadow-[0_0_20px_-6px_rgb(30_123_255/0.7)]">
+              <Ruler size={19} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-fg">Dimensões e Peso</h1>
+              <p className="mt-1 text-sm text-fg-muted">Dimensões e peso cúbico por SKU.</p>
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium cursor-pointer hover:bg-gray-50">
+          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line/15 text-sm font-medium cursor-pointer hover:bg-ink/[0.03]">
             <Upload size={16} />
             {importing ? "Importando…" : "Importar XLSX"}
             <input type="file" accept=".xlsx,.xls" className="hidden" onChange={onImport} disabled={importing} />
@@ -245,7 +249,7 @@ export default function CatalogPage() {
               setEditingId(null);
               setModal(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium hover:bg-brandSolid-400 shadow-glow-brand"
           >
             <Plus size={16} />
             Novo
@@ -263,7 +267,7 @@ export default function CatalogPage() {
               <button
                 type="button"
                 onClick={clearPackage}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line/15 text-sm font-medium hover:bg-ink/[0.03]"
               >
                 <Trash2 size={16} />
                 Limpar pacote
@@ -274,19 +278,19 @@ export default function CatalogPage() {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim" size={18} />
         <input
-          className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm"
+          className="field w-full !pl-10 !pr-4"
           placeholder="Buscar SKU ou produto…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+      <div className="glass rounded-xl border border-line/10 overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-100 text-left text-gray-600">
+            <tr className="bg-ink/[0.03] border-b border-line/10 text-left text-fg-muted">
               <th className="px-3 py-2 font-medium">SKU-1</th>
               <th className="px-3 py-2 font-medium">Produto</th>
               <th className="px-3 py-2 font-medium">L×C×A</th>
@@ -294,14 +298,14 @@ export default function CatalogPage() {
               <th className="px-3 py-2 w-10" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line/[0.07]">
             {items.map((p) => (
-              <tr key={p._id} className="hover:bg-gray-50/80">
+              <tr key={p._id} className="hover:bg-ink/[0.02]">
                 <td className="px-3 py-2 font-mono text-xs">{p.sku1}</td>
                 <td className="px-3 py-2 max-w-[200px] truncate" title={p.produto}>
                   {p.produto}
                 </td>
-                <td className="px-3 py-2 text-gray-600 text-xs">
+                <td className="px-3 py-2 text-fg-muted text-xs">
                   {p.largura}×{p.comprimento}×{p.altura}
                 </td>
                 <td className="px-3 py-2">{p.pesoCubico}</td>
@@ -311,7 +315,7 @@ export default function CatalogPage() {
                       type="button"
                       onClick={() => addToPackage(p)}
                       title="Adicionar ao pacote"
-                      className="text-emerald-600 p-1 rounded hover:bg-emerald-50"
+                      className="text-neon p-1 rounded hover:bg-neon/10"
                     >
                       <PackagePlus size={16} />
                     </button>
@@ -333,11 +337,11 @@ export default function CatalogPage() {
                         setModal(true);
                       }}
                       title="Editar"
-                      className="text-brand-600 p-1 rounded hover:bg-brand-50"
+                      className="text-brandSolid-300 p-1 rounded hover:bg-brandSolid-500/10"
                     >
                       <Pencil size={16} />
                     </button>
-                    <button type="button" onClick={() => remove(p._id)} className="text-red-500 p-1 rounded hover:bg-red-50">
+                    <button type="button" onClick={() => remove(p._id)} className="text-danger p-1 rounded hover:bg-danger/10">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -346,11 +350,11 @@ export default function CatalogPage() {
             ))}
           </tbody>
         </table>
-        {loading && <p className="text-center text-gray-500 py-8">Carregando…</p>}
-        {!loading && items.length === 0 && <p className="text-center text-gray-500 py-12">Nenhum item.</p>}
+        {loading && <p className="text-center text-fg-muted py-8">Carregando…</p>}
+        {!loading && items.length === 0 && <p className="text-center text-fg-muted py-12">Nenhum item.</p>}
         {hasMore && (
-          <div className="p-4 text-center border-t border-gray-100">
-            <button type="button" className="text-brand-600 text-sm font-medium" onClick={loadMore}>
+          <div className="p-4 text-center border-t border-line/10">
+            <button type="button" className="text-brandSolid-300 text-sm font-medium" onClick={loadMore}>
               Carregar mais
             </button>
           </div>
@@ -359,13 +363,13 @@ export default function CatalogPage() {
 
       {modal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => { setModal(false); setEditingId(null); }}>
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="glass rounded-2xl p-6 max-w-md w-full shadow-xl space-y-3" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-semibold text-lg">{editingId ? "Editar produto" : "Novo produto"}</h3>
             {["sku1", "sku2", "sku3", "produto", "medidas"].map((k) => (
               <div key={k}>
-                <label className="text-xs text-gray-600 uppercase">{k}</label>
+                <label className="text-xs text-fg-muted">{k}</label>
                 <input
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-0.5"
+                  className="field w-full mt-0.5"
                   value={form[k]}
                   onChange={(e) => setForm({ ...form, [k]: e.target.value })}
                 />
@@ -374,9 +378,9 @@ export default function CatalogPage() {
             <div className="grid grid-cols-3 gap-2">
               {["largura", "comprimento", "altura"].map((k) => (
                 <div key={k}>
-                  <label className="text-xs text-gray-600">{k}</label>
+                  <label className="text-xs text-fg-muted">{k}</label>
                   <input
-                    className="w-full border border-gray-200 rounded-lg px-2 py-2 text-sm mt-0.5"
+                    className="field w-full mt-0.5"
                     value={form[k]}
                     onChange={(e) => setForm({ ...form, [k]: e.target.value })}
                   />
@@ -384,22 +388,22 @@ export default function CatalogPage() {
               ))}
             </div>
             <div>
-              <label className="text-xs text-gray-600">Peso (kg)</label>
+              <label className="text-xs text-fg-muted">Peso (kg)</label>
               <input
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mt-0.5"
+                className="field w-full mt-0.5"
                 value={form.peso}
                 onChange={(e) => setForm({ ...form, peso: e.target.value })}
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => { setModal(false); setEditingId(null); }}>
+              <button type="button" className="px-4 py-2 text-sm text-fg-muted" onClick={() => { setModal(false); setEditingId(null); }}>
                 Cancelar
               </button>
               <button
                 type="button"
                 disabled={saving}
                 onClick={save}
-                className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+                className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand"
               >
                 Salvar
               </button>
@@ -411,33 +415,33 @@ export default function CatalogPage() {
 
       {packageModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setPackageModal(false)}>
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-xl space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="glass rounded-2xl p-6 max-w-2xl w-full shadow-xl space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <PackageCheck size={18} />
                 Verificar Pacote
               </h3>
-              <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+              <span className="text-xs px-2 py-1 rounded bg-ink/[0.06] text-fg-muted">
                 {packageItems.length} item(ns)
               </span>
             </div>
 
             <div className="space-y-2">
               {packageItems.map((item) => (
-                <div key={item.product._id} className="border border-gray-100 rounded-lg p-2 flex items-center gap-2">
+                <div key={item.product._id} className="border border-line/10 rounded-lg p-2 flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate">{item.product.produto}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-fg-muted">
                       SKU: {item.product.sku1} · P.Cúbico: {Number(item.product.pesoCubico || 0).toFixed(3)} kg · Peso: {Number(item.product.peso || 0).toFixed(3)} kg
                     </p>
                   </div>
                   <input
-                    className="w-20 border border-gray-200 rounded px-2 py-1 text-sm text-center"
+                    className="field w-20"
                     value={item.qty}
                     onChange={(e) => updatePackageQty(item.product._id, e.target.value)}
                     placeholder="Qtd"
                   />
-                  <button type="button" onClick={() => removeFromPackage(item.product._id)} className="text-red-500 p-1 rounded hover:bg-red-50">
+                  <button type="button" onClick={() => removeFromPackage(item.product._id)} className="text-danger p-1 rounded hover:bg-danger/10">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -446,20 +450,20 @@ export default function CatalogPage() {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-gray-600 flex items-center gap-1"><Ruler size={12} />Largura (cm)</label>
-                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgLargura} onChange={(e) => { setPkgLargura(e.target.value); setPkgResult(null); }} />
+                <label className="text-xs text-fg-muted flex items-center gap-1"><Ruler size={12} />Largura (cm)</label>
+                <input className="field w-full mt-0.5" value={pkgLargura} onChange={(e) => { setPkgLargura(e.target.value); setPkgResult(null); }} />
               </div>
               <div>
-                <label className="text-xs text-gray-600 flex items-center gap-1"><Ruler size={12} />Comprimento (cm)</label>
-                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgComprimento} onChange={(e) => { setPkgComprimento(e.target.value); setPkgResult(null); }} />
+                <label className="text-xs text-fg-muted flex items-center gap-1"><Ruler size={12} />Comprimento (cm)</label>
+                <input className="field w-full mt-0.5" value={pkgComprimento} onChange={(e) => { setPkgComprimento(e.target.value); setPkgResult(null); }} />
               </div>
               <div>
-                <label className="text-xs text-gray-600 flex items-center gap-1"><Ruler size={12} />Altura (cm)</label>
-                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgAltura} onChange={(e) => { setPkgAltura(e.target.value); setPkgResult(null); }} />
+                <label className="text-xs text-fg-muted flex items-center gap-1"><Ruler size={12} />Altura (cm)</label>
+                <input className="field w-full mt-0.5" value={pkgAltura} onChange={(e) => { setPkgAltura(e.target.value); setPkgResult(null); }} />
               </div>
               <div>
-                <label className="text-xs text-gray-600 flex items-center gap-1"><Weight size={12} />Peso total (kg)</label>
-                <input className="w-full border border-gray-200 rounded px-2 py-2 text-sm mt-0.5" value={pkgPeso} onChange={(e) => { setPkgPeso(e.target.value); setPkgResult(null); }} />
+                <label className="text-xs text-fg-muted flex items-center gap-1"><Weight size={12} />Peso total (kg)</label>
+                <input className="field w-full mt-0.5" value={pkgPeso} onChange={(e) => { setPkgPeso(e.target.value); setPkgResult(null); }} />
               </div>
             </div>
 
@@ -467,36 +471,36 @@ export default function CatalogPage() {
               type="button"
               onClick={verifyPackage}
               disabled={!pkgLargura || !pkgComprimento || !pkgAltura || !pkgPeso || packageItems.length === 0}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand"
             >
               <Calculator size={16} />
               Conferir pacote
             </button>
 
             {pkgResult && (
-              <div className={`border rounded-lg p-4 space-y-3 ${pkgResult.cubadoAprovado ? "border-emerald-300 bg-emerald-50" : "border-red-300 bg-red-50"}`}>
+              <div className={`border rounded-lg p-4 space-y-3 ${pkgResult.cubadoAprovado ? "border-neon/50 bg-neon/10" : "border-danger/50 bg-danger/10"}`}>
                 <div className="flex items-center gap-2">
-                  {pkgResult.cubadoAprovado ? <CheckCircle2 size={18} className="text-emerald-600" /> : <XCircle size={18} className="text-red-600" />}
-                  <p className={`font-semibold ${pkgResult.cubadoAprovado ? "text-emerald-700" : "text-red-700"}`}>
+                  {pkgResult.cubadoAprovado ? <CheckCircle2 size={18} className="text-neon" /> : <XCircle size={18} className="text-danger" />}
+                  <p className={`font-semibold ${pkgResult.cubadoAprovado ? "text-neon" : "text-danger"}`}>
                     {pkgResult.cubadoAprovado ? "APROVADO" : "REPROVADO"}
                   </p>
-                  {pkgResult.pesoDivergente && <span className="text-amber-600 text-xs font-semibold">PESO DIVERGENTE</span>}
+                  {pkgResult.pesoDivergente && <span className="text-warn text-xs font-semibold">PESO DIVERGENTE</span>}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-gray-500 text-xs">Cubado do pacote</p>
+                    <p className="text-fg-muted text-xs">Cubado do pacote</p>
                     <p className="font-mono font-semibold">{pkgResult.cubadoCaixa.toFixed(3)} kg</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">Limite total catálogo</p>
-                    <p className="font-mono font-semibold text-blue-700">{pkgResult.cubadoLimiteTotal.toFixed(3)} kg</p>
+                    <p className="text-fg-muted text-xs">Limite total catálogo</p>
+                    <p className="font-mono font-semibold text-brandSolid-300">{pkgResult.cubadoLimiteTotal.toFixed(3)} kg</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">Peso informado</p>
+                    <p className="text-fg-muted text-xs">Peso informado</p>
                     <p className="font-mono">{pkgResult.pesoInformado.toFixed(3)} kg</p>
                   </div>
                   <div>
-                    <p className="text-gray-500 text-xs">Peso esperado</p>
+                    <p className="text-fg-muted text-xs">Peso esperado</p>
                     <p className="font-mono">{pkgResult.pesoEsperado.toFixed(3)} kg</p>
                   </div>
                 </div>
@@ -504,7 +508,7 @@ export default function CatalogPage() {
             )}
 
             <div className="flex justify-end gap-2">
-              <button type="button" className="px-4 py-2 text-sm text-gray-600" onClick={() => setPackageModal(false)}>
+              <button type="button" className="px-4 py-2 text-sm text-fg-muted" onClick={() => setPackageModal(false)}>
                 Fechar
               </button>
             </div>

@@ -21,22 +21,20 @@ export function AccountSelect({ accounts, value, onChange, disabled = false }) {
         type="button"
         onClick={() => { if (!disabled) setOpen((v) => !v); }}
         disabled={disabled}
-        className={"flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium min-w-[175px] transition-colors shadow-sm " + (disabled ? "text-gray-400 opacity-60 cursor-not-allowed" : "text-gray-700 hover:bg-gray-50")}
+        aria-expanded={open}
+        className={"flex items-center gap-2 px-3 py-2 rounded-xl border border-line/15 bg-surface-2/80 text-sm font-medium min-w-[175px] transition-colors " + (disabled ? "text-fg-dim opacity-50 cursor-not-allowed" : "text-fg hover:border-line/30")}
       >
-        <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-yellow-400/20 shrink-0">
-          <Store size={13} className="text-yellow-600" />
+        <span className="flex items-center justify-center w-6 h-6 rounded-md border border-warn/30 bg-warn/10 shrink-0">
+          <Store size={13} className="text-warn" />
         </span>
         <span className="flex-1 text-left truncate">
           {selected?.nickname || (accounts.length === 0 ? "Nenhuma conta" : "Selecionar loja")}
         </span>
-        <ChevronDown
-          size={14}
-          className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown size={14} className={`shrink-0 text-fg-dim transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && !disabled && accounts.length > 0 && (
-        <div className="absolute left-0 top-full mt-1.5 w-full min-w-[220px] bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden py-1">
+        <div className="popover absolute left-0 top-full mt-1.5 w-full min-w-[220px] z-50 py-1">
           {accounts.map((a) => {
             const isSelected = String(a.user_id) === String(value);
             return (
@@ -45,14 +43,14 @@ export function AccountSelect({ accounts, value, onChange, disabled = false }) {
                 type="button"
                 onClick={() => { onChange(String(a.user_id)); setOpen(false); }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors text-left ${
-                  isSelected ? "bg-green-50 text-green-700 font-semibold" : "text-gray-700 hover:bg-gray-50"
+                  isSelected ? "bg-brandSolid-500/15 text-fg font-medium" : "text-fg-muted hover:text-fg hover:bg-ink/[0.04]"
                 }`}
               >
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-yellow-400/15 shrink-0">
-                  <Store size={13} className="text-yellow-600" />
+                <span className="flex items-center justify-center w-7 h-7 rounded-md border border-warn/25 bg-warn/10 shrink-0">
+                  <Store size={13} className="text-warn" />
                 </span>
                 <span className="flex-1 truncate">{a.nickname || `ID ${a.user_id}`}</span>
-                {isSelected && <Check size={14} className="shrink-0 text-green-600" />}
+                {isSelected && <Check size={14} className="shrink-0 text-glow" />}
               </button>
             );
           })}

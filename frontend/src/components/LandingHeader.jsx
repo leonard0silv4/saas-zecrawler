@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
+import BrandLogo from "./BrandLogo";
+import ThemeToggle from "./ThemeToggle";
 
 const NAV_LINKS = [
   { to: "/price", label: "Planos" },
@@ -13,12 +15,12 @@ export default function LandingHeader() {
   const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
+    <header className="sticky top-0 z-50 bg-void/60 backdrop-blur-xl border-b border-line/10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/login" className="flex items-center group">
-            <img src="/logo.png" alt="ML SmartHub" className="h-9 w-auto" />
+            <BrandLogo size={34} />
           </Link>
 
           {/* Desktop nav */}
@@ -31,8 +33,8 @@ export default function LandingHeader() {
                   to={link.to}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     active
-                      ? "text-brand-700 bg-brand-50"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      ? "text-brandSolid-300 bg-brandSolid-500/10"
+                      : "text-fg-muted hover:text-fg hover:bg-ink/[0.03]"
                   }`}
                 >
                   {link.label}
@@ -43,34 +45,38 @@ export default function LandingHeader() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             <Link
               to="/login"
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-sm font-medium text-fg-muted hover:text-fg transition-colors"
             >
               Entrar
             </Link>
             <Link
               to="/register"
-              className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              className="px-4 py-2 bg-brandSolid-500 hover:bg-brandSolid-400 text-white text-sm font-medium rounded-lg transition-colors shadow-glow-brand"
             >
               Criar conta grátis
             </Link>
           </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile: tema + hamburger */}
+          <div className="md:hidden flex items-center gap-1">
+          <ThemeToggle />
           <button
-            className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-lg text-fg-muted hover:bg-ink/[0.06] transition-colors"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Menu"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1 shadow-lg">
+        <div className="md:hidden border-t border-line/10 bg-surface-2 px-4 py-3 space-y-1 shadow-lg">
           {NAV_LINKS.map((link) => {
             const active = location.pathname === link.to;
             return (
@@ -80,26 +86,26 @@ export default function LandingHeader() {
                 onClick={() => setMobileOpen(false)}
                 className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   active
-                    ? "text-brand-700 bg-brand-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "text-brandSolid-300 bg-brandSolid-500/10"
+                    : "text-fg-muted hover:text-fg hover:bg-ink/[0.03]"
                 }`}
               >
                 {link.label}
               </Link>
             );
           })}
-          <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
+          <div className="pt-2 border-t border-line/10 flex flex-col gap-2">
             <Link
               to="/login"
               onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all"
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-fg-muted hover:bg-ink/[0.03] transition-all"
             >
               Entrar
             </Link>
             <Link
               to="/register"
               onClick={() => setMobileOpen(false)}
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-center bg-brand-600 text-white hover:bg-brand-700 transition-colors"
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-center bg-brandSolid-500 text-white hover:bg-brandSolid-400 transition-colors shadow-glow-brand"
             >
               Criar conta grátis
             </Link>

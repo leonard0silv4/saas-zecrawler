@@ -4,9 +4,11 @@ import { MessageSquare, TrendingUp, Clock, Zap, Users, Lock } from "lucide-react
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { StatCard, StatCardSkeleton } from "./StatCard";
 import { SectionHeader, SectionWrap, Panel, RankList } from "./DashboardPrimitives";
-import { DarkTooltip } from "./DarkTooltip";
+import { NeonTooltip, ChartGlowDefs } from "../charts";
+import { chartAxis, chartGrid, chartTooltipProps, chartColors } from "../../lib/chartTheme";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../services/api";
+import { Button, EmptyState } from "../ui";
 
 export function MensagensMlSection({ stats, loading }) {
   const { canAccess } = useAuth();
@@ -21,21 +23,14 @@ export function MensagensMlSection({ stats, loading }) {
   if (!hasAccess) {
     return (
       <SectionWrap>
-        <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} accent="bg-amber-500" />
-        <div className="flex flex-col items-center justify-center py-10 gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
-            <Lock size={22} className="text-amber-500" />
-          </div>
-          <p className="text-gray-600 font-medium">Disponível a partir do plano Starter</p>
-          <p className="text-sm text-gray-400 text-center max-w-sm">
-            Gerencie perguntas do Mercado Livre com análise de desempenho da equipe
-          </p>
-          <Link
-            to="/plans"
-            className="mt-2 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 transition-colors"
-          >
-            Ver planos
-          </Link>
+        <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} />
+        <div className="glass rounded-2xl">
+          <EmptyState
+            icon={Lock}
+            title="Disponível a partir do plano Starter"
+            description="Gerencie perguntas do Mercado Livre com análise de desempenho da equipe."
+            action={<Link to="/plans"><Button size="sm">Ver planos</Button></Link>}
+          />
         </div>
       </SectionWrap>
     );
@@ -45,26 +40,26 @@ export function MensagensMlSection({ stats, loading }) {
     {
       icon: MessageSquare, label: "Total de Perguntas",
       value: stats?.total,
-      iconBg: "bg-blue-50", iconColor: "text-blue-600",
+      tone: "brand",
     },
     {
       icon: TrendingUp, label: "Taxa de Resposta",
       value: stats?.responseRate != null ? `${stats.responseRate.toFixed(1)}%` : "—",
       sub: `${stats?.answered ?? 0} de ${stats?.total ?? 0} respondidas`,
-      iconBg: "bg-green-50", iconColor: "text-green-600",
+      tone: "neon",
       trend: { value: "Ótimo", direction: "up" },
     },
     {
       icon: Clock, label: "Tempo Médio",
       value: stats?.avgResponseMinutes != null ? `${stats.avgResponseMinutes}min` : "—",
       sub: "últimos 7 dias",
-      iconBg: "bg-amber-50", iconColor: "text-amber-600",
+      tone: "warn",
     },
     {
       icon: Zap, label: "Pico de Mensagens",
       value: stats?.peakHour != null ? `${stats.peakHour}h` : "—",
       sub: "hora com mais perguntas",
-      iconBg: "bg-brand-50", iconColor: "text-brand-600",
+      tone: "glow",
     },
   ];
 
@@ -74,9 +69,9 @@ export function MensagensMlSection({ stats, loading }) {
 
   return (
     <SectionWrap>
-      <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} accent="bg-amber-500" />
+      <SectionHeader title="Mensagens ML" to="/meli/messages" linkLabel="Abrir mensagens" icon={MessageSquare} />
       {usage && (
-        <p className="text-xs text-gray-500 -mt-2">
+        <p className="text-xs text-fg-muted -mt-2">
           {usage.max == null
             ? "Mensagens respondidas este mês: ilimitado"
             : `Mensagens respondidas este mês: ${usage.current} de ${usage.max}`}
@@ -91,25 +86,13 @@ export function MensagensMlSection({ stats, loading }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Panel title="Perguntas por Horário" className="lg:col-span-2">
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={hourlyData} barCategoryGap="20%">
-                <CartesianGrid stroke="#f1f5f9" vertical={false} />
-                <XAxis
-                  dataKey="hora"
-                  tick={{ fontSize: 9, fill: "#94a3b8" }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={2}
-                />
-                <YAxis
-                  tick={{ fontSize: 9, fill: "#94a3b8" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  content={<DarkTooltip />}
-                  cursor={{ fill: "rgba(0,112,199,0.06)" }}
-                />
-                <Bar dataKey="Perguntas" fill="#0070c7" radius={[4, 4, 0, 0]} maxBarSize={22} />
+              <BarChart data={hourlyData} barCategoryGap="22%">
+                {ChartGlowDefs()}
+                <CartesianGrid {...chartGrid} />
+                <XAxis dataKey="hora" {...chartAxis} tick={{ ...chartAxis.tick, fontSize: 10 }} interval={2} />
+                <YAxis {...chartAxis} tick={{ ...chartAxis.tick, fontSize: 10 }} width={28} allowDecimals={false} />
+                <Tooltip {...chartTooltipProps} cursor={{ fill: "rgb(var(--glow) / 0.06)" }} content={<NeonTooltip />} />
+                <Bar dataKey="Perguntas" fill={chartColors.brand} radius={[4, 4, 0, 0]} maxBarSize={20} filter="url(#neon-glow)" />
               </BarChart>
             </ResponsiveContainer>
           </Panel>
@@ -117,7 +100,6 @@ export function MensagensMlSection({ stats, loading }) {
             <RankList
               items={stats?.topRespondedores}
               emptyText="Nenhum dado ainda. Os respondedores aparecerão aqui conforme as mensagens forem respondidas."
-              badgeColor="bg-brand-50 text-brand-700"
               nameKey="name"
               valueKey="answered"
             />

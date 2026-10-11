@@ -12,10 +12,10 @@ const MODULES = [
     module: "links",
     step: "Passo 1",
     icon: Link2,
-    color: "bg-blue-500",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
-    bgLight: "bg-blue-50",
+    color: "bg-brandSolid-500",
+    textColor: "text-brandSolid-300",
+    borderColor: "border-brandSolid-400/30",
+    bgLight: "bg-brandSolid-500/10",
     label: "Links",
     tagline: "Base de tudo — monitore preços de concorrentes",
     to: "/links",
@@ -35,9 +35,9 @@ const MODULES = [
     step: "Passo 2",
     icon: LineChart,
     color: "bg-sky-500",
-    textColor: "text-sky-600",
-    borderColor: "border-sky-200",
-    bgLight: "bg-sky-50",
+    textColor: "text-brandSolid-300",
+    borderColor: "border-brandSolid-400/30",
+    bgLight: "bg-brandSolid-500/10",
     label: "Análise de Preços",
     tagline: "Compare seus preços com a concorrência, agrupados por produto",
     to: "/price-analyze",
@@ -64,9 +64,9 @@ const MODULES = [
     step: "Módulo independente",
     icon: Store,
     color: "bg-teal-500",
-    textColor: "text-teal-600",
-    borderColor: "border-teal-200",
-    bgLight: "bg-teal-50",
+    textColor: "text-neon",
+    borderColor: "border-neon/25",
+    bgLight: "bg-neon/10",
     label: "Monitor de Sellers",
     tagline: "Preços dos concorrentes nos catálogos em que você disputa",
     to: "/seller-monitor",
@@ -86,9 +86,9 @@ const MODULES = [
     step: "Módulo independente",
     icon: Package,
     color: "bg-orange-500",
-    textColor: "text-orange-600",
-    borderColor: "border-orange-200",
-    bgLight: "bg-orange-50",
+    textColor: "text-warn",
+    borderColor: "border-warn/30",
+    bgLight: "bg-warn/10",
     label: "Dimensões e Peso",
     tagline: "Validação de pacotes de envio no padrão ML",
     to: "/catalog",
@@ -107,10 +107,10 @@ const MODULES = [
     module: "meliAnalytics",
     step: "Planos pagos",
     icon: BarChart2,
-    color: "bg-green-600",
-    textColor: "text-green-600",
-    borderColor: "border-green-200",
-    bgLight: "bg-green-50",
+    color: "bg-brandSolid-500",
+    textColor: "text-neon",
+    borderColor: "border-neon/25",
+    bgLight: "bg-neon/10",
     label: "Analytics ML",
     tagline: "Vendas, estoque Full e KPIs financeiros em tempo real",
     to: "/meli/analytics",
@@ -131,9 +131,9 @@ const MODULES = [
     step: "Planos pagos",
     icon: MessageCircle,
     color: "bg-indigo-500",
-    textColor: "text-indigo-600",
-    borderColor: "border-indigo-200",
-    bgLight: "bg-indigo-50",
+    textColor: "text-violet-300",
+    borderColor: "border-violet-400/30",
+    bgLight: "bg-violet-500/10",
     label: "Mensagens ML",
     tagline: "Gestão de perguntas do Mercado Livre",
     to: "/meli/messages",
@@ -154,25 +154,25 @@ function ModuleCard({ mod }) {
   const Icon = mod.icon;
 
   return (
-    <div className={`border ${mod.borderColor} rounded-xl overflow-hidden bg-white`}>
+    <div className={`border ${mod.borderColor} rounded-xl overflow-hidden bg-surface-2`}>
       {/* Header clicável */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-4 p-5 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center gap-4 p-5 text-left hover:bg-ink/[0.03] transition-colors"
       >
         <div className={`w-10 h-10 rounded-lg ${mod.color} flex items-center justify-center shrink-0`}>
           <Icon size={20} className="text-white" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-semibold uppercase tracking-wide ${mod.textColor}`}>{mod.step}</span>
+            <span className={`text-xs font-semibold  tracking-wide ${mod.textColor}`}>{mod.step}</span>
           </div>
-          <p className="font-semibold text-gray-900">{mod.label}</p>
-          <p className="text-sm text-gray-500">{mod.tagline}</p>
+          <p className="font-semibold text-fg">{mod.label}</p>
+          <p className="text-sm text-fg-muted">{mod.tagline}</p>
         </div>
         {open
-          ? <ChevronUp size={18} className="text-gray-400 shrink-0" />
-          : <ChevronDown size={18} className="text-gray-400 shrink-0" />
+          ? <ChevronUp size={18} className="text-fg-dim shrink-0" />
+          : <ChevronDown size={18} className="text-fg-dim shrink-0" />
         }
       </button>
 
@@ -181,16 +181,16 @@ function ModuleCard({ mod }) {
         <div className={`px-5 pb-5 border-t ${mod.borderColor}`}>
           {/* O que é */}
           <div className="mt-4">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">O que é</h4>
-            <p className="text-sm text-gray-700 leading-relaxed">{mod.what}</p>
+            <h4 className="text-xs font-semibold text-fg-muted tracking-wide mb-1">O que é</h4>
+            <p className="text-sm text-fg/90 leading-relaxed">{mod.what}</p>
           </div>
 
           {/* Como usar */}
           <div className="mt-4">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Como usar</h4>
+            <h4 className="text-xs font-semibold text-fg-muted tracking-wide mb-2">Como usar</h4>
             <ol className="space-y-2">
               {mod.steps.map((s, i) => (
-                <li key={i} className="flex gap-3 text-sm text-gray-700">
+                <li key={i} className="flex gap-3 text-sm text-fg/90">
                   <span className={`shrink-0 w-5 h-5 rounded-full ${mod.color} text-white text-xs flex items-center justify-center font-bold mt-0.5`}>
                     {i + 1}
                   </span>
@@ -203,24 +203,24 @@ function ModuleCard({ mod }) {
           {/* Tabela comparativa — só para módulos que definem "diff" */}
           {mod.diff && (
             <div className="mt-4">
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-semibold text-fg-muted tracking-wide mb-2">
                 Diferença em relação a Links
               </h4>
-              <div className="overflow-x-auto rounded-lg border border-gray-100">
+              <div className="overflow-x-auto rounded-lg border border-line/10">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100 text-left text-gray-500">
+                    <tr className="bg-ink/[0.03] border-b border-line/10 text-left text-fg-muted">
                       <th className="px-3 py-2 font-medium"></th>
-                      <th className="px-3 py-2 font-medium text-blue-600">Links</th>
+                      <th className="px-3 py-2 font-medium text-brandSolid-300">Links</th>
                       <th className={`px-3 py-2 font-medium ${mod.textColor}`}>Análise de Preços</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-line/[0.07]">
                     {mod.diff.map((row, i) => (
-                      <tr key={i} className="hover:bg-gray-50/60">
-                        <td className="px-3 py-2 font-medium text-gray-700">{row.feature}</td>
-                        <td className="px-3 py-2 text-gray-500">{row.links}</td>
-                        <td className="px-3 py-2 text-gray-700">{row.analyze}</td>
+                      <tr key={i} className="hover:bg-ink/[0.02]">
+                        <td className="px-3 py-2 font-medium text-fg/90">{row.feature}</td>
+                        <td className="px-3 py-2 text-fg-muted">{row.links}</td>
+                        <td className="px-3 py-2 text-fg/90">{row.analyze}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -232,7 +232,7 @@ function ModuleCard({ mod }) {
           {/* Dica */}
           <div className={`mt-4 flex gap-3 ${mod.bgLight} rounded-lg p-3`}>
             <Lightbulb size={16} className={`${mod.textColor} shrink-0 mt-0.5`} />
-            <p className="text-sm text-gray-700 leading-relaxed">{mod.tip}</p>
+            <p className="text-sm text-fg/90 leading-relaxed">{mod.tip}</p>
           </div>
 
           {/* Link para a página */}
@@ -259,27 +259,27 @@ export default function HelpPage() {
     <div className="max-w-3xl mx-auto">
       {/* Cabeçalho */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">📘 Como o ML Smart Hub funciona</h1>
-        <p className="text-gray-500 mt-1">Guia completo dos módulos e fluxo de trabalho do sistema</p>
+        <h1 className="text-2xl font-semibold text-fg">Como o ML SmartHub funciona</h1>
+        <p className="text-fg-muted mt-1">Guia completo dos módulos e fluxo de trabalho do sistema</p>
       </div>
 
       {/* Fluxo visual */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-5">Fluxo principal</h2>
+      <div className="glass border border-line/15 rounded-xl p-6 mb-8">
+        <h2 className="text-sm font-semibold text-fg-muted tracking-wide mb-5">Fluxo principal</h2>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           {/* Links */}
           <div className="flex flex-col items-center text-center min-w-[120px]">
-            <div className="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-xl bg-brandSolid-500 flex items-center justify-center mb-2">
               <Link2 size={22} className="text-white" />
             </div>
-            <span className="text-sm font-semibold text-gray-800">Links</span>
-            <span className="text-xs text-gray-500 mt-0.5">Adicione URLs de<br />produtos ML</span>
+            <span className="text-sm font-semibold text-fg">Links</span>
+            <span className="text-xs text-fg-muted mt-0.5">Adicione URLs de<br />produtos ML</span>
           </div>
 
-          <div className="flex flex-col items-center text-gray-300 sm:rotate-0">
+          <div className="flex flex-col items-center text-fg-dim/60 sm:rotate-0">
             <ArrowRight size={24} className="hidden sm:block" />
             <ArrowRight size={24} className="block sm:hidden rotate-90" />
-            <span className="text-xs text-gray-400 mt-1">alimenta</span>
+            <span className="text-xs text-fg-dim mt-1">alimenta</span>
           </div>
 
           {/* Análise de Preços */}
@@ -287,31 +287,31 @@ export default function HelpPage() {
             <div className="w-12 h-12 rounded-xl bg-sky-500 flex items-center justify-center mb-2">
               <LineChart size={22} className="text-white" />
             </div>
-            <span className="text-sm font-semibold text-gray-800">Análise de Preços</span>
-            <span className="text-xs text-gray-500 mt-0.5">Grupos por SKU<br />e recomendações</span>
+            <span className="text-sm font-semibold text-fg">Análise de Preços</span>
+            <span className="text-xs text-fg-muted mt-0.5">Grupos por SKU<br />e recomendações</span>
           </div>
         </div>
 
         {/* Módulos independentes */}
-        <div className="mt-6 pt-5 border-t border-gray-100">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Módulos independentes</h3>
+        <div className="mt-6 pt-5 border-t border-line/10">
+          <h3 className="text-xs font-semibold text-fg-dim tracking-wide mb-4">Módulos independentes</h3>
           <div className="flex flex-col sm:flex-row flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-teal-500 flex items-center justify-center">
                 <Store size={18} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Monitor de Sellers</p>
-                <p className="text-xs text-gray-500">Monitora vitrines completas de vendedores</p>
+                <p className="text-sm font-semibold text-fg">Monitor de Sellers</p>
+                <p className="text-xs text-fg-muted">Monitora vitrines completas de vendedores</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-warn/15 border border-warn/40 flex items-center justify-center">
                 <Package size={18} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Dimensões e Peso</p>
-                <p className="text-xs text-gray-500">Valida pacotes de envio no padrão ML</p>
+                <p className="text-sm font-semibold text-fg">Dimensões e Peso</p>
+                <p className="text-xs text-fg-muted">Valida pacotes de envio no padrão ML</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -319,8 +319,8 @@ export default function HelpPage() {
                 <MessageCircle size={18} className="text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Mensagens ML</p>
-                <p className="text-xs text-gray-500">Gestão de perguntas de compradores</p>
+                <p className="text-sm font-semibold text-fg">Mensagens ML</p>
+                <p className="text-xs text-fg-muted">Gestão de perguntas de compradores</p>
               </div>
             </div>
           </div>
@@ -328,7 +328,7 @@ export default function HelpPage() {
       </div>
 
       {/* Cards detalhados por módulo — filtrados pelo plano */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Detalhes dos seus módulos</h2>
+      <h2 className="text-sm font-semibold text-fg-muted tracking-wide mb-4">Detalhes dos seus módulos</h2>
       <div className="space-y-3">
         {visibleModules.map((mod) => (
           <ModuleCard key={mod.id} mod={mod} />
@@ -336,10 +336,10 @@ export default function HelpPage() {
       </div>
 
       {/* Rodapé */}
-      <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-100 text-center">
-        <p className="text-sm text-gray-500">
+      <div className="mt-8 p-4 bg-ink/[0.03] rounded-xl border border-line/10 text-center">
+        <p className="text-sm text-fg-muted">
           Dúvidas adicionais?{" "}
-          <a href="/faq" className="text-brand-600 font-medium hover:underline">
+          <a href="/faq" className="text-brandSolid-300 font-medium hover:underline">
             Acesse o FAQ público →
           </a>
         </p>

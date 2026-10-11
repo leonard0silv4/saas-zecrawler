@@ -48,7 +48,7 @@ export function AddSellerModal({ isOpen, onClose, onAdded }) {
         <div className="flex gap-2">
           {[["competitors", "Concorrentes encontrados"], ["url", "Por link do vendedor"]].map(([id, label]) => (
             <button key={id} type="button" onClick={() => setTab(id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${tab === id ? "bg-brand-100 text-brand-800" : "text-gray-600 hover:bg-gray-50"}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${tab === id ? "bg-brandSolid-500/15 text-brandSolid-300" : "text-fg-muted hover:bg-ink/[0.03]"}`}>
               {label}
             </button>
           ))}
@@ -57,33 +57,33 @@ export function AddSellerModal({ isOpen, onClose, onAdded }) {
         {tab === "competitors" ? (
           <>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim pointer-events-none" />
               <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar por nickname..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none" />
+                className="field w-full !pl-9 !pr-3" />
             </div>
             {isLoading ? (
-              <p className="text-center text-sm text-gray-400 py-8">Carregando…</p>
+              <p className="text-center text-sm text-fg-dim py-8">Carregando…</p>
             ) : competitors.length === 0 ? (
-              <p className="text-center text-sm text-gray-500 py-8">
+              <p className="text-center text-sm text-fg-muted py-8">
                 Nenhum concorrente ainda. Rode a varredura de catálogos (botão "Varrer agora").
               </p>
             ) : (
-              <ul className="max-h-96 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
+              <ul className="max-h-96 overflow-y-auto divide-y divide-line/[0.07] border border-line/10 rounded-lg">
                 {filtered.map((c) => (
                   <li key={c.sellerId} className="flex items-center gap-3 px-3 py-2.5 text-sm">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 truncate">{c.nickname || `Vendedor ${c.sellerId}`}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-medium text-fg truncate">{c.nickname || `Vendedor ${c.sellerId}`}</p>
+                      <p className="text-xs text-fg-muted">
                         {c.catalogCount} {c.catalogCount === 1 ? "catálogo" : "catálogos"} em comum
                         {c.cheapest > 0 ? ` · menor preço em ${c.cheapest}` : ""}
                       </p>
                     </div>
                     {c.monitored ? (
-                      <span className="text-xs text-gray-400">Monitorado</span>
+                      <span className="text-xs text-fg-dim">Monitorado</span>
                     ) : (
                       <button type="button" disabled={saving !== null}
                         onClick={() => add({ mlSellerId: c.sellerId, nickname: c.nickname }, c.sellerId)}
-                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-brand-200 text-brand-700 hover:bg-brand-50 disabled:opacity-50">
+                        className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-brandSolid-400/30 text-brandSolid-300 hover:bg-brandSolid-500/10 disabled:opacity-50">
                         {saving === c.sellerId ? "Salvando…" : "Monitorar"}
                       </button>
                     )}
@@ -96,24 +96,24 @@ export function AddSellerModal({ isOpen, onClose, onAdded }) {
           <form onSubmit={(e) => { e.preventDefault(); if (url.trim()) add({ url: url.trim(), name: name.trim() }, "url"); }}
             className="space-y-3">
             <div>
-              <label className="text-sm text-gray-600">Página do vendedor *</label>
+              <label className="text-sm text-fg-muted">Página do vendedor *</label>
               <input value={url} onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://www.mercadolivre.com.br/pagina/NICKNAME"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-              <p className="text-xs text-gray-500 mt-1">
+                className="field w-full mt-1" />
+              <p className="text-xs text-fg-muted mt-1">
                 Aceita /pagina/NICK, /perfil/NICK ou listagem com _CustId_. Só aparecem produtos do vendedor que estejam
                 nos catálogos varridos — se ele não for encontrado, o seller fica marcado como "Sem dados".
               </p>
             </div>
             <div>
-              <label className="text-sm text-gray-600">Nome (opcional)</label>
+              <label className="text-sm text-fg-muted">Nome (opcional)</label>
               <input value={name} onChange={(e) => setName(e.target.value)}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                className="field w-full mt-1" />
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600">Cancelar</button>
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-fg-muted">Cancelar</button>
               <button type="submit" disabled={saving !== null}
-                className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50">
+                className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand">
                 {saving === "url" ? "Salvando…" : "Cadastrar"}
               </button>
             </div>

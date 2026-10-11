@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown, CreditCard } from "lucide-react";
+import { Check, Crown, CreditCard } from "lucide-react";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { MODULE_LABELS } from "../lib/moduleLabels";
@@ -19,82 +19,86 @@ export default function SettingsPlanSection() {
   const allowedModules = user?.allowedModules || [];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+    <div className="glass rounded-2xl p-6 space-y-6">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-brand-50 text-brand-700">
+        <div className="p-2 rounded-lg border border-warn/30 bg-warn/10 text-warn">
           <Crown size={22} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Plano da conta</h2>
-          <p className="text-sm text-gray-600 mt-0.5">
+          <h2 className="text-lg font-semibold text-fg">Plano da conta</h2>
+          <p className="text-sm text-fg-muted mt-0.5">
             Plano efetivo usado para limites e módulos (se você é membro de equipe, segue o plano do owner).
           </p>
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-100 bg-gray-50/80 p-4 space-y-2">
-        <p className="text-sm text-gray-600">
-          Plano atual:{" "}
-          <strong className="text-gray-900">{planConfig?.name || effectivePlan}</strong>
-          <span className="text-gray-500"> ({effectivePlan})</span>
-        </p>
-        {planConfig?.maxLinks != null && (
-          <p className="text-sm text-gray-600">
-            Limite de links: <strong className="text-gray-900">{planConfig.maxLinks.toLocaleString("pt-BR")}</strong>
-          </p>
-        )}
-        {planConfig?.maxSellerMonitors != null && (
-          <p className="text-sm text-gray-600">
-            Limite de sellers monitorados:{" "}
-            <strong className="text-gray-900">{planConfig.maxSellerMonitors.toLocaleString("pt-BR")}</strong>
-          </p>
-        )}
-        {planConfig?.maxMeliAccounts > 0 && (
-          <p className="text-sm text-gray-600">
-            Limite de contas Mercado Livre:{" "}
-            <strong className="text-gray-900">{planConfig.maxMeliAccounts.toLocaleString("pt-BR")}</strong>
-          </p>
-        )}
-        {planConfig?.maxMeliAccounts > 0 && (
-          <p className="text-sm text-gray-600">
-            Limite de mensagens ML por mês:{" "}
-            <strong className="text-gray-900">
-              {planConfig.maxMonthlyMessages == null ? "Ilimitado" : planConfig.maxMonthlyMessages.toLocaleString("pt-BR")}
-            </strong>
-          </p>
-        )}
-        {subStatus?.subscription?.status === "trialing" && subStatus.subscription.currentPeriodEnd && (
-          <p className="text-sm text-blue-700 bg-blue-50 rounded-lg px-3 py-2">
-            Em período de teste — encerra em{" "}
-            <strong>{new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}</strong>.
-            Após isso, a cobrança começa automaticamente.
-          </p>
-        )}
-        {subStatus?.subscription?.status !== "trialing" && subStatus?.subscription?.currentPeriodEnd && (
-          <p className="text-sm text-gray-600">
-            {subStatus.subscription.cancelAtPeriodEnd ? "Acesso até" : "Renova em"}{" "}
-            <strong>{new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}</strong>
-          </p>
-        )}
-      </div>
+      {(() => {
+        const fmt = (n) => n.toLocaleString("pt-BR");
+        const limits = [
+          planConfig?.maxLinks != null && { label: "Links", value: fmt(planConfig.maxLinks) },
+          planConfig?.maxSellerMonitors != null && { label: "Sellers monitorados", value: fmt(planConfig.maxSellerMonitors) },
+          planConfig?.maxMeliAccounts > 0 && { label: "Contas Mercado Livre", value: fmt(planConfig.maxMeliAccounts) },
+          planConfig?.maxMeliAccounts > 0 && {
+            label: "Mensagens ML por mês",
+            value: planConfig.maxMonthlyMessages == null ? "Ilimitado" : fmt(planConfig.maxMonthlyMessages),
+          },
+        ].filter(Boolean);
+        const sub = subStatus?.subscription;
+        return (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brandSolid-400/40 bg-brandSolid-500/15 px-3 py-1 text-sm font-medium text-fg">
+                <Crown size={14} className="text-warn" />
+                {planConfig?.name || effectivePlan}
+              </span>
+              {sub?.status !== "trialing" && sub?.currentPeriodEnd && (
+                <span className="text-sm text-fg-muted">
+                  {sub.cancelAtPeriodEnd ? "Acesso até" : "Renova em"}{" "}
+                  <strong className="num text-fg">{new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")}</strong>
+                </span>
+              )}
+            </div>
+            {sub?.status === "trialing" && sub.currentPeriodEnd && (
+              <p className="text-sm text-fg/90 bg-brandSolid-500/10 ring-1 ring-inset ring-brandSolid-400/25 rounded-lg px-3 py-2">
+                Em período de teste — encerra em{" "}
+                <strong className="num">{new Date(sub.currentPeriodEnd).toLocaleDateString("pt-BR")}</strong>.
+                Após isso, a cobrança começa automaticamente.
+              </p>
+            )}
+            {limits.length > 0 && (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {limits.map((l) => (
+                  <div key={l.label} className="rounded-xl border border-line/10 bg-ink/[0.03] px-4 py-3">
+                    <p className="text-xs text-fg-dim">{l.label}</p>
+                    <p className="mt-1 num text-xl font-semibold text-fg">{l.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div>
-        <h3 className="text-sm font-medium text-gray-800 mb-2">Módulos incluídos no plano</h3>
-        <ul className="text-sm text-gray-600 space-y-1.5 list-disc list-inside">
-          {planModules.length === 0 ? (
-            <li>Nenhum (verifique seu cadastro)</li>
-          ) : (
-            planModules.map((key) => (
-              <li key={key}>{MODULE_LABELS[key] || key}</li>
-            ))
-          )}
-        </ul>
+        <h3 className="text-sm font-medium text-fg mb-2">Módulos incluídos no plano</h3>
+        {planModules.length === 0 ? (
+          <p className="text-sm text-fg-muted">Nenhum (verifique seu cadastro)</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {planModules.map((key) => (
+              <span key={key} className="inline-flex items-center gap-1.5 rounded-full bg-neon/[0.07] px-3 py-1 text-xs text-fg/90 ring-1 ring-inset ring-neon/25">
+                <Check size={12} className="text-neon" />
+                {MODULE_LABELS[key] || key}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {user?.role === "member" && (
         <div>
-          <h3 className="text-sm font-medium text-gray-800 mb-2">Seu acesso (permissões)</h3>
-          <ul className="text-sm text-gray-600 space-y-1.5 list-disc list-inside">
+          <h3 className="text-sm font-medium text-fg mb-2">Seu acesso (permissões)</h3>
+          <ul className="text-sm text-fg-muted space-y-1.5 list-disc list-inside">
             {allowedModules.length === 0 ? (
               <li>Nenhum módulo atribuído — peça ao administrador.</li>
             ) : (
@@ -108,7 +112,7 @@ export default function SettingsPlanSection() {
         <div className="flex flex-wrap gap-3 pt-2">
           <Link
             to="/plans"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium hover:bg-brandSolid-400 shadow-glow-brand"
           >
             Ver todos os planos
           </Link>
@@ -116,7 +120,7 @@ export default function SettingsPlanSection() {
             <button
               type="button"
               onClick={() => manageBilling()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-800 text-sm font-medium hover:bg-gray-50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-line/15 text-fg text-sm font-medium hover:bg-ink/[0.03]"
             >
               <CreditCard size={18} />
               Gerenciar assinatura

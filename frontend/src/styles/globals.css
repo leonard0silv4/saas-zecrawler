@@ -2,9 +2,247 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900 antialiased;
-  font-family: "DM Sans", system-ui, sans-serif;
+/*
+ * Tema "Holo" — tokens em RGB (espaço separado) para aceitar /opacidade no Tailwind.
+ * Azul da logo (#1e7bff) é a cor de ação; ciano é luz/realce; verde neon é
+ * reservado para dados positivos e status "ao vivo".
+ */
+:root {
+  color-scheme: dark;
+  --void: 4 7 13;           /* fundo da página */
+  --surface: 9 15 28;       /* painel de vidro (usado com /opacidade) */
+  --surface-2: 13 21 38;    /* campos, linhas, superfícies sólidas */
+  --surface-3: 20 31 54;    /* hover */
+  --line: 120 160 220;      /* bordas — sempre usado com /opacidade baixa */
+  --line-strong: 63 160 255;
+  --fg: 232 239 250;
+  --fg-muted: 145 160 186;
+  --fg-dim: 92 108 136;
+  --glow: 64 200 255;
+  --neon: 52 245 160;
+  --warn: 255 184 77;
+  --danger: 255 92 112;
+  --ink: 255 255 255;       /* sobreposições neutras (bg-ink/[0.04]): branco no escuro, azul-escuro no claro */
+  --scrim: 4 7 13;          /* fundo atrás de modais */
+  /* tons claros de acento usados como texto (brand-300, violet-300...) */
+  --brand-200: 180 212 255;
+  --brand-300: 127 182 255;
+  --violet-200: 221 214 254;
+  --violet-300: 196 181 253;
+  --pink-300: 249 168 212;
+  --glass-a1: 0.78;
+  --glass-a2: 0.62;
+  --glass-hi: 255 255 255 / 0.04;
+  --panel-shadow: 0 24px 48px -28px rgb(0 0 0 / 0.9);
+}
+
+/* Tema claro — mesmos tokens, valores claros. Brilhos ficam sutis porque usam as mesmas vars. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --void: 241 245 251;
+  --surface: 255 255 255;
+  --surface-2: 248 250 253;
+  --surface-3: 236 241 248;
+  --line: 30 50 90;
+  --line-strong: 30 123 255;
+  --fg: 13 22 41;
+  --fg-muted: 71 85 110;
+  --fg-dim: 105 120 146;
+  --glow: 2 132 199;
+  --neon: 5 150 105;
+  --warn: 180 83 9;
+  --danger: 220 38 38;
+  --ink: 15 30 60;
+  --scrim: 15 23 42;
+  --brand-200: 13 67 150;
+  --brand-300: 11 82 192;
+  --violet-200: 91 33 182;
+  --violet-300: 109 40 217;
+  --pink-300: 190 24 93;
+  --glass-a1: 0.92;
+  --glass-a2: 0.84;
+  --glass-hi: 255 255 255 / 0.9;
+  --panel-shadow: 0 1px 2px rgb(15 30 60 / 0.06), 0 12px 32px -16px rgb(15 30 60 / 0.18);
+}
+
+@layer base {
+  html {
+    background: rgb(var(--void));
+  }
+
+  body {
+    @apply antialiased;
+    background: rgb(var(--void));
+    color: rgb(var(--fg));
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-feature-settings: "ss01";
+  }
+
+  h1, h2, h3 {
+    font-family: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: rgb(30 123 255 / 0.45);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--glow) / 0.8);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar discreta */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--line) / 0.18) transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-thumb {
+    background: rgb(var(--line) / 0.18);
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-track { background: transparent; }
+
+  /* Inputs nativos (checkbox, radio, date, scrollbar do select) seguem o tema via color-scheme do :root */
+  input, select, textarea {
+    accent-color: #1e7bff;
+  }
+  select option {
+    background: rgb(var(--surface-2));
+    color: rgb(var(--fg));
+  }
+}
+
+/* Elementos que só fazem sentido no escuro (poeira estelar etc.) */
+:root[data-theme="light"] .dark-only { display: none; }
+
+@layer components {
+  /* Painel de vidro: base de cards, tabelas, modais */
+  .glass {
+    background: linear-gradient(180deg, rgb(var(--surface) / var(--glass-a1)), rgb(var(--surface) / var(--glass-a2)));
+    border: 1px solid rgb(var(--line) / 0.12);
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--glass-hi)),
+      var(--panel-shadow);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
+
+  /* Linha de luz no topo do painel, como nos painéis do vídeo */
+  .glow-top {
+    position: relative;
+  }
+  .glow-top::before {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(var(--glow) / 0.75), transparent);
+    pointer-events: none;
+  }
+
+  /* Cantos HUD (colchetes) — só em painéis de destaque */
+  .hud-corners {
+    position: relative;
+  }
+  .hud-corners::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    pointer-events: none;
+    border-radius: inherit;
+    --c: rgb(var(--glow) / 0.7);
+    --l: 14px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / var(--l) 1px,
+      linear-gradient(var(--c), var(--c)) top left / 1px var(--l),
+      linear-gradient(var(--c), var(--c)) top right / var(--l) 1px,
+      linear-gradient(var(--c), var(--c)) top right / 1px var(--l),
+      linear-gradient(var(--c), var(--c)) bottom left / var(--l) 1px,
+      linear-gradient(var(--c), var(--c)) bottom left / 1px var(--l),
+      linear-gradient(var(--c), var(--c)) bottom right / var(--l) 1px,
+      linear-gradient(var(--c), var(--c)) bottom right / 1px var(--l);
+    background-repeat: no-repeat;
+  }
+
+  .field {
+    @apply w-full rounded-lg px-3 py-2 text-sm transition duration-150;
+    background: rgb(var(--surface-2) / 0.9);
+    border: 1px solid rgb(var(--line) / 0.16);
+    color: rgb(var(--fg));
+  }
+  .field::placeholder { color: rgb(var(--fg-dim)); }
+  .field:hover { border-color: rgb(var(--line) / 0.28); }
+  .field:focus {
+    outline: none;
+    border-color: rgb(30 123 255 / 0.8);
+    box-shadow: 0 0 0 3px rgb(30 123 255 / 0.18), 0 0 18px -6px rgb(var(--glow) / 0.6);
+  }
+  .field:disabled { @apply opacity-50 cursor-not-allowed; }
+  /* Autopreenchimento do navegador segue o tema */
+  .field:-webkit-autofill,
+  .field:-webkit-autofill:hover,
+  .field:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgb(var(--fg));
+    -webkit-box-shadow: 0 0 0 1000px rgb(var(--surface-2)) inset;
+    caret-color: rgb(var(--fg));
+    transition: background-color 9999s;
+  }
+
+  /* Tabela de dados escura */
+  .table-holo {
+    @apply w-full text-sm;
+  }
+  .table-holo thead th {
+    @apply px-4 py-3 text-left text-xs font-medium;
+    color: rgb(var(--fg-dim));
+    border-bottom: 1px solid rgb(var(--line) / 0.1);
+  }
+  .table-holo tbody td {
+    @apply px-4 py-3;
+    border-bottom: 1px solid rgb(var(--line) / 0.06);
+  }
+  .table-holo tbody tr {
+    transition: background-color 120ms;
+  }
+  .table-holo tbody tr:hover {
+    background: rgb(30 123 255 / 0.06);
+  }
+
+  /* Controle segmentado (filtros de período, visão etc.) */
+  .seg {
+    @apply inline-flex items-center gap-0.5 rounded-xl p-1 text-sm;
+    background: rgb(var(--surface) / 0.7);
+    border: 1px solid rgb(var(--line) / 0.12);
+  }
+  .seg-btn {
+    @apply rounded-lg px-3 py-1.5 font-medium transition-all;
+    color: rgb(var(--fg-muted));
+  }
+  .seg-btn:hover { color: rgb(var(--fg)); background: rgb(var(--ink) / 0.04); }
+  .seg-btn[aria-pressed="true"], .seg-btn-active {
+    color: rgb(var(--fg));
+    background: rgb(30 123 255 / 0.16);
+    box-shadow: inset 0 0 0 1px rgb(74 149 255 / 0.45), 0 0 16px -6px rgb(30 123 255 / 0.6);
+  }
+
+  /* Dropdown/popover de vidro */
+  .popover {
+    @apply rounded-2xl overflow-hidden;
+    background: rgb(var(--surface-2) / 0.97);
+    border: 1px solid rgb(var(--line) / 0.16);
+    box-shadow: var(--panel-shadow), 0 0 0 1px rgb(var(--line) / 0.06);
+    backdrop-filter: blur(16px);
+  }
+
+  .num {
+    font-family: "Space Grotesk", "DM Sans", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /*
@@ -17,5 +255,13 @@ body {
   select,
   textarea {
     font-size: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
