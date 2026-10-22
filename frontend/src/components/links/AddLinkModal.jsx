@@ -10,7 +10,7 @@ export function AddLinkModal({ isOpen, onClose, newLink, setNewLink, onSubmit, a
           placeholder="URL do produto"
           value={newLink.link}
           onChange={(e) => setNewLink({ ...newLink, link: e.target.value })}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+          className="field w-full"
         />
         <div className="flex gap-3">
           <input
@@ -19,20 +19,20 @@ export function AddLinkModal({ isOpen, onClose, newLink, setNewLink, onSubmit, a
             placeholder="Meu preço"
             value={newLink.myPrice}
             onChange={(e) => setNewLink({ ...newLink, myPrice: e.target.value })}
-            className="flex-1 px-2 py-2.5 rounded-lg border border-gray-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+            className="field flex-1"
           />
           <input
             type="text"
             placeholder="Tag (opcional)"
             value={newLink.tag}
             onChange={(e) => setNewLink({ ...newLink, tag: e.target.value })}
-            className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+            className="field flex-1"
           />
         </div>
         <button
           type="submit"
           disabled={adding}
-          className="w-full py-2.5 bg-brand-600 text-white rounded-lg font-medium text-sm hover:bg-brand-700 disabled:opacity-50"
+          className="w-full py-2.5 bg-brandSolid-500 text-white rounded-lg font-medium text-sm hover:bg-brandSolid-400 disabled:opacity-50 shadow-glow-brand"
         >
           {adding ? "Salvando..." : "Adicionar"}
         </button>

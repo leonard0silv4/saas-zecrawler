@@ -149,16 +149,20 @@ export default function TeamPage() {
     <div className="space-y-6 mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users size={22} className="text-brand-600" />
-            Time & Permissões
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">Gerencie usuários e times com permissões específicas.</p>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brandSolid-400/30 bg-brandSolid-500/10 text-brandSolid-300 shadow-[0_0_20px_-6px_rgb(30_123_255/0.7)]">
+              <Users size={19} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold text-fg">Time & Permissões</h1>
+              <p className="mt-1 text-sm text-fg-muted">Gerencie usuários e times com permissões específicas.</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-100">
+      <div className="flex items-center gap-2 border-b border-line/10">
         {[
           { key: "users", icon: Users, label: "Usuários", count: `${users.length}/${maxUsers}` },
           { key: "teams", icon: Shield, label: "Times", count: `${teams.length}/${maxTeams}` },
@@ -169,12 +173,12 @@ export default function TeamPage() {
             onClick={() => setTab(key)}
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 transition",
-              tab === key ? "border-brand-600 text-brand-700" : "border-transparent text-gray-500 hover:text-gray-700"
+              tab === key ? "border-brand-600 text-brandSolid-300" : "border-transparent text-fg-muted hover:text-fg/90"
             )}
           >
             <span className="flex items-center gap-2">
               <Icon size={15} /> {label}
-              <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-ink/[0.06] text-fg-muted">
                 {count}
               </span>
             </span>
@@ -184,7 +188,7 @@ export default function TeamPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-brandSolid-400/30 border-t-blue-600 rounded-full animate-spin" />
         </div>
       ) : (
         <>
@@ -192,27 +196,27 @@ export default function TeamPage() {
           {tab === "users" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-fg-muted">
                   {users.length} de {maxUsers} usuário{maxUsers !== 1 ? "s" : ""} utilizados
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowCreateUser(true)}
                   disabled={users.length >= maxUsers}
-                  className="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm flex items-center gap-2 disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg bg-brandSolid-500 text-white text-sm flex items-center gap-2 disabled:opacity-50 shadow-glow-brand"
                 >
                   <Plus size={14} /> Novo usuário
                 </button>
               </div>
 
               {users.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
-                  <Users size={32} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 text-sm">Nenhum usuário criado ainda.</p>
-                  <p className="text-gray-400 text-xs mt-1">Crie um usuário e defina permissões específicas.</p>
+                <div className="text-center py-12 glass rounded-xl border border-line/10">
+                  <Users size={32} className="mx-auto text-fg-dim/60 mb-3" />
+                  <p className="text-fg-muted text-sm">Nenhum usuário criado ainda.</p>
+                  <p className="text-fg-dim text-xs mt-1">Crie um usuário e defina permissões específicas.</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
+                <div className="glass rounded-xl border border-line/10 divide-y divide-line/[0.07]">
                   {users.map((u) => {
                     const userTeams = teams.filter((t) =>
                       (u.teamIds || []).some((tid) => String(tid._id || tid) === String(t._id))
@@ -221,12 +225,12 @@ export default function TeamPage() {
                       <div key={u._id} className="p-4 flex flex-wrap items-start gap-3 justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-sm font-bold shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-brandSolid-500/15 flex items-center justify-center text-brandSolid-300 text-sm font-bold shrink-0">
                               {u.name?.[0]?.toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 text-sm">{u.name}</p>
-                              <p className="text-xs text-gray-400">{u.email}</p>
+                              <p className="font-medium text-fg text-sm">{u.name}</p>
+                              <p className="text-xs text-fg-dim">{u.email}</p>
                             </div>
                           </div>
                           {u.permissions?.length > 0 && (
@@ -237,24 +241,24 @@ export default function TeamPage() {
                           {userTeams.length > 0 && (
                             <div className="mt-1.5 flex flex-wrap gap-1">
                               {userTeams.map((t) => (
-                                <span key={t._id} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                                <span key={t._id} className="text-[10px] px-2 py-0.5 rounded-full bg-ink/[0.06] text-fg-muted font-medium">
                                   🏷 {t.name}
                                 </span>
                               ))}
                             </div>
                           )}
                           {u.permissions?.length === 0 && userTeams.length === 0 && (
-                            <p className="text-xs text-gray-400 mt-1">Sem permissões</p>
+                            <p className="text-xs text-fg-dim mt-1">Sem permissões</p>
                           )}
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <button type="button" title="Alterar senha" onClick={() => setChangePassUser(u)} className="p-1.5 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50">
+                          <button type="button" title="Alterar senha" onClick={() => setChangePassUser(u)} className="p-1.5 rounded text-fg-dim hover:text-brandSolid-300 hover:bg-brandSolid-500/10">
                             <Shield size={15} />
                           </button>
-                          <button type="button" title="Editar usuário" onClick={() => setEditUser(u)} className="p-1.5 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50">
+                          <button type="button" title="Editar usuário" onClick={() => setEditUser(u)} className="p-1.5 rounded text-fg-dim hover:text-brandSolid-300 hover:bg-brandSolid-500/10">
                             <Pencil size={15} />
                           </button>
-                          <button type="button" title="Excluir usuário" onClick={() => setDeleteUserId(u._id)} className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50">
+                          <button type="button" title="Excluir usuário" onClick={() => setDeleteUserId(u._id)} className="p-1.5 rounded text-fg-dim hover:text-danger hover:bg-danger/10">
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -270,45 +274,45 @@ export default function TeamPage() {
           {tab === "teams" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-fg-muted">
                   {teams.length} de {maxTeams} time{maxTeams !== 1 ? "s" : ""} utilizados
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowCreateTeam(true)}
                   disabled={teams.length >= maxTeams}
-                  className="px-3 py-2 rounded-lg bg-brand-600 text-white text-sm flex items-center gap-2 disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg bg-brandSolid-500 text-white text-sm flex items-center gap-2 disabled:opacity-50 shadow-glow-brand"
                 >
                   <Plus size={14} /> Novo time
                 </button>
               </div>
 
               {teams.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
-                  <Shield size={32} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 text-sm">Nenhum time criado ainda.</p>
-                  <p className="text-gray-400 text-xs mt-1">Crie um time para agrupar usuários com as mesmas permissões.</p>
+                <div className="text-center py-12 glass rounded-xl border border-line/10">
+                  <Shield size={32} className="mx-auto text-fg-dim/60 mb-3" />
+                  <p className="text-fg-muted text-sm">Nenhum time criado ainda.</p>
+                  <p className="text-fg-dim text-xs mt-1">Crie um time para agrupar usuários com as mesmas permissões.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {teams.map((t) => (
-                    <div key={t._id} className="bg-white rounded-xl border border-gray-100 p-4">
+                    <div key={t._id} className="glass rounded-xl border border-line/10 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900">{t.name}</p>
+                          <p className="font-semibold text-fg">{t.name}</p>
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             {(t.permissions || []).length === 0 ? (
-                              <span className="text-xs text-gray-400">Sem permissões definidas</span>
+                              <span className="text-xs text-fg-dim">Sem permissões definidas</span>
                             ) : (
                               (t.permissions || []).map((p) => <PermBadge key={p} module={p} />)
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <button type="button" onClick={() => setEditTeam(t)} className="p-1.5 rounded text-gray-400 hover:text-brand-600 hover:bg-brand-50" title="Editar time">
+                          <button type="button" onClick={() => setEditTeam(t)} className="p-1.5 rounded text-fg-dim hover:text-brandSolid-300 hover:bg-brandSolid-500/10" title="Editar time">
                             <Pencil size={15} />
                           </button>
-                          <button type="button" onClick={() => setDeleteTeamId(t._id)} className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50" title="Excluir time">
+                          <button type="button" onClick={() => setDeleteTeamId(t._id)} className="p-1.5 rounded text-fg-dim hover:text-danger hover:bg-danger/10" title="Excluir time">
                             <Trash2 size={15} />
                           </button>
                         </div>

@@ -14,20 +14,20 @@ adminApi.interceptors.request.use((c) => {
 
 // ─── Helpers ─────────────────────────────────────────────────────
 const PLAN_COLORS = {
-  free:     "bg-gray-100 text-gray-600",
-  starter:  "bg-blue-100 text-blue-700",
-  pro:      "bg-violet-100 text-violet-700",
-  business: "bg-amber-100 text-amber-700",
+  free:     "bg-ink/[0.06] text-fg-muted",
+  starter:  "bg-brandSolid-500/15 text-brandSolid-300",
+  pro:      "bg-violet-500/15 text-violet-300",
+  business: "bg-warn/15 text-warn",
 };
 
 const STATUS_COLORS = {
-  free:     "text-gray-400",
-  active:   "text-emerald-500",
-  trialing: "text-sky-500",
-  past_due: "text-orange-500",
-  canceled: "text-red-400",
-  manual:   "text-teal-500",
-  expired:  "text-red-400",
+  free:     "text-fg-dim",
+  active:   "text-neon",
+  trialing: "text-brandSolid-300",
+  past_due: "text-warn",
+  canceled: "text-danger",
+  manual:   "text-neon",
+  expired:  "text-danger",
 };
 
 const STATUS_LABELS = {
@@ -59,28 +59,28 @@ function fmtRelative(dateStr) {
   return fmt(dateStr);
 }
 
-function Bar({ value, max, color = "bg-blue-500" }) {
+function Bar({ value, max, color = "bg-brandSolid-500" }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   const warn = pct >= 90;
   return (
     <div className="flex items-center gap-2">
-      <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-16 h-1.5 bg-ink/10 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full ${warn ? "bg-red-400" : color}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-gray-500 tabular-nums">{value}/{max}</span>
+      <span className="text-xs text-fg-muted tabular-nums">{value}/{max}</span>
     </div>
   );
 }
 
 function StatCard({ label, value, sub, accent }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className={`text-3xl font-bold mt-1 ${accent || "text-gray-900"}`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className="glass rounded-xl border border-line/10 p-5">
+      <p className="text-xs font-medium text-fg-dim tracking-wide">{label}</p>
+      <p className={`text-3xl font-bold mt-1 ${accent || "text-fg"}`}>{value}</p>
+      {sub && <p className="text-xs text-fg-dim mt-1">{sub}</p>}
     </div>
   );
 }
@@ -108,44 +108,44 @@ function LoginScreen({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+    <div className="min-h-screen bg-void flex items-center justify-center">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gray-800 border border-gray-700 mb-4">
-            <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-surface-2 border border-line/15 mb-4">
+            <svg className="w-7 h-7 text-warn" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-white">Admin Panel</h1>
-          <p className="text-gray-500 text-sm mt-1">Acesso restrito</p>
+          <h1 className="text-xl font-bold text-fg">Admin Panel</h1>
+          <p className="text-fg-muted text-sm mt-1">Acesso restrito</p>
         </div>
 
-        <form onSubmit={submit} className="bg-gray-900 rounded-2xl border border-gray-800 p-6 space-y-4">
+        <form onSubmit={submit} className="bg-surface/80 rounded-2xl border border-line/10 p-6 space-y-4">
           {err && (
-            <div className="text-sm text-red-400 bg-red-900/20 border border-red-900/40 rounded-lg px-4 py-2.5">
+            <div className="text-sm text-danger bg-red-900/20 border border-red-900/40 rounded-lg px-4 py-2.5">
               {err}
             </div>
           )}
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">Usuário</label>
+            <label className="block text-xs font-medium text-fg-dim mb-1.5">Usuário</label>
             <input
               autoFocus value={user} onChange={(e) => setUser(e.target.value)} required
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 text-white rounded-lg text-sm placeholder-gray-600 focus:outline-none focus:border-amber-500 transition-colors"
+              className="field w-full"
               placeholder="usuário"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">Senha</label>
+            <label className="block text-xs font-medium text-fg-dim mb-1.5">Senha</label>
             <input
               type="password" value={pass} onChange={(e) => setPass(e.target.value)} required
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 text-white rounded-lg text-sm placeholder-gray-600 focus:outline-none focus:border-amber-500 transition-colors"
+              className="field w-full"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit" disabled={loading}
-            className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-950 font-semibold rounded-lg text-sm transition-colors"
+            className="w-full py-2.5 bg-warn hover:bg-amber-300 disabled:opacity-50 text-void font-semibold rounded-lg text-sm transition-colors shadow-[0_0_20px_-6px_rgb(var(--warn)/0.8)]"
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
@@ -154,7 +154,7 @@ function LoginScreen({ onLogin }) {
         <div className="text-center mt-4">
           <a
             href="/login"
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors inline-flex items-center gap-1"
+            className="text-xs text-fg-muted hover:text-fg-dim/60 transition-colors inline-flex items-center gap-1"
           >
             ← Ir para o login do app
           </a>
@@ -254,7 +254,7 @@ function Dashboard({ onLogout }) {
     return (
       <th
         onClick={() => toggleSort(col)}
-        className={`px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide cursor-pointer select-none hover:text-gray-200 whitespace-nowrap ${right ? "text-right" : "text-left"}`}
+        className={`px-4 py-3 text-xs font-medium text-fg-dim  tracking-wide cursor-pointer select-none hover:text-fg-dim/40 whitespace-nowrap ${right ? "text-right" : "text-left"}`}
       >
         {label} {active ? (sort.dir === "asc" ? "↑" : "↓") : <span className="opacity-30">↕</span>}
       </th>
@@ -262,33 +262,33 @@ function Dashboard({ onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-void text-fg">
       {/* Header */}
-      <div className="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-line/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-            <svg className="w-4 h-4 text-gray-950" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-8 h-8 rounded-lg bg-warn/15 border border-warn/40 flex items-center justify-center">
+            <svg className="w-4 h-4 text-warn" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
           <div>
             <h1 className="font-bold text-base leading-none">Admin Panel</h1>
-            <p className="text-xs text-gray-500 mt-0.5">ML SmartHub</p>
+            <p className="text-xs text-fg-muted mt-0.5">ML SmartHub</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <a
             href="/login"
-            className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors"
+            className="text-xs text-fg-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line/15 hover:border-line/30 transition-colors"
           >
             ← App
           </a>
-          <button onClick={load} className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg border border-gray-700 hover:border-gray-500 transition-colors">
+          <button onClick={load} className="text-xs text-fg-dim hover:text-fg px-3 py-1.5 rounded-lg border border-line/15 hover:border-line/30 transition-colors">
             ↻ Atualizar
           </button>
           <button onClick={() => { localStorage.removeItem("admin_token"); onLogout(); }}
-            className="text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg border border-red-900/50 hover:border-red-700 transition-colors">
+            className="text-xs text-danger hover:text-red-300 px-3 py-1.5 rounded-lg border border-red-900/50 hover:border-red-700 transition-colors">
             Sair
           </button>
         </div>
@@ -302,7 +302,7 @@ function Dashboard({ onLogout }) {
             <StatCard label="Assinantes"        value={stats.subscribers}   accent="text-emerald-400" />
             <StatCard label="Gratuitos"         value={stats.freeUsers}     />
             <StatCard label="Novos este mês"    value={stats.newThisMonth}  accent="text-sky-400" />
-            <StatCard label="MRR estimado"      value={`R$ ${Number(stats.mrr).toLocaleString("pt-BR",{minimumFractionDigits:2})}`} accent="text-amber-400" />
+            <StatCard label="MRR estimado"      value={`R$ ${Number(stats.mrr).toLocaleString("pt-BR",{minimumFractionDigits:2})}`} accent="text-warn" />
             <StatCard label="Links totais"      value={stats.totalLinks}    />
             <StatCard label="Sellers monit."    value={stats.totalSellers}  />
           </div>
@@ -312,7 +312,7 @@ function Dashboard({ onLogout }) {
         {stats?.byPlan && (
           <div className="flex flex-wrap gap-2">
             {Object.entries(stats.byPlan).map(([plan, count]) => (
-              <span key={plan} className={`px-3 py-1 rounded-full text-xs font-medium ${PLAN_COLORS[plan] || "bg-gray-700 text-gray-300"}`}>
+              <span key={plan} className={`px-3 py-1 rounded-full text-xs font-medium ${PLAN_COLORS[plan] || "bg-ink/10 text-fg-dim/60"}`}>
                 {plan}: {count}
               </span>
             ))}
@@ -324,10 +324,10 @@ function Dashboard({ onLogout }) {
           <input
             type="search" placeholder="Buscar nome ou e-mail…" value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 w-64"
+            className="field w-64"
           />
           <select value={filterPlan} onChange={(e) => setFilterPlan(e.target.value)}
-            className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500">
+            className="field">
             <option value="all">Todos planos</option>
             <option value="free">Free</option>
             <option value="starter">Starter</option>
@@ -335,60 +335,60 @@ function Dashboard({ onLogout }) {
             <option value="business">Business</option>
           </select>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500">
+            className="field">
             <option value="all">Todos status</option>
             <option value="subscribers">Assinantes</option>
             <option value="free">Gratuitos</option>
             <option value="active">Ativos</option>
             <option value="inactive">Inativos</option>
           </select>
-          <span className="text-xs text-gray-500 ml-auto">{visible.length} resultados</span>
+          <span className="text-xs text-fg-muted ml-auto">{visible.length} resultados</span>
         </div>
 
         {/* Table */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-surface/80 border border-line/10 rounded-xl overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-gray-500">
-              <div className="w-6 h-6 border-2 border-gray-700 border-t-amber-400 rounded-full animate-spin mr-3" />
+            <div className="flex items-center justify-center py-20 text-fg-muted">
+              <div className="w-6 h-6 border-2 border-line/15 border-t-amber-400 rounded-full animate-spin mr-3" />
               Carregando…
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1100px] text-sm">
-                <thead className="border-b border-gray-800">
+                <thead className="border-b border-line/10">
                   <tr>
                     <th className="w-8" />
                     <Th col="name"         label="Cliente" />
                     <Th col="plan"         label="Plano" />
-                    <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-left">Status</th>
+                    <th className="px-4 py-3 text-xs font-medium text-fg-dim tracking-wide text-left">Status</th>
                     <Th col="links"        label="Links" />
                     <Th col="sellers"      label="Sellers" />
                     <Th col="users"        label="Usuários" />
-                    <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-left">Times</th>
+                    <th className="px-4 py-3 text-xs font-medium text-fg-dim tracking-wide text-left">Times</th>
                     <Th col="createdAt"    label="Criado" />
                     <Th col="lastAccessAt" label="Último acesso" />
                     <Th col="nextPayment"  label="Próx. pag." />
                     <Th col="autoReplies" label="Respostas auto." right />
-                    <th className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-left">Ações</th>
+                    <th className="px-4 py-3 text-xs font-medium text-fg-dim tracking-wide text-left">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800/60">
+                <tbody className="divide-y divide-line/[0.07]">
                   {visible.length === 0 && (
                     <tr>
-                      <td colSpan={13} className="text-center py-12 text-gray-500">Nenhum resultado</td>
+                      <td colSpan={13} className="text-center py-12 text-fg-muted">Nenhum resultado</td>
                     </tr>
                   )}
                   {visible.flatMap((c) => {
                     const isExpanded = expandedIds.has(c.id);
                     const hasMembers = c.members?.length > 0;
                     const rows = [
-                      <tr key={c.id} className="hover:bg-gray-800/40 transition-colors">
+                      <tr key={c.id} className="hover:bg-ink/[0.04] transition-colors">
                         {/* Expand toggle */}
                         <td className="pl-3 py-3 w-8">
                           {hasMembers ? (
                             <button
                               onClick={() => toggleExpand(c.id)}
-                              className="text-gray-500 hover:text-amber-400 text-xs transition-colors leading-none"
+                              className="text-fg-muted hover:text-warn text-xs transition-colors leading-none"
                               title={isExpanded ? "Recolher usuários" : `Ver ${c.members.length} usuário(s)`}
                             >
                               {isExpanded ? "▼" : "▶"}
@@ -398,33 +398,33 @@ function Dashboard({ onLogout }) {
 
                         {/* Cliente */}
                         <td className="px-4 py-3">
-                          <p className="font-medium text-white">{c.name}</p>
-                          <p className="text-xs text-gray-400">{c.email}</p>
+                          <p className="font-medium text-fg">{c.name}</p>
+                          <p className="text-xs text-fg-dim">{c.email}</p>
                         </td>
 
                         {/* Plano */}
                         <td className="px-4 py-3">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${PLAN_COLORS[c.plan] || "bg-gray-700 text-gray-300"}`}>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${PLAN_COLORS[c.plan] || "bg-ink/10 text-fg-dim/60"}`}>
                             {c.planName}
                           </span>
                           {c.planPrice > 0 && (
-                            <p className="text-xs text-gray-500 mt-0.5">R$ {c.planPrice.toFixed(2)}/mês</p>
+                            <p className="text-xs text-fg-muted mt-0.5">R$ {c.planPrice.toFixed(2)}/mês</p>
                           )}
                         </td>
 
                         {/* Status */}
                         <td className="px-4 py-3">
-                          <span className={`text-xs font-medium ${STATUS_COLORS[c.subscriptionStatus] || "text-gray-400"}`}>
+                          <span className={`text-xs font-medium ${STATUS_COLORS[c.subscriptionStatus] || "text-fg-dim"}`}>
                             ● {STATUS_LABELS[c.subscriptionStatus] || c.subscriptionStatus}
                           </span>
                           {c.hasStripe && (
-                            <p className="text-xs text-gray-600 mt-0.5">Stripe</p>
+                            <p className="text-xs text-fg-muted mt-0.5">Stripe</p>
                           )}
                         </td>
 
                         {/* Links */}
                         <td className="px-4 py-3">
-                          <Bar value={c.links.count} max={c.links.max} color="bg-blue-500" />
+                          <Bar value={c.links.count} max={c.links.max} color="bg-brandSolid-500" />
                         </td>
 
                         {/* Sellers */}
@@ -444,12 +444,12 @@ function Dashboard({ onLogout }) {
 
                         {/* Criado */}
                         <td className="px-4 py-3">
-                          <span className="text-xs text-gray-400">{fmt(c.createdAt)}</span>
+                          <span className="text-xs text-fg-dim">{fmt(c.createdAt)}</span>
                         </td>
 
                         {/* Último acesso */}
                         <td className="px-4 py-3">
-                          <span className={`text-xs ${c.lastAccessAt ? "text-gray-300" : "text-gray-600"}`}>
+                          <span className={`text-xs ${c.lastAccessAt ? "text-fg-dim/60" : "text-fg-muted"}`}>
                             {fmtRelative(c.lastAccessAt)}
                           </span>
                         </td>
@@ -457,17 +457,17 @@ function Dashboard({ onLogout }) {
                         {/* Próximo pagamento */}
                         <td className="px-4 py-3">
                           {c.planExpiresAt ? (
-                            <span className={`text-xs ${new Date(c.planExpiresAt) < new Date() ? "text-red-400" : "text-gray-300"}`}>
+                            <span className={`text-xs ${new Date(c.planExpiresAt) < new Date() ? "text-danger" : "text-fg-dim/60"}`}>
                               {fmt(c.planExpiresAt)}
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-600">—</span>
+                            <span className="text-xs text-fg-muted">—</span>
                           )}
                         </td>
 
                         {/* Respostas automáticas */}
                         <td className="px-4 py-3 text-right">
-                          <span className={`text-sm font-semibold tabular-nums ${c.autoReplies > 0 ? "text-emerald-400" : "text-gray-600"}`}>
+                          <span className={`text-sm font-semibold tabular-nums ${c.autoReplies > 0 ? "text-emerald-400" : "text-fg-muted"}`}>
                             {(c.autoReplies || 0).toLocaleString("pt-BR")}
                           </span>
                         </td>
@@ -477,7 +477,7 @@ function Dashboard({ onLogout }) {
                           <button
                             onClick={() => impersonate(c.id)}
                             disabled={impersonatingId === c.id}
-                            className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
+                            className="text-xs px-2.5 py-1 rounded-lg bg-amber-500/10 text-warn border border-amber-500/30 hover:bg-amber-500/20 disabled:opacity-40 transition-colors whitespace-nowrap"
                           >
                             {impersonatingId === c.id ? "…" : "Entrar como"}
                           </button>
@@ -487,29 +487,29 @@ function Dashboard({ onLogout }) {
 
                     if (isExpanded && hasMembers) {
                       rows.push(
-                        <tr key={`${c.id}-members`} className="bg-gray-800/20">
+                        <tr key={`${c.id}-members`} className="bg-ink/[0.02]">
                           <td colSpan={13} className="px-0 py-0">
-                            <div className="ml-10 mr-4 my-2 border-l-2 border-gray-700 pl-4">
+                            <div className="ml-10 mr-4 my-2 border-l-2 border-line/15 pl-4">
                               <table className="w-full text-xs">
                                 <thead>
                                   <tr>
-                                    <th className="text-left py-1 pr-6 font-medium text-gray-500 uppercase tracking-wide">Usuário</th>
-                                    <th className="text-left py-1 pr-6 font-medium text-gray-500 uppercase tracking-wide">Role</th>
-                                    <th className="text-left py-1 font-medium text-gray-500 uppercase tracking-wide">Último acesso</th>
+                                    <th className="text-left py-1 pr-6 font-medium text-fg-muted tracking-wide">Usuário</th>
+                                    <th className="text-left py-1 pr-6 font-medium text-fg-muted tracking-wide">Role</th>
+                                    <th className="text-left py-1 font-medium text-fg-muted tracking-wide">Último acesso</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {c.members.map((m) => (
-                                    <tr key={m.id} className="border-t border-gray-700/40">
+                                    <tr key={m.id} className="border-t border-line/10">
                                       <td className="py-1.5 pr-6">
-                                        <p className="text-gray-300">{m.name}</p>
-                                        <p className="text-gray-500">{m.email}</p>
+                                        <p className="text-fg-dim/60">{m.name}</p>
+                                        <p className="text-fg-muted">{m.email}</p>
                                       </td>
                                       <td className="py-1.5 pr-6">
-                                        <span className="text-gray-400 capitalize">{m.role}</span>
+                                        <span className="text-fg-dim capitalize">{m.role}</span>
                                       </td>
                                       <td className="py-1.5">
-                                        <span className={m.lastAccessAt ? "text-gray-300" : "text-gray-600"}>
+                                        <span className={m.lastAccessAt ? "text-fg-dim/60" : "text-fg-muted"}>
                                           {fmtRelative(m.lastAccessAt)}
                                         </span>
                                       </td>

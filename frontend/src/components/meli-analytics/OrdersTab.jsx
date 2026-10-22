@@ -21,29 +21,29 @@ export function OrdersTab({ orders, loading }) {
     overscan: 10,
   });
 
-  if (loading) return <p className="text-sm text-gray-400">Carregando…</p>;
-  if (orders.length === 0) return <p className="text-sm text-gray-400">Sincronize os pedidos para listá-los aqui.</p>;
+  if (loading) return <p className="text-sm text-fg-dim">Carregando…</p>;
+  if (orders.length === 0) return <p className="text-sm text-fg-dim">Sincronize os pedidos para listá-los aqui.</p>;
 
   return (
     <div className="space-y-3">
       <div className="relative max-w-xs">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nº do pedido…"
-          className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400 placeholder-gray-400"
+          className="field !pl-8"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-gray-400">Nenhum pedido encontrado.</p>
+        <p className="text-sm text-fg-dim">Nenhum pedido encontrado.</p>
       ) : (
         <div ref={parentRef} className="overflow-auto rounded-lg" style={{ height: "480px" }}>
           <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-white">
-              <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wider">
+            <thead className="sticky top-0 z-10 bg-surface-2">
+              <tr className="border-b border-line/10 text-xs text-fg-dim">
                 <th className="text-left py-2 pr-4 font-semibold">Data</th>
                 <th className="text-left py-2 pr-4 font-semibold">Nº Pedido</th>
                 <th className="text-left py-2 pr-4 font-semibold">Produto(s)</th>
@@ -53,34 +53,34 @@ export function OrdersTab({ orders, loading }) {
                 <th className="text-center py-2 font-semibold">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line/[0.07]">
               {virtualizer.getVirtualItems()[0]?.start > 0 && (
                 <tr><td colSpan={7} style={{ height: virtualizer.getVirtualItems()[0].start }} /></tr>
               )}
               {virtualizer.getVirtualItems().map((vRow) => {
                 const o = filtered[vRow.index];
                 return (
-                  <tr key={o.order_id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-2.5 pr-4 text-gray-500 whitespace-nowrap text-xs">
+                  <tr key={o.order_id} className="hover:bg-ink/[0.03] transition-colors">
+                    <td className="py-2.5 pr-4 text-fg-muted whitespace-nowrap text-xs">
                       {o.date_closed ? format(new Date(o.date_closed), "dd/MM/yy HH:mm") : "—"}
                     </td>
-                    <td className="py-2.5 pr-4 font-mono text-xs text-gray-400">{o.order_id}</td>
+                    <td className="py-2.5 pr-4 font-mono text-xs text-fg-dim">{o.order_id}</td>
                     <td className="py-2.5 pr-4 max-w-[200px]">
                       <span className="block font-medium">{o.order_items?.[0]?.title || "—"}</span>
                       {o.order_items?.length > 1 && (
-                        <span className="text-xs text-gray-400">+{o.order_items.length - 1} item(s)</span>
+                        <span className="text-xs text-fg-dim">+{o.order_items.length - 1} item(s)</span>
                       )}
                     </td>
                     <td className="py-2.5 pr-4 text-right font-semibold">{formatBRL(o.total_amount)}</td>
-                    <td className="py-2.5 pr-4 text-right text-red-500 font-medium">{formatBRL(o.ml_fee)}</td>
-                    <td className="py-2.5 pr-4 text-right text-green-700 font-semibold">
+                    <td className="py-2.5 pr-4 text-right text-danger font-medium">{formatBRL(o.ml_fee)}</td>
+                    <td className="py-2.5 pr-4 text-right text-neon font-semibold">
                       {formatBRL(o.total_amount - o.ml_fee)}
                     </td>
                     <td className="py-2.5 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        o.status === "paid"      ? "bg-green-100 text-green-700" :
-                        o.status === "cancelled" ? "bg-red-100 text-red-700" :
-                                                  "bg-gray-100 text-gray-600"
+                        o.status === "paid"      ? "bg-neon/15 text-neon" :
+                        o.status === "cancelled" ? "bg-danger/15 text-danger" :
+                                                  "bg-ink/[0.06] text-fg-muted"
                       }`}>
                         {o.status}
                       </span>

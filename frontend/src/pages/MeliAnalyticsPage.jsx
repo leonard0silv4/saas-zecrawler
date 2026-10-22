@@ -16,6 +16,9 @@ import { DateRangePicker }   from "../components/meli-analytics/DateRangePicker"
 import { formatBRL }         from "../components/meli-analytics/formatBRL";
 import { AIInsightsSection } from "../components/meli-analytics/AIInsightsSection";
 import { OrdersTab }         from "../components/meli-analytics/OrdersTab";
+import { PageHeader, Tabs, Button, EmptyState } from "../components/ui";
+import { ChartGlowDefs } from "../components/charts";
+import { chartAxis, chartGrid, chartColors, chartLegendProps, neonActiveDot } from "../lib/chartTheme";
 
 const TABS = [
   { id: "analytics", label: "Analytics", icon: BarChart2 },
@@ -141,66 +144,46 @@ export default function MeliAnalyticsPage() {
   const avgReceita    = useMemo(() => chartData.length > 0 ? chartData.reduce((s, d) => s + d.receita, 0) / chartData.length : 0, [chartData]);
   const daysWithSales = useMemo(() => chartData.filter((d) => d.receita > 0).length, [chartData]);
 
+  const tabItems = TABS.map((t) => ({
+    value: t.id,
+    icon: t.icon,
+    label: t.id === "pedidos" && orders.length > 0 ? `${t.label} · ${orders.length}` : t.label,
+  }));
+
   return (
-    <div className="space-y-6 mx-auto">
-      {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BarChart2 size={22} className="text-green-600" />
-            Analytics ML
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">Vendas, estoque Full e KPIs financeiros</p>
+    <div className="space-y-6 mx-auto max-w-[1400px]">
+      <PageHeader
+        icon={BarChart2}
+        title="Analytics ML"
+        description="Vendas, estoque Full e KPIs financeiros"
+      />
+
+      {/* Filtros e ações */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="seg">
+          <button type="button" aria-pressed={!unifiedView} onClick={() => setUnifiedView(false)} className="seg-btn">Loja</button>
+          <button type="button" aria-pressed={unifiedView} onClick={() => setUnifiedView(true)} className="seg-btn">Todas</button>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
+        <AccountSelect accounts={accounts} value={selectedAccount} onChange={setSelectedAccount} disabled={unifiedView} />
+        <div className="seg">
+          {PERIODS.map((p) => (
             <button
+              key={p.value}
               type="button"
-              onClick={() => setUnifiedView(false)}
-              className={"px-3 py-1.5 rounded-lg transition-all font-medium " + (!unifiedView ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700")}
+              aria-pressed={period === p.value && !customRange}
+              onClick={() => handlePeriodChange(p.value)}
+              className="seg-btn"
             >
-              Loja
+              {p.label}
             </button>
-            <button
-              type="button"
-              onClick={() => setUnifiedView(true)}
-              className={"px-3 py-1.5 rounded-lg transition-all font-medium " + (unifiedView ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700")}
-            >
-              Todas
-            </button>
-          </div>
-          <AccountSelect accounts={accounts} value={selectedAccount} onChange={setSelectedAccount} disabled={unifiedView} />
-          <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
-            {PERIODS.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => handlePeriodChange(p.value)}
-                className={`px-3 py-1.5 rounded-lg transition-all font-medium ${
-                  period === p.value && !customRange ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-            <DateRangePicker value={customRange} onChange={handleCustomRange} />
-          </div>
-          <button
-            onClick={() => handleSync(false)}
-            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm"
-          >
-            <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
-            {syncing ? "Sincronizando…" : (unifiedView ? "Sincronizar todas" : "Sincronizar")}
-          </button>
-          <button
-            onClick={() => handleSync(true)}
-            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
-            title="Re-processa 90 dias"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold disabled:opacity-50 transition-colors"
-          >
-            <RefreshCw size={13} /> Re-sync 90d
-          </button>
-          <button
+          ))}
+          <DateRangePicker value={customRange} onChange={handleCustomRange} />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={generateAiAnalysis}
             disabled={loadingAI || loadingSummary || aiAlreadyUsedToday || !!customRange || (unifiedView ? accounts.length === 0 : !selectedAccount)}
             title={
@@ -210,108 +193,94 @@ export default function MeliAnalyticsPage() {
                 ? "Análise gerada hoje · disponível amanhã"
                 : "Gerar análise com IA"
             }
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="!border-glow/30 !text-glow hover:!bg-glow/10"
           >
-            <Sparkles size={13} className={loadingAI ? "animate-pulse" : ""} />
+            <Sparkles size={14} className={loadingAI ? "animate-pulse" : ""} />
             {loadingAI
               ? "Gerando…"
               : aiAlreadyUsedToday
               ? "IA usada hoje"
               : customRange
-              ? "Análise IA · indisponível"
+              ? "Análise IA indisponível"
               : `Análise IA · ${period}`}
-          </button>
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleSync(true)}
+            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
+            title="Re-processa 90 dias"
+          >
+            <RefreshCw size={13} /> Re-sync 90d
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleSync(false)}
+            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
+          >
+            <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Sincronizando…" : (unifiedView ? "Sincronizar todas" : "Sincronizar")}
+          </Button>
         </div>
       </div>
 
-      {/* Tab nav + pedidos panel num único card; analytics renderiza diretamente na página */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex items-center border-b border-gray-100 px-2 pt-2 pb-1 gap-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
-                activeTab === tab.id
-                  ? "bg-green-50 text-green-700"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <tab.icon size={14} />
-              {tab.label}
-              {tab.id === "pedidos" && orders.length > 0 && (
-                <span className="ml-0.5 text-xs font-semibold bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full leading-none">
-                  {orders.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      <Tabs items={tabItems} value={activeTab} onChange={setActiveTab} />
 
-        {/* Pedidos: dentro do card */}
-        <div style={{ display: activeTab === "pedidos" ? "block" : "none" }} className="p-5">
-          <OrdersTab orders={orders} loading={loadingOrders} />
-        </div>
+      {/* Pedidos */}
+      <div style={{ display: activeTab === "pedidos" ? "block" : "none" }} className="glass rounded-2xl p-5">
+        <OrdersTab orders={orders} loading={loadingOrders} />
       </div>
 
-      {/* Analytics: fora do card, cada seção tem seu próprio card — sem duplo aninhamento */}
+      {/* Analytics */}
       <div className="space-y-5" style={{ display: activeTab === "analytics" ? "block" : "none" }}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard icon={DollarSign}   label="Faturamento"      value={loadingSummary ? "…" : formatBRL(summary?.faturamento)}      sub="Pedidos pagos no período"            color="text-green-700"  accent="bg-green-50" />
-          <KpiCard icon={TrendingUp}   label="Liq. Marketplace" value={loadingSummary ? "…" : formatBRL(summary?.liq_marketplace)}  sub={`Taxa ML: ${formatBRL(summary?.taxa_ml)}`} color="text-blue-700"   accent="bg-blue-50" />
-          <KpiCard icon={ShoppingCart} label="Pedidos"          value={loadingSummary ? "…" : (summary?.pedidos ?? "—")}            sub="Pedidos pagos"                       color="text-violet-700" accent="bg-violet-50" />
-          <KpiCard icon={Package}      label="Ticket Médio"     value={loadingSummary ? "…" : formatBRL(summary?.ticket_medio)}                                               color="text-orange-700" accent="bg-orange-50" />
+          <KpiCard icon={DollarSign}   label="Faturamento"      value={loadingSummary ? "…" : formatBRL(summary?.faturamento)}      sub="Pedidos pagos no período"                   tone="neon" />
+          <KpiCard icon={TrendingUp}   label="Liq. Marketplace" value={loadingSummary ? "…" : formatBRL(summary?.liq_marketplace)}  sub={`Taxa ML: ${formatBRL(summary?.taxa_ml)}`} tone="brand" />
+          <KpiCard icon={ShoppingCart} label="Pedidos"          value={loadingSummary ? "…" : (summary?.pedidos ?? "—")}            sub="Pedidos pagos"                              tone="violet" />
+          <KpiCard icon={Package}      label="Ticket Médio"     value={loadingSummary ? "…" : formatBRL(summary?.ticket_medio)}                                                      tone="warn" />
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
+        <div className="glass hud-corners rounded-2xl p-5 md:p-6">
+          <div className="flex items-start justify-between gap-3 mb-5">
             <div>
-              <h2 className="text-sm font-bold text-gray-800">Receita & Pedidos diários</h2>
-              <p className="text-xs text-gray-400 mt-0.5">{unifiedView ? "Todas as lojas — receita bruta e volume de pedidos" : "Período selecionado — receita bruta e volume de pedidos"}</p>
+              <h2 className="text-base font-semibold text-fg">Receita e pedidos diários</h2>
+              <p className="text-xs text-fg-dim mt-0.5">{unifiedView ? "Todas as lojas — receita bruta e volume de pedidos" : "Período selecionado — receita bruta e volume de pedidos"}</p>
             </div>
             {!loadingChart && chartData.length > 0 && (
-              <span className="text-xs font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full">
-                {daysWithSales} dias com vendas
+              <span className="shrink-0 text-xs font-medium text-neon bg-neon/10 ring-1 ring-inset ring-neon/25 px-3 py-1 rounded-full">
+                <span className="num">{daysWithSales}</span> dias com vendas
               </span>
             )}
           </div>
           {loadingChart ? (
-            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+            <div className="h-64 flex items-center justify-center text-fg-dim text-sm">
               <RefreshCw size={18} className="animate-spin mr-2" /> Carregando…
             </div>
           ) : chartData.length === 0 ? (
-            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">Nenhum dado para o período.</div>
+            <EmptyState icon={BarChart2} title="Nenhum dado para o período" description="Sincronize a conta ou escolha outro período." />
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="recGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="#16a34a" stopOpacity={0.35} />
-                    <stop offset="75%"  stopColor="#16a34a" stopOpacity={0.06} />
-                    <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="4 4" stroke="#f3f4f6" vertical={false} />
+            <ResponsiveContainer width="100%" height={320}>
+              <ComposedChart data={chartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                {ChartGlowDefs()}
+                <CartesianGrid {...chartGrid} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#9ca3af" }}
-                  tickLine={false}
-                  axisLine={false}
+                  {...chartAxis}
                   tickFormatter={(d) => { try { return format(parseISO(d), "dd/MM", { locale: ptBR }); } catch { return d; } }}
                   interval="preserveStartEnd"
                 />
-                <YAxis yAxisId="left"  tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`} width={52} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "#9ca3af" }} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "#d1fae5", strokeWidth: 2 }} />
+                <YAxis yAxisId="left" {...chartAxis} tickFormatter={(v) => v >= 1000 ? `R$${(v/1000).toFixed(0)}k` : `R$${v}`} width={52} />
+                <YAxis yAxisId="right" orientation="right" {...chartAxis} allowDecimals={false} width={28} />
+                <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgb(var(--glow) / 0.35)", strokeWidth: 1 }} wrapperStyle={{ outline: "none" }} />
                 {avgReceita > 0 && (
-                  <ReferenceLine yAxisId="left" y={avgReceita} stroke="#16a34a" strokeDasharray="6 3" strokeOpacity={0.45}
-                    label={{ value: "Média", position: "insideTopRight", fontSize: 10, fill: "#16a34a", opacity: 0.6 }}
+                  <ReferenceLine yAxisId="left" y={avgReceita} stroke={chartColors.neon} strokeDasharray="6 4" strokeOpacity={0.4}
+                    label={{ value: "Média", position: "insideTopRight", fontSize: 10, fill: chartColors.neon, opacity: 0.7 }}
                   />
                 )}
-                <Bar      yAxisId="right" dataKey="pedidos" name="pedidos" fill="#86efac" radius={[4,4,0,0]} maxBarSize={16} />
-                <Area     yAxisId="left"  type="monotone" dataKey="receita" name="receita" stroke="#16a34a" strokeWidth={2.5} fill="url(#recGrad)" dot={false} activeDot={{ r: 5, fill: "#16a34a", stroke: "#fff", strokeWidth: 2 }} />
-                <Legend verticalAlign="bottom" height={28} iconType="circle" iconSize={8}
-                  formatter={(value) => <span className="text-xs text-gray-500 font-medium">{value === "receita" ? "Receita (R$)" : "Pedidos"}</span>}
+                <Bar yAxisId="right" dataKey="pedidos" name="pedidos" fill={chartColors.brand} fillOpacity={0.55} radius={[3,3,0,0]} maxBarSize={14} />
+                <Area yAxisId="left" type="monotone" dataKey="receita" name="receita" stroke={chartColors.neon} strokeWidth={2.2} fill="url(#area-neon)" filter="url(#neon-glow)" dot={false} activeDot={neonActiveDot(chartColors.neon)} />
+                <Legend verticalAlign="bottom" height={28} {...chartLegendProps}
+                  formatter={(value) => <span className="text-xs text-fg-muted">{value === "receita" ? "Receita (R$)" : "Pedidos"}</span>}
                 />
               </ComposedChart>
             </ResponsiveContainer>

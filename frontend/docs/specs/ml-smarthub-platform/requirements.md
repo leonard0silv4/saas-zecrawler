@@ -37,6 +37,7 @@ Cada pasta de spec deve conter:
 | Painel admin               | `frontend/docs/specs/admin/`             |
 | Componentes compartilhados | `frontend/docs/specs/shared-components/` |
 | Hooks e utilitários        | `frontend/docs/specs/hooks-utils/`       |
+| Design system (tema Holo)  | `frontend/docs/specs/design-system/`     |
 
 ## Lacunas Identificadas
 
@@ -52,10 +53,14 @@ Cada pasta de spec deve conter:
 | `mlsmarthub.com.br` / `www.` | Landing page de marketing | HTML estático (`/var/www/mlsmarthub-landing/`) |
 | `app.mlsmarthub.com.br`      | React SPA + API           | Nginx → dist + proxy `:3333`                   |
 
-**Landing page local:** `landing/index.html` na raiz do projeto.
-**Deploy manual:** `rsync -avz --delete dist/ ipvps:/var/www/saas-zecrawler/frontend/dist/`
+**Landing page local:** `landing/index.html` + `landing/assets/` (vídeo do hero, poster, logo, favicon) na raiz do projeto.
+**Deploy:** push na `main` → GitHub Action (`.github/workflows/deploy.yml`) roda `deploy.sh` na VPS, que faz o build do frontend e copia `landing/index.html` e `landing/assets/` para `/var/www/mlsmarthub-landing/`.
 
-Ao alterar preços ou funcionalidades descritos na landing, atualizar `landing/index.html` e re-enviar para a VPS.
+Ao alterar preços ou funcionalidades descritos na landing, atualizar `landing/index.html`.
+
+## Identidade visual
+
+Todas as telas seguem o design system escuro "Holo" (vidro, brilho, HUD, gráficos neon, azul da logo como cor de ação). Regras e componentes em `frontend/docs/specs/design-system/`.
 
 ## Rotina de Manutenção
 

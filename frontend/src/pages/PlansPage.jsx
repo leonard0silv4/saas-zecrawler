@@ -81,11 +81,11 @@ export default function PlansPage() {
     <div className="mx-auto">
       {/* Header */}
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 mb-4">
-          <Crown size={22} className="text-brand-600" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brandSolid-500/10 mb-4">
+          <Crown size={22} className="text-brandSolid-300" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Planos e Preços</h1>
-        <p className="text-gray-500 mt-1">Escolha o plano ideal para o seu negócio</p>
+        <h1 className="text-2xl font-semibold text-fg">Planos e Preços</h1>
+        <p className="text-fg-muted mt-1">Escolha o plano ideal para o seu negócio</p>
       </div>
 
       {/* Alerts */}
@@ -108,16 +108,16 @@ export default function PlansPage() {
 
       {/* Subscription status card */}
       {subStatus?.subscription && (
-        <div className="mb-8 max-w-md mx-auto bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+        <div className="mb-8 max-w-md mx-auto glass rounded-xl border border-line/10 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-sm font-semibold text-fg">
               {subStatus.subscription.status === "trialing" ? "Período de teste" : "Assinatura ativa"}
             </span>
             <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
-              subStatus.subscription.status === "active"   ? "bg-emerald-50 text-emerald-700" :
-              subStatus.subscription.status === "trialing" ? "bg-blue-50 text-blue-700" :
-              subStatus.subscription.status === "past_due" ? "bg-red-50 text-red-600" :
-                                                             "bg-gray-100 text-gray-500"
+              subStatus.subscription.status === "active"   ? "bg-neon/10 text-neon" :
+              subStatus.subscription.status === "trialing" ? "bg-brandSolid-500/10 text-brandSolid-300" :
+              subStatus.subscription.status === "past_due" ? "bg-danger/10 text-danger" :
+                                                             "bg-ink/[0.06] text-fg-muted"
             }`}>
               {subStatus.subscription.status === "active"   ? "Ativa" :
                subStatus.subscription.status === "trialing" ? "Em teste" :
@@ -125,11 +125,11 @@ export default function PlansPage() {
                subStatus.subscription.status}
             </span>
           </div>
-          <p className="text-sm text-gray-500">
-            Plano <strong className="text-gray-800">{subStatus.planConfig?.name}</strong>{" "}
+          <p className="text-sm text-fg-muted">
+            Plano <strong className="text-fg">{subStatus.planConfig?.name}</strong>{" "}
             {subStatus.subscription.status === "trialing" ? (
               <>— trial encerra em{" "}
-                <strong className="text-gray-800">
+                <strong className="text-fg">
                   {new Date(subStatus.subscription.currentPeriodEnd).toLocaleDateString("pt-BR")}
                 </strong>
                 . Após isso, a cobrança começa automaticamente.
@@ -156,38 +156,38 @@ export default function PlansPage() {
             <div
               key={plan.slug}
               className={[
-                "relative bg-white rounded-2xl border-2 flex flex-col overflow-hidden",
+                "relative glass rounded-2xl border-2 flex flex-col overflow-hidden",
                 isCurrent ? "border-brand-500 shadow-xl shadow-brand-100/60" : accent,
               ].join(" ")}
             >
               {/* Top color bar */}
-              <div className={`h-1 w-full ${isCurrent ? "bg-brand-500" : topColor} shrink-0`} />
+              <div className={`h-1 w-full ${isCurrent ? "bg-brandSolid-500" : topColor} shrink-0`} />
 
               {/* Badge */}
               {badge && (
-                <span className="absolute top-4 right-4 bg-brand-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ring-2 ring-brand-300 ring-offset-1">
+                <span className="absolute top-4 right-4 bg-brandSolid-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full ring-2 ring-brand-300 ring-offset-1 shadow-glow-brand">
                   {badge}
                 </span>
               )}
 
               <div className="p-6 flex flex-col flex-1">
-                <h3 className="text-base font-bold text-gray-900 mb-3">{plan.name}</h3>
+                <h3 className="text-base font-bold text-fg mb-3">{plan.name}</h3>
 
                 {/* Price */}
                 <div className="mb-4">
                   {plan.price === 0 ? (
-                    <span className="text-3xl font-bold text-gray-900">Grátis</span>
+                    <span className="text-3xl font-bold text-fg">Grátis</span>
                   ) : (
                     <>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-sm text-gray-400">R$</span>
-                        <span className="text-3xl font-bold text-gray-900">
+                        <span className="text-sm text-fg-dim">R$</span>
+                        <span className="text-3xl font-bold text-fg">
                           {plan.price.toFixed(2).replace(".", ",")}
                         </span>
-                        <span className="text-sm text-gray-400">/mês</span>
+                        <span className="text-sm text-fg-dim">/mês</span>
                       </div>
                       {plan.trialDays > 0 && (
-                        <p className="text-xs text-emerald-600 font-medium mt-1">
+                        <p className="text-xs text-neon font-medium mt-1">
                           {plan.trialDays} dias grátis para começar
                         </p>
                       )}
@@ -197,33 +197,33 @@ export default function PlansPage() {
 
                 {/* Limits */}
                 <div className="space-y-1 mb-5">
-                  <p className="text-xs text-gray-500">
-                    Até <strong className="text-gray-700">{plan.maxLinks.toLocaleString()}</strong> links
+                  <p className="text-xs text-fg-muted">
+                    Até <strong className="text-fg/90">{plan.maxLinks.toLocaleString()}</strong> links
                   </p>
                   {plan.maxSellerMonitors != null && (
-                    <p className="text-xs text-gray-500">
-                      Até <strong className="text-gray-700">{plan.maxSellerMonitors.toLocaleString()}</strong>{" "}
+                    <p className="text-xs text-fg-muted">
+                      Até <strong className="text-fg/90">{plan.maxSellerMonitors.toLocaleString()}</strong>{" "}
                       {plan.maxSellerMonitors === 1 ? "seller monitorado" : "sellers monitorados"}
                     </p>
                   )}
                   {plan.maxTeamUsers != null && (
-                    <p className="text-xs text-gray-500">
-                      Até <strong className="text-gray-700">{plan.maxTeamUsers.toLocaleString()}</strong>{" "}
+                    <p className="text-xs text-fg-muted">
+                      Até <strong className="text-fg/90">{plan.maxTeamUsers.toLocaleString()}</strong>{" "}
                       {plan.maxTeamUsers === 1 ? "usuário no time" : "usuários no time"}
                     </p>
                   )}
                   {plan.maxMeliAccounts > 0 && (
-                    <p className="text-xs text-gray-500">
-                      Até <strong className="text-gray-700">{plan.maxMeliAccounts.toLocaleString()}</strong>{" "}
+                    <p className="text-xs text-fg-muted">
+                      Até <strong className="text-fg/90">{plan.maxMeliAccounts.toLocaleString()}</strong>{" "}
                       {plan.maxMeliAccounts === 1 ? "conta Mercado Livre" : "contas Mercado Livre"}
                     </p>
                   )}
                   {plan.maxMeliAccounts > 0 && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-fg-muted">
                       {plan.maxMonthlyMessages == null ? (
-                        <>Mensagens ML <strong className="text-gray-700">ilimitadas</strong></>
+                        <>Mensagens ML <strong className="text-fg/90">ilimitadas</strong></>
                       ) : (
-                        <>Até <strong className="text-gray-700">{plan.maxMonthlyMessages.toLocaleString()}</strong> mensagens ML/mês</>
+                        <>Até <strong className="text-fg/90">{plan.maxMonthlyMessages.toLocaleString()}</strong> mensagens ML/mês</>
                       )}
                     </p>
                   )}
@@ -232,8 +232,8 @@ export default function PlansPage() {
                 {/* Features */}
                 <ul className="space-y-2.5 mb-6 flex-1">
                   {plan.features?.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
-                      <Check size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <li key={f} className="flex items-start gap-2 text-xs text-fg-muted">
+                      <Check size={14} className="text-neon mt-0.5 shrink-0" />
                       {f}
                     </li>
                   ))}
@@ -241,7 +241,7 @@ export default function PlansPage() {
 
                 {/* CTA */}
                 {isCurrent ? (
-                  <div className="text-center text-sm font-semibold text-brand-600 bg-brand-50 py-2.5 rounded-xl">
+                  <div className="text-center text-sm font-semibold text-brandSolid-300 bg-brandSolid-500/10 py-2.5 rounded-xl">
                     ✓ Plano atual
                   </div>
                 ) : isOwner ? (
@@ -251,8 +251,8 @@ export default function PlansPage() {
                     className={[
                       "w-full py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50",
                       plan.price === 0
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        : "bg-brand-600 text-white hover:bg-brand-700 shadow-sm hover:shadow-md",
+                        ? "bg-ink/[0.06] text-fg/90 hover:bg-ink/10"
+                        : "bg-brandSolid-500 text-white hover:bg-brandSolid-400 shadow-sm hover:shadow-md",
                     ].join(" ")}
                   >
                     {upgrading === plan.slug ? (
@@ -281,12 +281,12 @@ export default function PlansPage() {
         <div className="text-center mt-10 space-y-3">
           <button
             onClick={openPortal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 glass border border-line/15 rounded-xl text-sm font-medium text-fg/90 hover:bg-ink/[0.03] hover:border-line/25 transition-all shadow-sm"
           >
             <CreditCard size={16} />
             Gerenciar assinatura e pagamento
           </button>
-          <p className="text-xs text-gray-400">Alterar cartão, ver faturas, cancelar assinatura</p>
+          <p className="text-xs text-fg-dim">Alterar cartão, ver faturas, cancelar assinatura</p>
         </div>
       )}
     </div>

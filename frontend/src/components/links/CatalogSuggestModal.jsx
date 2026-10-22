@@ -53,8 +53,8 @@ export function CatalogSuggestModal({ isOpen, onClose, linkId, url, onSelect }) 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Escolher produto de catálogo" size="lg">
       <div className="space-y-4">
-        <div className="flex gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5 text-xs text-orange-800">
-          <Info size={14} className="shrink-0 mt-0.5 text-orange-500" />
+        <div className="flex gap-2 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2.5 text-xs text-warn">
+          <Info size={14} className="shrink-0 mt-0.5 text-warn" />
           <p>
             Este anúncio está <strong>fora de catálogo</strong> e o Mercado Livre não libera os dados dele pela API.
             Escolha um produto de catálogo equivalente para acompanhar — o preço passará a ser o da oferta vencedora
@@ -66,48 +66,48 @@ export function CatalogSuggestModal({ isOpen, onClose, linkId, url, onSelect }) 
           onSubmit={(e) => { e.preventDefault(); if (query.trim()) load({ q: query.trim() }); }}
           className="relative"
         >
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim pointer-events-none" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar no catálogo do Mercado Livre..."
-            className="w-full pl-9 pr-24 py-2 text-sm border border-gray-200 rounded-lg focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none"
+            className="field w-full !pl-9 !pr-24"
           />
           <button type="submit" disabled={loading}
-            className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 text-xs font-medium bg-brand-600 text-white rounded-md hover:bg-brand-700 disabled:opacity-50">
+            className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 text-xs font-medium bg-brandSolid-500 text-white rounded-md hover:bg-brandSolid-400 disabled:opacity-50 shadow-glow-brand">
             Buscar
           </button>
         </form>
 
         {loading ? (
-          <p className="text-center text-sm text-gray-400 py-8">Buscando no catálogo...</p>
+          <p className="text-center text-sm text-fg-dim py-8">Buscando no catálogo...</p>
         ) : suggestions.length === 0 ? (
-          <p className="text-center text-sm text-gray-400 py-8">Nenhum produto de catálogo encontrado. Tente outro termo.</p>
+          <p className="text-center text-sm text-fg-dim py-8">Nenhum produto de catálogo encontrado. Tente outro termo.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-line/[0.07]">
             {suggestions.map((s) => (
               <li key={s.id} className="flex items-center gap-3 py-3">
                 {s.image ? (
-                  <img src={s.image} alt="" className="w-12 h-12 rounded-lg object-cover bg-gray-100 shrink-0" />
+                  <img src={s.image} alt="" className="w-12 h-12 rounded-lg object-cover bg-ink/[0.06] shrink-0" />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0" />
+                  <div className="w-12 h-12 rounded-lg bg-ink/[0.06] shrink-0" />
                 )}
                 <div className="min-w-0 flex-1">
                   <a href={s.permalink} target="_blank" rel="noopener noreferrer"
-                    className="text-sm font-medium text-gray-900 hover:text-brand-600 hover:underline line-clamp-2">
+                    className="text-sm font-medium text-fg hover:text-brandSolid-300 hover:underline line-clamp-2">
                     {s.name}
                   </a>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-fg-muted mt-0.5">
                     {s.price > 0 ? `R$ ${s.price.toFixed(2)}` : "Sem oferta ativa"}
                     {s.seller ? ` · ${s.seller}` : ""}
-                    <span className="font-mono text-gray-400"> · {s.id}</span>
+                    <span className="font-mono text-fg-dim"> · {s.id}</span>
                   </p>
                 </div>
                 <button
                   onClick={() => handleSelect(s)}
                   disabled={selectingId !== null}
-                  className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-brand-200 text-brand-700 hover:bg-brand-50 disabled:opacity-50">
+                  className="shrink-0 px-3 py-1.5 text-xs font-medium rounded-lg border border-brandSolid-400/30 text-brandSolid-300 hover:bg-brandSolid-500/10 disabled:opacity-50">
                   {selectingId === s.id ? "Salvando..." : "Usar este"}
                 </button>
               </li>

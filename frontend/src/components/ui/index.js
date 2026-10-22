@@ -1,6 +1,10 @@
 export { Button } from "./Button";
-export { Card } from "./Card";
+export { Card, Panel } from "./Card";
 export { Alert } from "./Alert";
 export { Badge } from "./Badge";
-export { Input } from "./Input";
+export { Input, Select } from "./Input";
 export { Modal } from "./Modal";
+export { PageHeader } from "./PageHeader";
+export { Tabs } from "./Tabs";
+export { EmptyState } from "./EmptyState";
+export { Kpi } from "./Kpi";

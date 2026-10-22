@@ -20,13 +20,23 @@ saas-zecrawler/
 │       ├── services/cron.js    # Atualização automática de links
 │       └── utils/              # scraper, SSE, meliToken
 │
-└── frontend/                   # React 18 + Vite + Tailwind
+├── landing/                    # Site institucional (HTML estático + assets/)
+└── frontend/                   # React 18 + Vite + Tailwind (tema escuro "Holo")
     └── src/
         ├── components/         # AppLayout (sidebar responsiva)
         ├── contexts/           # AuthContext (login, register, canAccess)
         ├── pages/              # 9 páginas
         └── services/api.js     # Axios com interceptors
 ```
+
+## Frontend — stack visual
+
+- Tailwind com tokens próprios do tema escuro "Holo" (`frontend/tailwind.config.js`, `frontend/src/styles/globals.css`)
+- `motion` para animações, Recharts com tema neon (`src/lib/chartTheme.js`)
+- Hero 3D do Dashboard com `three` + `@react-three/fiber` v8 + `drei` + `postprocessing` (carregado sob demanda)
+- Tema escuro por padrão + tema claro opcional (botão sol/lua no topo; `ThemeContext`)
+- Fontes: DM Sans (corpo) e Space Grotesk (títulos/números)
+- Detalhes em `frontend/docs/specs/design-system/`
 
 ## Setup Rápido
 
@@ -261,6 +271,9 @@ pm2 start src/index.js --name zecrawler-api
 cd frontend
 npm run build
 # Servir dist/ via Nginx
+
+# Deploy automático: push na main → .github/workflows/deploy.yml → deploy.sh
+# (build do frontend + cópia de landing/index.html e landing/assets/ para /var/www/mlsmarthub-landing)
 
 # Nginx config
 server {

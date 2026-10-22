@@ -53,11 +53,11 @@ export function CatalogScanPanel({ onScanFinished }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col md:flex-row md:items-center gap-3">
+    <div className="glass rounded-xl border border-line/10 p-4 flex flex-col md:flex-row md:items-center gap-3">
       <div className="flex items-start gap-3 flex-1 min-w-0">
-        <Layers size={18} className="text-brand-600 shrink-0 mt-0.5" />
+        <Layers size={18} className="text-brandSolid-300 shrink-0 mt-0.5" />
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-medium text-fg">
             {scan?.running ? (
               <span className="inline-flex items-center gap-1.5">
                 <Loader2 size={14} className="animate-spin" /> Varrendo catálogos… (pode levar alguns minutos)
@@ -68,18 +68,18 @@ export function CatalogScanPanel({ onScanFinished }) {
               </>
             )}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5 flex items-start gap-1">
+          <p className="text-xs text-fg-muted mt-0.5 flex items-start gap-1">
             <Info size={12} className="shrink-0 mt-0.5" />
             Pela API oficial do Mercado Livre só é possível ver vendedores dentro de produtos de catálogo. Varremos os
             catálogos dos seus anúncios, dos seus Links e dos mais vendidos das categorias escolhidas (até {scan?.maxCatalogs ?? 300}).
           </p>
           {scan?.lastError === "NO_ACCOUNT" && (
-            <p className="text-xs text-orange-700 mt-1">Conecte uma conta do Mercado Livre para varrer os catálogos.</p>
+            <p className="text-xs text-warn mt-1">Conecte uma conta do Mercado Livre para varrer os catálogos.</p>
           )}
           {scan?.categories?.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {scan.categories.map((c) => (
-                <span key={c.id} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{c.name || c.id}</span>
+                <span key={c.id} className="text-xs bg-ink/[0.06] text-fg-muted px-1.5 py-0.5 rounded">{c.name || c.id}</span>
               ))}
             </div>
           )}
@@ -87,11 +87,11 @@ export function CatalogScanPanel({ onScanFinished }) {
       </div>
       <div className="flex gap-2 shrink-0">
         <button type="button" onClick={() => setCatOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface-2 border border-line/15 rounded-lg hover:bg-ink/[0.03]">
           <Tag size={14} /> Categorias
         </button>
         <button type="button" onClick={runScan} disabled={starting || scan?.running}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50">
+          className="flex items-center gap-1.5 px-3 py-2 text-sm bg-brandSolid-500 text-white rounded-lg hover:bg-brandSolid-400 disabled:opacity-50 shadow-glow-brand">
           <RefreshCw size={14} className={scan?.running ? "animate-spin" : ""} /> Varrer agora
         </button>
       </div>
@@ -153,51 +153,51 @@ function CategoriesModal({ isOpen, onClose, initial, max, onSaved }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Categorias (mais vendidos)" size="md">
       <div className="space-y-3">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-fg-muted">
           Os produtos de catálogo mais vendidos destas categorias entram na varredura. Categorias mais específicas trazem
           concorrentes mais relevantes. Máximo {max}.
         </p>
         {selected.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {selected.map((c) => (
-              <span key={c.id} className="inline-flex items-center gap-1 text-xs bg-brand-50 text-brand-700 px-2 py-1 rounded-full">
+              <span key={c.id} className="inline-flex items-center gap-1 text-xs bg-brandSolid-500/10 text-brandSolid-300 px-2 py-1 rounded-full">
                 {c.name || c.id}
                 <button type="button" onClick={() => toggle(c)}><X size={11} /></button>
               </span>
             ))}
           </div>
         )}
-        <div className="flex items-center gap-1 text-xs text-gray-500">
+        <div className="flex items-center gap-1 text-xs text-fg-muted">
           {path.length > 0 && (
             <button type="button" onClick={() => setPath((p) => p.slice(0, -1))}
-              className="inline-flex items-center gap-0.5 text-brand-600 hover:underline">
+              className="inline-flex items-center gap-0.5 text-brandSolid-300 hover:underline">
               <ChevronLeft size={12} /> Voltar
             </button>
           )}
           <span className="truncate">{path.length ? path.map((p) => p.name).join(" › ") : "Todas as categorias"}</span>
         </div>
-        <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
+        <ul className="max-h-80 overflow-y-auto divide-y divide-line/[0.07] border border-line/10 rounded-lg">
           {isLoading ? (
-            <li className="p-4 text-center text-sm text-gray-400">Carregando…</li>
+            <li className="p-4 text-center text-sm text-fg-dim">Carregando…</li>
           ) : list.map((c) => (
             <li key={c.id} className="flex items-center gap-2 px-3 py-2 text-sm">
               <input type="checkbox" checked={selected.some((s) => s.id === c.id)} onChange={() => toggle(c)}
                 className="accent-brand-600" />
               <span className="flex-1 truncate">{c.name}</span>
               <button type="button" onClick={() => setPath((p) => [...p, { id: c.id, name: c.name }])}
-                className="p-1 text-gray-400 hover:text-gray-700" title="Subcategorias">
+                className="p-1 text-fg-dim hover:text-fg/90" title="Subcategorias">
                 <ChevronRight size={14} />
               </button>
             </li>
           ))}
           {!isLoading && list.length === 0 && (
-            <li className="p-4 text-center text-sm text-gray-400">Sem subcategorias.</li>
+            <li className="p-4 text-center text-sm text-fg-dim">Sem subcategorias.</li>
           )}
         </ul>
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600">Cancelar</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-fg-muted">Cancelar</button>
           <button type="button" onClick={save} disabled={saving}
-            className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium disabled:opacity-50">
+            className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium disabled:opacity-50 shadow-glow-brand">
             {saving ? "Salvando…" : "Salvar"}
           </button>
         </div>

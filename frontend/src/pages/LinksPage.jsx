@@ -16,6 +16,7 @@ import { AISection }      from "../components/links/AISection";
 import { AddLinkModal }   from "../components/links/AddLinkModal";
 import { EditLinkModal }  from "../components/links/EditLinkModal";
 import { CatalogSuggestModal } from "../components/links/CatalogSuggestModal";
+import { PageHeader, Button } from "../components/ui";
 
 const QK = {
   links: (filters) => ["links", filters],
@@ -228,9 +229,9 @@ export default function LinksPage() {
   }
 
   const statusColors = {
-    winning: "text-emerald-600 bg-emerald-50",
-    losing:  "text-red-600 bg-red-50",
-    neutral: "text-gray-500 bg-gray-50",
+    winning: "text-neon bg-neon/10",
+    losing:  "text-danger bg-danger/10",
+    neutral: "text-fg-muted bg-ink/[0.03]",
   };
   const statusIcons = { winning: TrendingUp, losing: TrendingDown, neutral: Minus };
 
@@ -242,7 +243,7 @@ export default function LinksPage() {
     return (
       <th
         onClick={() => handleSort(col)}
-        className={`cursor-pointer select-none px-4 py-3 font-medium text-gray-500 hover:text-gray-700 ${className}`}
+        className={`cursor-pointer select-none px-4 py-3 font-medium text-fg-muted hover:text-fg/90 ${className}`}
       >
         <span className="inline-flex items-center gap-1">
           {label}
@@ -257,39 +258,34 @@ export default function LinksPage() {
   }
 
   return (
-    <div className="mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Link2 size={22} className="text-brand-600" />
-            Links
-          </h1>
-          <p className="text-sm text-gray-500">{total} de {maxLinks} links utilizados</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={handleRefresh} disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">
-            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-            {refreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-brand-600 text-white rounded-lg hover:bg-brand-700">
-            <Plus size={16} /> Adicionar
-          </button>
-        </div>
-      </div>
+    <div className="mx-auto max-w-[1400px]">
+      <PageHeader
+        icon={Link2}
+        title="Links"
+        description={<><span className="num text-fg">{total}</span> de <span className="num">{maxLinks}</span> links utilizados</>}
+        actions={
+          <>
+            <Button variant="secondary" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw size={15} className={refreshing ? "animate-spin" : ""} />
+              {refreshing ? "Atualizando..." : "Atualizar"}
+            </Button>
+            <Button onClick={() => setShowAdd(true)}>
+              <Plus size={16} /> Adicionar
+            </Button>
+          </>
+        }
+      />
 
       {/* Aviso: conta ML necessária */}
       {noMeliAccount && (
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
-          <Info size={16} className="shrink-0 text-orange-500" />
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-warn/30 bg-warn/10 px-4 py-3 text-sm text-warn">
+          <Info size={16} className="shrink-0 text-warn" />
           <span>
             É necessário ter <strong>ao menos 1 conta do Mercado Livre conectada</strong> para cadastrar e atualizar links.
             Os dados dos produtos são consultados pela API oficial do Mercado Livre.
           </span>
           <Link to="/meli"
-            className="sm:ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-semibold hover:bg-orange-600 transition-colors">
+            className="sm:ml-auto shrink-0 px-3 py-1.5 rounded-lg bg-warn/15 border border-warn/40 text-warn text-xs font-semibold hover:bg-warn/25 transition-colors">
             Conectar conta
           </Link>
         </div>
@@ -297,8 +293,8 @@ export default function LinksPage() {
 
       {/* Progress bar */}
       <div className="mb-4">
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-brand-500 rounded-full transition-all"
+        <div className="h-1.5 bg-ink/[0.06] rounded-full overflow-hidden">
+          <div className="h-full rounded-full transition-all bg-gradient-to-r from-brandSolid-500 to-glow shadow-[0_0_12px_rgb(var(--glow)/0.7)]"
             style={{ width: `${Math.min((total / maxLinks) * 100, 100)}%` }} />
         </div>
       </div>
@@ -313,20 +309,20 @@ export default function LinksPage() {
       />
 
       {/* Barra de Filtros */}
-      <div className="flex flex-wrap gap-3 mb-4 bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+      <div className="flex flex-wrap gap-3 mb-4 glass border border-line/10 rounded-xl p-3 shadow-sm">
         {/* Busca por título */}
         <div className="relative flex-1 min-w-[160px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por título..."
             value={filterSearch}
             onChange={(e) => { setFilterSearch(e.target.value); resetPage(); }}
-            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none"
+            className="field w-full !pl-9 !pr-8"
           />
           {filterSearch && (
             <button onClick={() => { setFilterSearch(""); resetPage(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-dim hover:text-fg-muted">
               <X size={13} />
             </button>
           )}
@@ -334,17 +330,17 @@ export default function LinksPage() {
 
         {/* Busca por SKU */}
         <div className="relative min-w-[140px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-dim pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar SKU..."
             value={filterSku}
             onChange={(e) => { setFilterSku(e.target.value); resetPage(); }}
-            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none"
+            className="field w-full !pl-9 !pr-8"
           />
           {filterSku && (
             <button onClick={() => { setFilterSku(""); resetPage(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-dim hover:text-fg-muted">
               <X size={13} />
             </button>
           )}
@@ -361,10 +357,10 @@ export default function LinksPage() {
               onClick={() => handleFilterStatus(value)}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                 filterStatus === value
-                  ? value === "winning" ? "bg-emerald-600 text-white"
-                    : value === "losing"  ? "bg-red-500 text-white"
-                    : "bg-brand-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? value === "winning" ? "bg-neon/15 text-neon ring-1 ring-inset ring-neon/40"
+                    : value === "losing"  ? "bg-danger/15 text-danger ring-1 ring-inset ring-danger/40"
+                    : "bg-brandSolid-500/20 text-fg ring-1 ring-inset ring-brandSolid-400/50 shadow-[0_0_14px_-6px_rgb(30_123_255/0.9)]"
+                  : "bg-ink/[0.06] text-fg-muted hover:bg-ink/10"
               }`}>
               <Icon size={12} />
               {label}
@@ -375,11 +371,11 @@ export default function LinksPage() {
         {/* Filtro Tag */}
         {availableTags.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <Tag size={13} className="text-gray-400 flex-shrink-0" />
+            <Tag size={13} className="text-fg-dim flex-shrink-0" />
             <select
               value={filterTag}
               onChange={(e) => handleFilterTag(e.target.value)}
-              className="px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:border-brand-400 outline-none cursor-pointer">
+              className="field !w-auto !pl-2 !pr-7 cursor-pointer">
               <option value="">Todas as Tags</option>
               {availableTags.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -393,7 +389,7 @@ export default function LinksPage() {
           <select
             value={filterSeller}
             onChange={(e) => { setFilterSeller(e.target.value); resetPage(); }}
-            className="px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:border-brand-400 outline-none cursor-pointer">
+            className="field !w-auto !pl-2 !pr-7 cursor-pointer">
             <option value="">Todos os Vendedores</option>
             {availableSellers.map((s) => (
               <option key={s} value={s}>{s}</option>
@@ -412,7 +408,7 @@ export default function LinksPage() {
               setFilterSeller("");
               resetPage();
             }}
-            className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            className="flex items-center gap-1 px-2 py-1.5 text-xs text-fg-muted hover:text-fg/90 hover:bg-ink/[0.06] rounded-lg transition-colors">
             <X size={12} /> Limpar
           </button>
         )}
@@ -441,44 +437,44 @@ export default function LinksPage() {
 
       {/* Tabela */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Carregando...</div>
+        <div className="text-center py-12 text-fg-dim">Carregando...</div>
       ) : links.length === 0 ? (
         <div className="text-center py-12">
           {hasFilters ? (
             <>
-              <p className="text-gray-400 mb-2">Nenhum resultado para os filtros aplicados</p>
+              <p className="text-fg-dim mb-2">Nenhum resultado para os filtros aplicados</p>
               <button
                 onClick={() => {
                   setFilterStatus("all"); setFilterTag(""); setFilterSearch("");
                   setFilterSku(""); setFilterSeller(""); resetPage();
                 }}
-                className="text-brand-600 text-sm font-medium hover:underline">
+                className="text-brandSolid-300 text-sm font-medium hover:underline">
                 Limpar filtros
               </button>
             </>
           ) : (
             <>
-              <p className="text-gray-400 mb-2">Nenhum link cadastrado</p>
+              <p className="text-fg-dim mb-2">Nenhum link cadastrado</p>
               <button onClick={() => setShowAdd(true)}
-                className="text-brand-600 text-sm font-medium hover:underline">
+                className="text-brandSolid-300 text-sm font-medium hover:underline">
                 Adicionar primeiro link
               </button>
             </>
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="glass rounded-xl border border-line/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">Produto</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-500">SKU</th>
+                <tr className="border-b border-line/10">
+                  <th className="text-left px-4 py-3 font-medium text-fg-muted">Produto</th>
+                  <th className="text-left px-4 py-3 font-medium text-fg-muted">SKU</th>
                   <SortableHeader col="nowPrice" label="Preço Atual" className="text-right" />
-                  <th className="text-left px-4 py-3 font-medium text-gray-500 min-w-[160px]">Histórico</th>
+                  <th className="text-left px-4 py-3 font-medium text-fg-muted min-w-[160px]">Histórico</th>
                   <SortableHeader col="myPrice" label="Meu Preço" className="text-right" />
-                  <th className="text-center px-4 py-3 font-medium text-gray-500">Status</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">Ações</th>
+                  <th className="text-center px-4 py-3 font-medium text-fg-muted">Status</th>
+                  <th className="text-right px-4 py-3 font-medium text-fg-muted">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -496,33 +492,33 @@ export default function LinksPage() {
                     : null;
 
                   return (
-                    <tr key={link._id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <tr key={link._id} className="border-b border-line/[0.06] hover:bg-ink/[0.02]">
 
                       {/* Produto */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {link.image ? (
                             <img src={link.image} alt=""
-                              className="w-10 h-10 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
+                              className="w-10 h-10 rounded-lg object-cover bg-ink/[0.06] flex-shrink-0" />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
+                            <div className="w-10 h-10 rounded-lg bg-ink/[0.06] flex-shrink-0" />
                           )}
                           <div className="min-w-0">
                             <a
                               href={link.link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="font-medium text-gray-900 hover:text-brand-600 hover:underline flex items-center gap-1 break-words"
+                              className="font-medium text-fg hover:text-brandSolid-300 hover:underline flex items-center gap-1 break-words"
                               title={link.name || "Sem título"}>
                               <span className="line-clamp-3 max-w-[220px]">{link.name || "Sem título"}</span>
-                              <ExternalLink size={11} className="flex-shrink-0 text-gray-300" />
+                              <ExternalLink size={11} className="flex-shrink-0 text-fg-dim/60" />
                             </a>
                             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                               {link.seller && (
-                                <span className="text-xs text-gray-400">{link.seller}</span>
+                                <span className="text-xs text-fg-dim">{link.seller}</span>
                               )}
                               {link.full && (
-                                <span className="text-xs bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-medium">
+                                <span className="text-xs bg-neon/10 text-neon px-1.5 py-0.5 rounded font-medium">
                                   FULL
                                 </span>
                               )}
@@ -530,12 +526,12 @@ export default function LinksPage() {
                                 <button
                                   onClick={() => setCatalogTarget({ linkId: link._id })}
                                   title="O Mercado Livre não libera este anúncio pela API. Escolha um produto de catálogo equivalente."
-                                  className="text-xs bg-orange-50 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded font-medium hover:bg-orange-100">
+                                  className="text-xs bg-warn/10 text-warn border border-warn/30 px-1.5 py-0.5 rounded font-medium hover:bg-warn/15">
                                   Fora de catálogo · escolher catálogo
                                 </button>
                               )}
                               {link.tags?.map((t) => (
-                                <span key={t} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
+                                <span key={t} className="text-xs bg-ink/[0.06] text-fg-muted px-1.5 py-0.5 rounded">
                                   {t}
                                 </span>
                               ))}
@@ -551,21 +547,21 @@ export default function LinksPage() {
                             href={`https://lista.mercadolivre.com.br/${link.sku}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono bg-violet-50 text-violet-700 hover:bg-violet-100 transition-colors">
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono bg-violet-500/10 text-violet-300 hover:bg-violet-500/15 transition-colors">
                             {link.sku}
                           </a>
                         ) : (
-                          <span className="text-xs text-gray-300">—</span>
+                          <span className="text-xs text-fg-dim/60">—</span>
                         )}
                       </td>
 
                       {/* Preço Atual */}
                       <td className="px-4 py-3 text-right">
-                        <span className="font-mono font-medium text-gray-900">
+                        <span className="font-mono font-medium text-fg">
                           R$ {link.nowPrice?.toFixed(2) ?? "—"}
                         </span>
                         {link.dateMl && (
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-fg-dim mt-0.5">
                             Desde {format(new Date(link.dateMl), "d 'de' MMM", { locale: ptBR })}
                           </p>
                         )}
@@ -581,10 +577,10 @@ export default function LinksPage() {
                                 : null;
                               return (
                                 <span key={i}
-                                  className="flex-shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap font-mono">
+                                  className="flex-shrink-0 inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-ink/[0.06] text-fg-muted whitespace-nowrap font-mono">
                                   R$ {h.price?.toFixed(2)}
                                   {h.updatedAt && (
-                                    <span className="text-gray-400 font-sans">
+                                    <span className="text-fg-dim font-sans">
                                       {format(new Date(h.updatedAt), "dd/MM")}
                                       {daysAgo !== null ? ` · ${daysAgo}d` : ""}
                                     </span>
@@ -593,18 +589,18 @@ export default function LinksPage() {
                               );
                             })
                           ) : (
-                            <span className="text-xs text-gray-300">—</span>
+                            <span className="text-xs text-fg-dim/60">—</span>
                           )}
                         </div>
                       </td>
 
                       {/* Meu Preço + diferencial */}
                       <td className="px-4 py-3 text-right">
-                        <span className="font-mono text-gray-900">
+                        <span className="font-mono text-fg">
                           R$ {link.myPrice?.toFixed(2) ?? "—"}
                         </span>
                         {percentDiff !== null && (
-                          <p className={`text-xs mt-0.5 font-medium ${percentDiff > 0 ? "text-red-500" : "text-emerald-600"}`}>
+                          <p className={`text-xs mt-0.5 font-medium ${percentDiff > 0 ? "text-danger" : "text-neon"}`}>
                             {percentDiff > 0 ? "+" : ""}{percentDiff.toFixed(1)}%
                           </p>
                         )}
@@ -613,7 +609,7 @@ export default function LinksPage() {
                       {/* Status */}
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusColors[status]}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? "bg-emerald-400" : "bg-gray-300"}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? "bg-neon shadow-[0_0_6px_rgb(var(--neon))]" : "bg-ink/15"}`} />
                           <StatusIcon size={11} />
                           {status === "winning" ? "Ganhando" : status === "losing" ? "Perdendo" : "Neutro"}
                         </span>
@@ -625,18 +621,18 @@ export default function LinksPage() {
                           <button
                             onClick={() => openEdit(link)}
                             title="Editar SKU / Preço"
-                            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700">
+                            className="p-1.5 hover:bg-ink/[0.06] rounded-lg text-fg-dim hover:text-fg/90">
                             <Pencil size={15} />
                           </button>
                           <button
                             onClick={() => handleDelete(link._id)}
                             title="Excluir do acompanhamento"
-                            className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500">
+                            className="p-1.5 hover:bg-danger/10 rounded-lg text-fg-dim hover:text-danger">
                             <Trash2 size={15} />
                           </button>
                         </div>
                         {link.updatedAt && (
-                          <p className="text-xs text-gray-400 mt-0.5 whitespace-nowrap"
+                          <p className="text-xs text-fg-dim mt-0.5 whitespace-nowrap"
                             title={link.ratingSeller ? `Reputação: ${link.ratingSeller}` : undefined}>
                             Atualizado {format(new Date(link.updatedAt), "dd/MM HH:mm")}
                           </p>
@@ -651,17 +647,17 @@ export default function LinksPage() {
 
           {/* Paginação */}
           {total > perPage && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-              <span className="text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-line/10">
+              <span className="text-sm text-fg-muted">
                 Página {page} de {Math.ceil(total / perPage)}
               </span>
               <div className="flex gap-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}
-                  className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-40">
+                  className="px-3 py-1.5 text-sm border rounded-lg hover:bg-ink/[0.03] disabled:opacity-40">
                   Anterior
                 </button>
                 <button onClick={() => setPage((p) => p + 1)} disabled={page * perPage >= total}
-                  className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-40">
+                  className="px-3 py-1.5 text-sm border rounded-lg hover:bg-ink/[0.03] disabled:opacity-40">
                   Próxima
                 </button>
               </div>

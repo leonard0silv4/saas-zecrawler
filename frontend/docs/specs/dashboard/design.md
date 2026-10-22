@@ -30,3 +30,9 @@ DashboardPage
 ├── PriceAnalyzeSection → StatCard, SectionHeader, SectionWrap, Panel, WinLossBar
 └── SellerSection → StatCard, SectionHeader, SectionWrap, Panel, RankList, DarkTooltip
 ```
+
+## Hero 3D (redesign Holo, 2026-10)
+
+- `components/dashboard/HoloDeck.jsx` escolhe entre a cena 3D (`HoloScene3D.jsx`, React Three Fiber, carregada com `React.lazy`) e o fallback 2D (`HoloDeck2D.jsx`).
+- Painéis do hero (`HoloPanels.jsx`): Competitividade (`stats.links.competitividade`), Perguntas por horário (`stats.messages`) e Links monitorados (`stats.links.total/winning/losing`).
+- Cards de módulo, `StatCard`, `WinLossBar` e gráficos usam o tema escuro — ver `../design-system/`.

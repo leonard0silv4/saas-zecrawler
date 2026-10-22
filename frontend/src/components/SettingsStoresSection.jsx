@@ -52,32 +52,32 @@ export default function SettingsStoresSection() {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+    <div className="glass rounded-xl border border-line/15 shadow-sm p-6 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <Store size={20} className="text-brand-600" />
+        <h2 className="text-lg font-semibold text-fg flex items-center gap-2">
+          <Store size={20} className="text-brandSolid-300" />
           Minhas lojas (vendedores próprios)
         </h2>
-        <p className="text-gray-600 mt-1 text-sm">
+        <p className="text-fg-muted mt-1 text-sm">
           Nomes exatamente como aparecem no XML / coluna vendedor (um por linha ou separados por vírgula). Usados para
           marcar “sua loja” na análise de preços.
         </p>
       </div>
 
       {!canEdit && (
-        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+        <p className="text-sm text-warn bg-warn/10 border border-warn/30 rounded-lg px-3 py-2">
           Apenas owner ou admin podem alterar esta lista.
         </p>
       )}
 
       {error && (
-        <div className="flex items-start gap-2 rounded-lg bg-red-50 text-red-800 text-sm px-3 py-2">
+        <div className="flex items-start gap-2 rounded-lg bg-danger/10 text-danger text-sm px-3 py-2">
           <AlertCircle size={18} className="shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
       {message && (
-        <div className="flex items-start gap-2 rounded-lg bg-emerald-50 text-emerald-800 text-sm px-3 py-2">
+        <div className="flex items-start gap-2 rounded-lg bg-neon/10 text-neon text-sm px-3 py-2">
           <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
           <span>{message}</span>
         </div>
@@ -89,7 +89,7 @@ export default function SettingsStoresSection() {
         disabled={loading || !canEdit}
         placeholder="MINHA_LOJA_1&#10;MINHA_LOJA_2"
         rows={8}
-        className="w-full font-mono text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none resize-y disabled:bg-gray-50 disabled:text-gray-500"
+        className="field w-full disabled:bg-ink/[0.03] disabled:text-fg-muted"
         spellCheck={false}
       />
 
@@ -98,7 +98,7 @@ export default function SettingsStoresSection() {
           type="button"
           onClick={handleSave}
           disabled={saving || loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium hover:bg-brandSolid-400 disabled:opacity-50 shadow-glow-brand"
         >
           <Save size={18} />
           {saving ? "Salvando…" : "Salvar lojas"}

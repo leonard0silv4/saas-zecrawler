@@ -12,6 +12,7 @@ import { AccountSelect } from "../components/meli-analytics/AccountSelect";
 import { InventoryTab } from "../components/meli-analytics/InventoryTab";
 import { TopProductsTab } from "../components/meli-analytics/TopProductsTab";
 import { ProductDrawer } from "../components/meli-analytics/ProductDrawer";
+import { PageHeader, Tabs, Button } from "../components/ui";
 
 const PERIODS = [
   { label: "7d",  value: "7d" },
@@ -143,123 +144,85 @@ export default function MeliCatalogPage() {
     : null;
 
   return (
-    <div className="space-y-5 mx-auto">
-      {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Package size={22} className="text-green-600" />
-            Catálogo ML
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">
-            Estoque e produtos em destaque — visão operacional
-          </p>
+    <div className="space-y-5 mx-auto max-w-[1400px]">
+      <PageHeader
+        icon={Package}
+        title="Catálogo ML"
+        description="Estoque e produtos em destaque — visão operacional"
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="seg">
+          <button type="button" aria-pressed={!unifiedView} onClick={() => setUnifiedView(false)} className="seg-btn">Loja</button>
+          <button type="button" aria-pressed={unifiedView} onClick={() => setUnifiedView(true)} className="seg-btn">Todas</button>
         </div>
 
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Toggle Loja / Todas */}
-            <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
-              <button
-                type="button"
-                onClick={() => setUnifiedView(false)}
-                className={"px-3 py-1.5 rounded-lg transition-all font-medium " + (!unifiedView ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700")}
-              >
-                Loja
-              </button>
-              <button
-                type="button"
-                onClick={() => setUnifiedView(true)}
-                className={"px-3 py-1.5 rounded-lg transition-all font-medium " + (unifiedView ? "bg-white text-green-700 shadow-sm" : "text-gray-500 hover:text-gray-700")}
-              >
-                Todas
-              </button>
-            </div>
+        <AccountSelect
+          accounts={accounts}
+          value={selectedAccount}
+          onChange={setSelectedAccount}
+          disabled={unifiedView}
+        />
 
-            <AccountSelect
-              accounts={accounts}
-              value={selectedAccount}
-              onChange={setSelectedAccount}
-              disabled={unifiedView}
-            />
-
-            {/* Period */}
-            <div className="flex bg-gray-100 rounded-xl p-0.5 text-sm">
-              {PERIODS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => setPeriod(p.value)}
-                  className={`px-3 py-1.5 rounded-lg transition-all font-medium ${
-                    period === p.value
-                      ? "bg-white text-green-700 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
+        <div className="seg">
+          {PERIODS.map((p) => (
             <button
-              onClick={() => handleSync(false)}
-              disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors shadow-sm"
+              key={p.value}
+              type="button"
+              aria-pressed={period === p.value}
+              onClick={() => setPeriod(p.value)}
+              className="seg-btn"
             >
-              <RefreshCw size={15} className={syncing ? "animate-spin" : ""} />
-              {syncing ? "Sincronizando…" : unifiedView ? "Sincronizar todas" : "Sincronizar"}
+              {p.label}
             </button>
+          ))}
+        </div>
 
-            <button
-              onClick={() => handleSync(true)}
-              disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
-              title="Re-processa 90 dias"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 text-xs font-semibold disabled:opacity-50 transition-colors"
-            >
-              <RefreshCw size={13} /> Re-sync 90d
-            </button>
-          </div>
-
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+          {lastSyncFormatted && (
+            <span className="hidden sm:flex items-center gap-1.5 text-xs text-fg-dim pr-1">
+              <Clock size={12} />
+              Sync <strong className="num text-fg-muted font-medium">{lastSyncFormatted}</strong>
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleSync(true)}
+            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
+            title="Re-processa 90 dias"
+          >
+            <RefreshCw size={13} /> Re-sync 90d
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleSync(false)}
+            disabled={syncing || (unifiedView ? accounts.length === 0 : !selectedAccount)}
+          >
+            <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+            {syncing ? "Sincronizando…" : unifiedView ? "Sincronizar todas" : "Sincronizar"}
+          </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div ref={tabSectionRef} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-100 px-2 pt-2 pb-1">
-          <div className="flex gap-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  requestAnimationFrame(() =>
-                    tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  );
-                }}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-green-50 text-green-700"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <tab.icon size={14} />
-                {tab.label}
-                {tab.id === "estoque" && alertTotal > 0 && (
-                  <span className="ml-0.5 text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full leading-none">
-                    {alertTotal}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-          {lastSyncFormatted && (
-            <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 pr-2">
-              <Clock size={11} />
-              Sync: <strong className="text-gray-500 font-semibold">{lastSyncFormatted}</strong>
-            </span>
-          )}
-        </div>
+      <div ref={tabSectionRef} className="space-y-4 scroll-mt-4">
+        <Tabs
+          items={TABS.map((t) => ({
+            value: t.id,
+            icon: t.icon,
+            label: t.id === "estoque" && alertTotal > 0 ? `${t.label} · ${alertTotal}` : t.label,
+          }))}
+          value={activeTab}
+          onChange={(id) => {
+            setActiveTab(id);
+            requestAnimationFrame(() =>
+              tabSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+            );
+          }}
+        />
 
-        <div className="p-5">
+        <div className="glass rounded-2xl p-5">
           <div style={{ display: activeTab === "estoque" ? "block" : "none" }}>
             <InventoryTab
               inventory={inventory}

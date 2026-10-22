@@ -36,9 +36,9 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Nome *</label>
+        <label className="text-xs text-fg-muted block mb-1">Nome *</label>
         <input
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          className="field w-full"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nome do usuário"
@@ -48,10 +48,10 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
       {!isEdit && (
         <>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Email *</label>
+            <label className="text-xs text-fg-muted block mb-1">Email *</label>
             <input
               type="email"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              className="field w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@exemplo.com"
@@ -59,11 +59,11 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Senha inicial *</label>
+            <label className="text-xs text-fg-muted block mb-1">Senha inicial *</label>
             <div className="relative">
               <input
                 type={showPass ? "text" : "password"}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-10"
+                className="field w-full !pr-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
@@ -73,7 +73,7 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
               <button
                 type="button"
                 onClick={() => setShowPass((v) => !v)}
-                className="absolute right-2 top-2 text-gray-400 hover:text-gray-700"
+                className="absolute right-2 top-2 text-fg-dim hover:text-fg/90"
               >
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -83,7 +83,7 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
       )}
 
       <div>
-        <p className="text-xs text-gray-500 mb-2 font-medium">Permissões diretas</p>
+        <p className="text-xs text-fg-muted mb-2 font-medium">Permissões diretas</p>
         <div className="grid grid-cols-2 gap-2">
           {Object.keys(MODULE_LABELS).map((mod) => (
             <ModuleCheckbox
@@ -95,12 +95,12 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
             />
           ))}
         </div>
-        <p className="text-[10px] text-gray-400 mt-1">Módulos desabilitados não estão disponíveis no plano atual.</p>
+        <p className="text-[10px] text-fg-dim mt-1">Módulos desabilitados não estão disponíveis no plano atual.</p>
       </div>
 
       {teams.length > 0 && (
         <div>
-          <p className="text-xs text-gray-500 mb-2 font-medium">Times</p>
+          <p className="text-xs text-fg-muted mb-2 font-medium">Times</p>
           <div className="space-y-1.5">
             {teams.map((t) => (
               <label key={t._id} className="flex items-center gap-2 cursor-pointer">
@@ -108,10 +108,10 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
                   type="checkbox"
                   checked={teamIds.includes(String(t._id))}
                   onChange={(e) => toggleTeam(String(t._id), e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-brand-600"
+                  className="w-4 h-4 rounded border-line/25 text-brandSolid-300"
                 />
-                <span className="text-sm text-gray-700">{t.name}</span>
-                <span className="text-[10px] text-gray-400">
+                <span className="text-sm text-fg/90">{t.name}</span>
+                <span className="text-[10px] text-fg-dim">
                   ({(t.permissions || []).map((p) => MODULE_LABELS[p] || p).join(", ") || "sem permissões"})
                 </span>
               </label>
@@ -121,10 +121,10 @@ export function UserForm({ initial, planModules, teams, onSave, onCancel, isEdit
       )}
 
       <div className="flex justify-end gap-2 pt-2">
-        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50">
+        <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border border-line/15 text-sm text-fg/90 hover:bg-ink/[0.03]">
           Cancelar
         </button>
-        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50">
+        <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-brandSolid-500 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-50 shadow-glow-brand">
           <Check size={14} />
           {saving ? "Salvando..." : isEdit ? "Salvar" : "Criar usuário"}
         </button>
