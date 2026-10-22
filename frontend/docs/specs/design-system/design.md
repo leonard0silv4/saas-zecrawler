@@ -38,4 +38,4 @@
 
 - `landing/index.html` replica os tokens no `tailwind.config` inline e as classes `.glass`, `.glow-top`, `.hud` no `<style>`.
 - `landing/assets/`: `hero.mp4`/`hero.webm` (trecho de ~5,6 s do vídeo da marca, sem áudio), `hero-poster.jpg`, `logo-mark.svg`, `favicon.png`.
-- Deploy: push na `main` → GitHub Action (`.github/workflows/deploy.yml`) → `deploy.sh` copia `landing/index.html` e `landing/assets/` para `/var/www/mlsmarthub-landing/`.
+- Deploy: push na `main` → GitHub Action (`.github/workflows/deploy.yml`) → `deploy.sh` copia `landing/index.html` e `landing/assets/` para `/var/www/mlsmarthub-landing/`. Após o `git pull`, o script se reexecuta (`DEPLOY_REEXEC`) para que alterações no próprio `deploy.sh` valham no mesmo deploy.
