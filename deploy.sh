@@ -4,9 +4,14 @@ set -euo pipefail
 REPO_DIR="/var/www/saas-zecrawler"
 LANDING_TARGET="/var/www/mlsmarthub-landing"
 
-echo "==> [1/5] git pull"
-cd "$REPO_DIR"
-git pull origin main || (git fetch origin && git reset --hard origin/main)
+# Bash lê o script enquanto executa: após o pull, reexecuta a versão nova
+# para que mudanças neste arquivo valham já neste deploy.
+if [ -z "${DEPLOY_REEXEC:-}" ]; then
+  echo "==> [1/5] git pull"
+  cd "$REPO_DIR"
+  git pull origin main || (git fetch origin && git reset --hard origin/main)
+  DEPLOY_REEXEC=1 exec bash "$REPO_DIR/deploy.sh"
+fi
 
 echo "==> [2/5] backend deps"
 cd "$REPO_DIR/backend"
