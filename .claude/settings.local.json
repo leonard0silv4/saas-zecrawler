@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn '$where\\\\|mapReduce\\\\|function\\(\\)\\\\|\\\\.save\\\\|\\\\.update\\\\|\\\\.find' /home/leonardo_silva/Desktop/projetos/zecrawler-saas/backend/src '--include=*.js')",
+      "Bash(grep -rn '$regex\\\\|user_id:\\\\|filter\\\\[' /home/leonardo_silva/Desktop/projetos/zecrawler-saas/backend/src/controllers '--include=*.js')",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(grep -E \"\\\\.\\(js|md\\)$\")",
+      "Bash(xargs cat -n)",
+      "Bash(xargs ls -la)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(ssh *)",
+      "Bash(scp -o StrictHostKeyChecking=no /home/leonardo_silva/Desktop/projetos/zecrawler-saas/backend/.env root@178.104.105.239:/var/www/saas-crawler/backend/.env)",
+      "Bash(xargs cat)",
+      "Bash(xargs basename -a)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|js|jsx|py\\)$\")",
+      "Bash(gh api *)",
+      "Bash(curl -s \"https://api.github.com/repos/anthropics/skills/contents/skills/canvas-design\")",
+      "Bash(curl -s \"https://api.github.com/repos/anthropics/skills/contents/skills/frontend-design\")",
+      "Bash(curl *)",
+      "Bash(python3 -c \"import sys,json; files=json.load\\(sys.stdin\\); [print\\(f['name'], f['download_url']\\) for f in files if f['download_url']]\")",
+      "Bash(python3 -c ' *)",
+      "Bash(xargs -P 8 -I{} sh -c 'curl -s -o ~/.claude/skills/canvas-fonts/$\\(basename {}\\) \"{}\"')",
+      "Read(//home/leonardo_silva/.claude/**)",
+      "Read(//home/leonardo_silva/.claude/plugins/**)",
+      "Bash(claude plugins *)",
+      "Bash(git checkout *)",
+      "Bash(rm -rf /tmp/zc3)",
+      "Bash(npx expo *)"
+    ]
+  }
+}
